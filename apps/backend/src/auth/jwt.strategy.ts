@@ -1,45 +1,32 @@
-// 路径：src/auth/jwt.strategy.ts
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PrismaService } from '../prisma/prisma.service';
 
-// 统一一个常量，和 AuthModule 里的 JwtModule.register 保持完全一致
-const JWT_SECRET = process.env.JWT_SECRET || 'SECRET_KEY';
+const JWT_SECRET = process.env.JWT_SECRET || 'SECRET_KEY'; // 确保和 Module 里一致
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(private prisma: PrismaService) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      ignoreExpiration: false, // 过期就直接 401
-      secretOrKey: JWT_SECRET, // 这里改成和 JwtModule 相同的密钥
+      ignoreExpiration: false, 
+      secretOrKey: JWT_SECRET,
     });
   }
 
-  /**
-   * JWT 验证通过后回调
-   * payload = { sub: userId, email }
-   */
+  // 验证通过后，去数据库查最新的用户信息
   async validate(payload: { sub: number; email: string }) {
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
-      select: {
-        id: true,
-        email: true,
-        nickname: true,
-        bio: true,
-        role: true,
-        createdAt: true,
-        updatedAt: true,
-      },
     });
 
+    // 如果用户被删了，Token 也就失效了
     if (!user) {
       throw new UnauthorizedException('用户不存在或已被删除');
     }
 
-    // 返回的对象会挂在 request.user 上
+    // 返回完整的 user 对象 (包含 role, avatar 等)
     return user;
   }
 }
