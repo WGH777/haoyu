@@ -11,18 +11,21 @@ export interface Order {
     description: string
     price: number
     status: string
-    publisher?: {
-      nickname: string
-    }
+    publisher?: { nickname: string }
   }
 }
 
-// 获取我抢到的任务列表
-export const getMyOrders = () => {
-  return http.get<Order[]>('/order')
+// 🔥 核心：抢单接口
+export const createOrder = (taskId: number) => {
+  return http.post('/order', { taskId })
 }
 
-// 🔥 新增：提交验收/结算任务
+// 获取我抢到的任务
+export const getMyOrders = () => {
+  return http.get<Order[]>('/order/my-orders')
+}
+
+// 结算任务
 export const completeOrder = (orderId: number) => {
   return http.post(`/order/${orderId}/complete`)
 }

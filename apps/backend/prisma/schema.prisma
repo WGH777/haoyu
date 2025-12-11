@@ -8,20 +8,21 @@ datasource db {
 }
 
 model User {
-  id          Int      @id @default(autoincrement())
-  email       String   @unique
-  password    String
-  nickname    String
-  bio         String?
-  role        String   @default("USER") 
-  balance     Float    @default(0)
-  
-  refreshToken String? 
+  id           Int           @id @default(autoincrement())
+  email        String        @unique
+  password     String
+  nickname     String
+  bio          String?
+  role         String        @default("USER")
+  balance      Float         @default(0)
+  refreshToken String?
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  avatar       String?
 
-  publishedTasks Task[]        @relation("UserPublishedTasks")
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  publishedTasks Task[]      @relation("UserPublishedTasks")
   orders         Order[]
   transactions   Transaction[]
 }
@@ -31,6 +32,7 @@ model Task {
   title       String
   description String
   price       Float
+  serviceFee  Float    @default(0) // 新增：服务费，单位与 price 一致（分）
   status      String   @default("PENDING")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

@@ -89,6 +89,7 @@ const handleLogin = async () => {
 
     isLoading.value = true
 
+    // 调用登录接口
     const res: any = await http.post('/auth/login', {
       email: form.email,
       password: form.password
@@ -102,8 +103,10 @@ const handleLogin = async () => {
       return
     }
 
+    // 存储关键信息
     localStorage.setItem('token', token)
     if (user) {
+      // 这一步很重要，Header和钱包页面会用到它
       localStorage.setItem('currentUser', JSON.stringify(user))
     }
 
@@ -127,6 +130,8 @@ const handleLogin = async () => {
   justify-content: center;
   align-items: center;
   background-color: #f0f2f5;
+  /* 加个背景图或者渐变会更好看，这里先用纯色 */
+  background-image: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
 }
 .login-card {
   width: 400px;

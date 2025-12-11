@@ -7,7 +7,7 @@ import { PrismaModule } from '../prisma/prisma.module';
   imports: [PrismaModule],
   controllers: [UserController],
   providers: [UserService],
-  // 🔥 核心修复：导出 UserService
+  // 🔥 必须导出，供 AuthModule 调用
   exports: [UserService], 
 })
 export class UserModule {}
