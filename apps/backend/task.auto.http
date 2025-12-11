@@ -1,0 +1,98 @@
+@baseUrl = http://localhost:3000
+
+### ===========================
+### 🎭 第一幕：角色注册
+### ===========================
+
+### 1. 注册“老板” (Publisher)
+POST {{baseUrl}}/user/register
+Content-Type: application/json
+
+{
+  "email": "boss@test.com",
+  "password": "123",
+  "nickname": "土豪老板"
+}
+
+### 2. 注册“打工仔” (Worker)
+POST {{baseUrl}}/user/register
+Content-Type: application/json
+
+{
+  "email": "worker@test.com",
+  "password": "123",
+  "nickname": "勤奋打工人"
+}
+
+
+### ===========================
+### 💰 第二幕：资金准备 (老板充钱)
+### ===========================
+
+### 3. 【老板】给自己充值 100 元 (10000 分)
+# 注意：我们用 x-user-id: 1 来模拟老板登录 (基于之前改写的 AuthGuard)
+POST {{baseUrl}}/user/deposit
+Content-Type: application/json
+x-user-id: 1
+
+{
+  "amount": 10000
+}
+
+### 4. 【老板】查看余额 (预期: 10000)
+GET {{baseUrl}}/user/profile
+x-user-id: 1
+
+
+### ===========================
+### 📜 第三幕：交易流程
+### ===========================
+
+### 5. 【老板】发布悬赏 (悬赏 50 元 / 5000 分)
+# 预期：发布成功，且余额自动扣除 5000
+POST {{baseUrl}}/task
+Content-Type: application/json
+x-user-id: 1
+
+{
+  "title": "急需一个 Logo 设计",
+  "description": "要五彩斑斓的黑",
+  "reward": 5000
+}
+
+### 6. 【老板】再次查余额 (预期: 5000)
+GET {{baseUrl}}/user/profile
+x-user-id: 1
+
+### 7. 【打工仔】抢单 (抢 ID 为 1 的任务)
+POST {{baseUrl}}/order
+Content-Type: application/json
+x-user-id: 2
+
+{
+  "taskId": 1
+}
+
+### 8. 【打工仔】提交任务 (订单 ID 1)
+POST {{baseUrl}}/order/1/submit
+Content-Type: application/json
+x-user-id: 2
+
+{}
+
+### ... (前面的步骤不变) ...
+
+### 9. 【老板】验收并结算 (触发分账逻辑)
+POST {{baseUrl}}/order/1/complete
+Content-Type: application/json
+x-user-id: 1
+
+{}
+
+### 10. 【打工仔】查看余额 (预期: 4500 分，因为被扣了 10%)
+GET {{baseUrl}}/user/profile
+x-user-id: 2
+
+### 11. 【平台/老板】查看余额 (预期: 余额增加了 500 分的抽成)
+GET {{baseUrl}}/user/profile
+x-user-id: 1
