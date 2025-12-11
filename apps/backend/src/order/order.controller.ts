@@ -1,46 +1,35 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Req, UnauthorizedException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards, Req } from '@nestjs/common';
 import { OrderService } from './order.service';
-import { CreateOrderDto } from './dto/create-order.dto';
-// 👇 检查路径，如果报错把 /guards 删掉
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 
+@ApiTags('订单管理')
 @Controller('order')
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}
 
   @UseGuards(JwtAuthGuard)
   @Post()
-  create(@Body() createOrderDto: CreateOrderDto, @Req() req: any) {
-    console.log('📝 抢单请求 - User:', req.user);
-    console.log('📝 抢单请求 - Body:', createOrderDto);
-
-    // 1. 获取当前抢单的用户 ID
-    const userId = req.user?.id || req.user?.userId;
-    if (!userId) {
-      throw new UnauthorizedException('无法识别用户身份');
-    }
-
-    // 2. 传给 Service (注意：这里假设前端传的是 { taskId: 1 })
-    return this.orderService.create(+userId, createOrderDto);
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '抢单（创建订单）' })
+  create(@Body() body: { taskId: number }, @Req() req: any) {
+    const workerId = req.user.id;
+    return this.orderService.create(workerId, body.taskId);
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get()
-  findAll(@Req() req: any) {
-    const userId = req.user?.id || req.user?.userId;
-    return this.orderService.findAll(+userId);
+  @Get('my-orders')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '查询我抢到的订单' })
+  findMyOrders(@Req() req: any) {
+    return this.orderService.findMyOrders(req.user.id);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.orderService.findOne(+id);
-  }
-
-  // 结算任务 (完成任务)
   @UseGuards(JwtAuthGuard)
   @Post(':id/complete')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '完成订单（结算赏金）' })
   complete(@Param('id') id: string, @Req() req: any) {
-    const userId = req.user?.id || req.user?.userId;
-    return this.orderService.complete(+userId, +id);
+    return this.orderService.complete(+id, req.user.id);
   }
 }

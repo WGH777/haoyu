@@ -1,3 +1,4 @@
+// apps/backend/src/task/task.service.ts
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateTaskDto } from './dto/create-task.dto';
@@ -7,49 +8,60 @@ import { UpdateTaskDto } from './dto/update-task.dto';
 export class TaskService {
   constructor(private prisma: PrismaService) {}
 
-  // 创建任务 (带事务扣款)
+  /**
+   * 创建任务（赏金 + 服务费 一次性扣款）
+   * @param userId 发布人 ID
+   * @param createTaskDto 任务数据（price 为分）
+   */
   async create(userId: number, createTaskDto: CreateTaskDto) {
-    // 1. 解构数据：注意这里使用的是 price 而不是 reward
-    // 如果 DTO 里还没有 serviceFee，这里默认取 0，防止报错
-    const { title, description, price, serviceFee } = createTaskDto as any; 
+    const { title, description, price } = createTaskDto;
 
-    // 计算总扣款金额 = 赏金 + 服务费
-    const finalServiceFee = serviceFee || 0;
-    const totalCost = price + finalServiceFee;
+    // 服务费比例：10%（这里可后续抽出来做配置）
+    const SERVICE_FEE_RATE = 0.1;
 
-    return this.prisma.$transaction(async (tx:any) => {
-      // 2. 检查余额
+    // 服务费：按比例计算，向最近的 1 分取整，最少为 0
+    const serviceFee = Math.max(0, Math.round(price * SERVICE_FEE_RATE));
+
+    // 总扣款 = 赏金 + 服务费
+    const totalCost = price + serviceFee;
+
+    return this.prisma.$transaction(async (tx: any) => {
+      // 1. 检查余额是否足够
       const user = await tx.user.findUnique({ where: { id: userId } });
-      
+
       if (!user || user.balance < totalCost) {
         throw new BadRequestException(
-          `余额不足，当前: ${user?.balance || 0}，需要: ${totalCost} (含服务费 ${finalServiceFee})`
+          `余额不足，当前: ${user?.balance || 0}，需要: ${totalCost} (含服务费 ${serviceFee})`,
         );
       }
 
-      // 3. 扣款 (扣除 总金额)
+      // 2. 从余额中扣除总金额
       await tx.user.update({
         where: { id: userId },
-        data: { balance: { decrement: totalCost } },
-      });
-
-      // 4. 记账 (记录流水)
-      await tx.transaction.create({
         data: {
-          amount: -totalCost, // 记录负数
-          type: 'PUBLISH',
-          status: 'SUCCESS',
-          userId: userId,
+          balance: {
+            decrement: totalCost,
+          },
         },
       });
 
-      // 5. 创建任务到数据库
+      // 3. 记录资金流水（负数代表支出）
+      await tx.transaction.create({
+        data: {
+          amount: -totalCost,
+          type: 'PUBLISH', // 发布任务
+          status: 'SUCCESS',
+          userId,
+        },
+      });
+
+      // 4. 创建任务记录，落库 serviceFee
       return tx.task.create({
         data: {
           title,
           description,
-          price: price,          // ✅ 对应数据库的 price 字段
-          serviceFee: finalServiceFee, // ✅ 对应数据库的 serviceFee 字段
+          price,
+          serviceFee,
           publisherId: userId,
           status: 'PENDING',
         },
@@ -57,29 +69,29 @@ export class TaskService {
     });
   }
 
-  // 查询所有
+  // 查询所有任务
   async findAll() {
     return this.prisma.task.findMany({
-      include: { 
-        publisher: { 
-          select: { nickname: true, email: true, id: true } 
-        } 
+      include: {
+        publisher: {
+          select: { nickname: true, email: true, id: true },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
   }
 
-  // 查询单个
+  // 查询单个任务
   async findOne(id: number) {
     return this.prisma.task.findUnique({
       where: { id },
       include: {
-        publisher: { select: { nickname: true, email: true } }
-      }
+        publisher: { select: { nickname: true, email: true } },
+      },
     });
   }
 
-  // 查询我发布的
+  // 查询我发布的任务
   async findCreatedBy(userId: number) {
     return this.prisma.task.findMany({
       where: { publisherId: userId },
@@ -87,38 +99,41 @@ export class TaskService {
     });
   }
 
-  // 查询我参与的 (通过 Order 表关联查询)
+  // 查询我参与的任务（通过订单表）
   async findAssignedTo(userId: number) {
     return this.prisma.order.findMany({
       where: { workerId: userId },
-      include: { 
-        task: true, // 包含任务详情
-        worker: { select: { nickname: true } }
+      include: {
+        task: true,
+        worker: { select: { nickname: true } },
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
     });
   }
 
   // 更新任务
   async update(id: number, updateTaskDto: UpdateTaskDto) {
-    // 注意：updateTaskDto 里的字段也需要确保没有 reward，改为 price
     return this.prisma.task.update({
       where: { id },
-      data: updateTaskDto as any, // 临时规避类型检查，建议去修改 UpdateTaskDto
+      data: updateTaskDto as any,
     });
   }
 
   // 删除任务
   async remove(id: number) {
-    return this.prisma.task.delete({ where: { id } });
+    return this.prisma.task.delete({
+      where: { id },
+    });
   }
 
-  // 🔥 兼容性补丁：引导旧接口报错
-  async assignTask(taskId: number, userId: number) {
+  // 兼容旧接口：直接提示已升级
+  async assignTask(_taskId: number, _userId: number) {
     throw new BadRequestException('接口已升级，请使用 POST /order 进行抢单');
   }
 
-  async completeTask(taskId: number, userId: number) {
-    throw new BadRequestException('接口已升级，请使用 POST /order/:id/complete 接口结算');
+  async completeTask(_taskId: number, _userId: number) {
+    throw new BadRequestException(
+      '接口已升级，请使用 POST /order/:id/complete 接口结算',
+    );
   }
 }

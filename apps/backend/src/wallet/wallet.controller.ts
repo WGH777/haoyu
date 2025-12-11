@@ -1,27 +1,30 @@
 import { Controller, Get, Post, Body, UseGuards, Req } from '@nestjs/common';
 import { WalletService } from './wallet.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { DepositDto } from './dto/deposit.dto';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 
-@UseGuards(JwtAuthGuard)
+@ApiTags('钱包中心')
 @Controller('wallet')
+@UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
 export class WalletController {
   constructor(private readonly walletService: WalletService) {}
 
-  @Get('balance')
-  getBalance(@Req() req: any) {
-    return this.walletService.getBalance(req.user.id);
-  }
-
   @Get('transactions')
+  @ApiOperation({ summary: '获取我的流水' })
   getTransactions(@Req() req: any) {
-    // 🔥 修正：使用 Service 中正确的函数名
-    return this.walletService.getMyTransactions(req.user.id);
+    return this.walletService.getTransactions(req.user.id);
   }
 
   @Post('deposit')
-  deposit(@Req() req: any, @Body() depositDto: DepositDto) {
-    const amount = depositDto.amount; 
-    return this.walletService.deposit(req.user.id, amount);
+  @ApiOperation({ summary: '充值 (模拟)' })
+  deposit(@Req() req: any, @Body() body: { amount: number }) {
+    return this.walletService.deposit(req.user.id, body.amount);
+  }
+
+  @Post('withdraw')
+  @ApiOperation({ summary: '提现 (模拟)' })
+  withdraw(@Req() req: any, @Body() body: { amount: number }) {
+    return this.walletService.withdraw(req.user.id, body.amount);
   }
 }

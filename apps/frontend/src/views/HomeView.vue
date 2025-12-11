@@ -1,266 +1,182 @@
-<!-- apps/frontend/src/views/HomeView.vue -->
 <template>
   <el-container class="layout-container">
-    <!-- 左侧菜单 -->
     <el-aside width="200px" class="aside">
-      <div class="logo">
-        浩煜平台
-      </div>
-
-      <el-menu
-        :default-active="activeMenu"
-        class="menu"
-        router
-      >
-        <el-menu-item index="/task">
-          <span>任务大厅</span>
-        </el-menu-item>
-
-        <el-menu-item index="/my-task">
-          <span>我的任务</span>
-        </el-menu-item>
-
-        <el-menu-item index="/wallet">
-          <span>钱包中心</span>
-        </el-menu-item>
-
-        <!-- 只有管理员 / 超管才看得见用户管理 -->
-        <el-menu-item
-          v-if="canSeeUserManage"
-          index="/user"
-        >
-          <span>用户管理</span>
-        </el-menu-item>
+      <div class="logo">浩煜平台</div>
+      <el-menu :default-active="activeMenu" class="menu" router background-color="#001529" text-color="#fff" active-text-color="#409eff">
+        <el-menu-item index="/task"><el-icon><List /></el-icon><span>任务大厅</span></el-menu-item>
+        <el-menu-item index="/my-task"><el-icon><Checked /></el-icon><span>我的任务</span></el-menu-item>
+        <el-menu-item index="/wallet"><el-icon><Wallet /></el-icon><span>钱包中心</span></el-menu-item>
+        <el-menu-item v-if="canSeeUserManage" index="/user"><el-icon><User /></el-icon><span>用户管理</span></el-menu-item>
       </el-menu>
     </el-aside>
 
-    <!-- 右侧：头部 + 内容 -->
     <el-container>
-      <!-- 顶部栏 -->
       <el-header class="header">
-        <div class="header-left">
-          <span class="system-title">宇宙级悬赏系统</span>
-        </div>
-
+        <div class="header-left"><span class="system-title">宇宙级悬赏系统</span></div>
         <div class="header-right">
-          <div class="balance" v-if="currentUser">
-            余额：
-            <span class="balance-amount">
-              {{ (currentUser.balance || 0) / 100 }} 元
-            </span>
+          <div class="balance-tag" v-if="currentUser">
+            <span class="label">余额：</span>
+            <span class="balance-amount">¥ {{ ((currentUser.balance || 0) / 100).toFixed(2) }}</span>
           </div>
 
           <el-dropdown trigger="click" @command="handleCommand">
-            <span class="user-dropdown">
+            <div class="user-dropdown">
               <el-avatar
-                size="small"
-                class="avatar"
+                v-if="currentUser?.avatar"
+                :size="32"
+                :src="getFullUrl(currentUser.avatar)"
+                class="avatar-img"
+              />
+              <el-avatar
+                v-else
+                :size="32"
+                :style="{ backgroundColor: getNameColor(currentUser?.email), color: '#fff', fontSize: '14px' }"
               >
-                {{ avatarText }}
+                {{ getFirstLetter(currentUser?.email) }}
               </el-avatar>
+              
               <span class="nickname">{{ currentUser?.nickname || '未登录' }}</span>
-            </span>
+              <el-icon class="el-icon--right"><CaretBottom /></el-icon>
+            </div>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item command="profile">
-                  个人资料
-                </el-dropdown-item>
-                <el-dropdown-item divided command="logout">
-                  退出登录
-                </el-dropdown-item>
+                <el-dropdown-item command="profile">个人资料</el-dropdown-item>
+                <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
         </div>
       </el-header>
 
-      <!-- 主体内容：子路由出口 -->
       <el-main class="main">
-        <router-view />
+        <router-view v-if="$route.path !== '/' && $route.path !== '/task'" />
+        <div v-else class="task-container">
+          <el-card class="box-card">
+            <template #header>
+              <div class="card-header">
+                <h2>📝 任务广场</h2>
+                <el-button type="primary" size="large" @click="showCreateDialog = true">+ 发布悬赏</el-button>
+              </div>
+            </template>
+            <div v-loading="loading">
+              <el-empty v-if="tasks.length === 0" description="暂无任务，快来发布第一个吧！" />
+              <div v-else class="task-grid">
+                <el-card v-for="task in tasks" :key="task.id" class="task-item" shadow="hover">
+                  <template #header>
+                    <div class="task-header">
+                      <span class="task-title">{{ task.title }}</span>
+                      <el-tag v-if="task.status === 'PENDING'" type="success">待领取</el-tag>
+                      <el-tag v-else-if="task.status === 'ONGOING'" type="warning">进行中</el-tag>
+                      <el-tag v-else type="info">已完成</el-tag>
+                    </div>
+                  </template>
+                  <p class="task-desc">{{ task.description }}</p>
+                  <div class="task-meta"><el-tag type="danger" effect="plain" size="small">💰 赏金 {{ ((task.price || 0) / 100).toFixed(2) }} 元</el-tag></div>
+                  <div class="task-footer"><span class="author">👤 {{ task.publisher?.nickname || '神秘人' }}</span><span class="time">{{ new Date(task.createdAt).toLocaleDateString() }}</span></div>
+                  <div style="margin-top: 15px;">
+                    <el-button v-if="task.status === 'PENDING'" type="primary" class="w-100" @click="handleAssign(task.id)">🚀 立即抢单</el-button>
+                    <el-button v-else disabled class="w-100">{{ task.status === 'ONGOING' ? '🏃 正在进行中' : '🏁 已结束' }}</el-button>
+                  </div>
+                </el-card>
+              </div>
+            </div>
+          </el-card>
+        </div>
       </el-main>
     </el-container>
+
+    <el-dialog v-model="showCreateDialog" title="发布新悬赏" width="500px">
+      <el-form :model="form" label-position="top">
+        <el-form-item label="任务标题"><el-input v-model="form.title" /></el-form-item>
+        <el-form-item label="任务描述"><el-input v-model="form.description" type="textarea" rows="4" /></el-form-item>
+        <el-form-item label="赏金预算 (元)"><el-input-number v-model="form.price" :min="1" :step="10" style="width: 100%" /></el-form-item>
+      </el-form>
+      <template #footer><el-button @click="showCreateDialog = false">取消</el-button><el-button type="primary" @click="handleCreate" :loading="submitting">确认发布</el-button></template>
+    </el-dialog>
   </el-container>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { ref, reactive, onMounted, computed, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { getTaskList, createTask } from '@/api/task'
+import { createOrder } from '@/api/order'
+import { getProfile } from '@/api/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import http from '../api/http'
+import { UserFilled, CaretBottom, List, Checked, Wallet, User } from '@element-plus/icons-vue'
 
-interface CurrentUser {
-  id: number
-  email: string
-  nickname: string | null
-  role: 'USER' | 'ADMIN' | 'SUPER_ADMIN' | string
-  balance: number
-  createdAt: string
-  updatedAt: string
-  bio?: string | null
+const route = useRoute(); const router = useRouter();
+const currentUser = ref<any>(null)
+const activeMenu = computed(() => route.path === '/' ? '/task' : route.path)
+const canSeeUserManage = computed(() => currentUser.value?.role === 'ADMIN' || currentUser.value?.role === 'SUPER_ADMIN')
+
+// 🔥 核心工具：获取完整图片地址
+const getFullUrl = (path: string) => (!path ? '' : path.startsWith('http') ? path : `http://localhost:3000${path}`)
+
+// 🔥 核心工具：获取首字母
+const getFirstLetter = (email: string) => (email ? email.charAt(0).toUpperCase() : '?')
+
+// 🔥 核心工具：根据名字生成固定颜色 (同一个邮箱永远是一个颜色)
+const getNameColor = (str: string) => {
+  if (!str) return '#409EFF'
+  const colors = ['#409EFF', '#67C23A', '#E6A23C', '#F56C6C', '#909399', '#9C27B0', '#3F51B5', '#009688']
+  let hash = 0
+  for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash)
+  return colors[Math.abs(hash) % colors.length]
 }
 
-const route = useRoute()
-const router = useRouter()
-
-const currentUser = ref<CurrentUser | null>(null)
-
-// 当前激活菜单
-const activeMenu = computed(() => {
-  return route.path
-})
-
-// 是否可以看到「用户管理」菜单
-const canSeeUserManage = computed(() => {
-  if (!currentUser.value) return false
-  const role = currentUser.value.role
-  return role === 'ADMIN' || role === 'SUPER_ADMIN'
-})
-
-/**
- * 头像里显示的文字：
- * - 优先用邮箱首字母（大写），例如 boss@haoyu.com -> B
- * - 若没有邮箱，则退回昵称首字
- * 这样右边再显示完整昵称，就不会出现“荒 荒”两个一模一样。
- */
-const avatarText = computed(() => {
-  if (currentUser.value?.email) {
-    return currentUser.value.email.slice(0, 1).toUpperCase()
-  }
-  if (currentUser.value?.nickname) {
-    return currentUser.value.nickname.slice(0, 1)
-  }
-  return '?'
-})
-
-// 从后端刷新个人信息
 const fetchProfile = async () => {
-  try {
-    const res = await http.get<CurrentUser>('/user/profile')
-    currentUser.value = res
-    localStorage.setItem('currentUser', JSON.stringify(res))
-  } catch (error) {
-    console.error('获取当前用户信息失败:', error)
-  }
+  try { const res = await getProfile(); currentUser.value = res; localStorage.setItem('currentUser', JSON.stringify(res)) } catch (e) {}
+}
+const handleCommand = (cmd: string) => {
+  if (cmd === 'logout') {
+    localStorage.clear(); router.push('/login'); ElMessage.success('已退出')
+  } else if (cmd === 'profile') router.push('/profile')
 }
 
-// 处理下拉菜单点击
-const handleCommand = async (command: string) => {
-  if (command === 'profile') {
-    router.push({ name: 'profile' })
-    return
-  }
-
-  if (command === 'logout') {
-    try {
-      await ElMessageBox.confirm('确认要退出登录吗？', '提示', {
-        type: 'warning',
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-      })
-
-      // 清除本地登录状态
-      localStorage.removeItem('token')
-      localStorage.removeItem('currentUser')
-
-      ElMessage.success('已退出登录')
-      router.replace({ name: 'login' })
-    } catch {
-      // 用户点了取消
-    }
-  }
+// 任务逻辑
+const loading = ref(false); const tasks = ref<any[]>([]); const showCreateDialog = ref(false); const submitting = ref(false)
+const form = reactive({ title: '', description: '', price: 100 })
+const fetchData = async () => {
+  try { loading.value = true; const res: any = await getTaskList(); tasks.value = Array.isArray(res) ? res : (res.data || []) } finally { loading.value = false }
+}
+const handleCreate = async () => {
+  if (!form.title) return ElMessage.warning('请补全信息');
+  try { submitting.value = true; await createTask({ title: form.title, description: form.description, price: form.price * 100 }); ElMessage.success('发布成功'); showCreateDialog.value = false; fetchData(); fetchProfile() } catch(e){} finally { submitting.value = false }
+}
+const handleAssign = (id: number) => {
+  ElMessageBox.confirm('确定抢单吗？', '确认').then(async () => {
+    await createOrder(id); ElMessage.success('抢单成功'); fetchData()
+  }).catch(() => {})
 }
 
 onMounted(() => {
-  // 1. 尝试从 localStorage 读取
-  const cached = localStorage.getItem('currentUser')
-  if (cached) {
-    try {
-      currentUser.value = JSON.parse(cached)
-    } catch {
-      currentUser.value = null
-    }
-  }
-
-  // 2. 再向后端刷新一次最新资料
-  fetchProfile()
+  const cached = localStorage.getItem('currentUser'); if (cached) currentUser.value = JSON.parse(cached)
+  fetchProfile(); fetchData(); window.addEventListener('balance-change', fetchProfile)
 })
+onUnmounted(() => window.removeEventListener('balance-change', fetchProfile))
 </script>
 
 <style scoped>
-.layout-container {
-  height: 100vh;
-}
-
-/* 左侧菜单 */
-.aside {
-  background-color: #001529;
-  color: #fff;
-  display: flex;
-  flex-direction: column;
-}
-
-.logo {
-  height: 60px;
-  line-height: 60px;
-  text-align: center;
-  font-weight: 600;
-  font-size: 18px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.menu {
-  border-right: none;
-}
-
-/* 顶部栏 */
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 60px;
-  box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
-  padding: 0 16px;
-  box-sizing: border-box;
-}
-
-.header-left .system-title {
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.balance {
-  font-size: 14px;
-}
-
-.balance-amount {
-  font-weight: 600;
-  color: #409eff;
-}
-
-.user-dropdown {
-  display: inline-flex;
-  align-items: center;
-  cursor: pointer;
-}
-
-.avatar {
-  margin-right: 8px;
-}
-
-.nickname {
-  font-size: 14px;
-}
-
-/* 主体内容 */
-.main {
-  background-color: #f5f5f5;
-  padding: 16px;
-  box-sizing: border-box;
-}
+.layout-container { height: 100vh; }
+.aside { background-color: #001529; color: #fff; display: flex; flex-direction: column; }
+.logo { height: 60px; line-height: 60px; text-align: center; font-weight: 600; font-size: 18px; background-color: #002140; }
+.menu { border-right: none; flex: 1; }
+.header { display: flex; align-items: center; justify-content: space-between; height: 60px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); background: #fff; z-index: 10; padding: 0 20px; }
+.header-left .system-title { font-size: 18px; font-weight: 600; }
+.header-right { display: flex; align-items: center; gap: 20px; }
+.balance-tag { background-color: #f0f9eb; padding: 4px 12px; border-radius: 16px; color: #67c23a; font-size: 14px; }
+.balance-amount { font-weight: bold; margin-left: 4px; }
+.user-dropdown { display: flex; align-items: center; cursor: pointer; padding: 4px 8px; border-radius: 4px; transition: background 0.3s; }
+.user-dropdown:hover { background-color: #f5f7fa; }
+.avatar-img { margin-right: 8px; border: 1px solid #e0e0e0; object-fit: cover; } /* 关键：防止图片变形 */
+.nickname { font-size: 14px; margin-left: 8px; margin-right: 4px; color: #333; }
+.main { background-color: #f0f2f5; padding: 20px; }
+.card-header { display: flex; justify-content: space-between; align-items: center; }
+.task-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; margin-top: 20px; }
+.task-header { display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
+.task-desc { color: #666; margin: 15px 0; height: 40px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; }
+.task-meta { margin-bottom: 15px; }
+.task-footer { display: flex; justify-content: space-between; color: #999; font-size: 12px; margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee; }
+.w-100 { width: 100%; }
 </style>
