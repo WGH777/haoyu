@@ -1,0 +1,18 @@
+# 1. 忽略依赖包 (这个最重要！千万别删)
+node_modules/
+
+# 2. 忽略构建产物 (编译后的文件，不需要上传)
+dist/
+build/
+
+# 3. 忽略环境变量 (保护你的数据库密码安全)
+.env
+.env.*
+
+# 4. Prisma 生成的文件 (如果有的话)
+/generated/prisma
+
+# 5. 系统和编辑器文件
+.DS_Store
+.vscode/
+*.log

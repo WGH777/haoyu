@@ -1,0 +1,61 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          Int      @id @default(autoincrement())
+  email       String   @unique
+  password    String
+  nickname    String
+  bio         String?
+  role        String   @default("USER") 
+  balance     Float    @default(0)
+  
+  refreshToken String? 
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  publishedTasks Task[]        @relation("UserPublishedTasks")
+  orders         Order[]
+  transactions   Transaction[]
+}
+
+model Task {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  price       Float
+  status      String   @default("PENDING")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  publisherId Int
+  publisher   User     @relation("UserPublishedTasks", fields: [publisherId], references: [id])
+  orders      Order[]
+}
+
+model Order {
+  id        Int      @id @default(autoincrement())
+  status    String   @default("PENDING")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  taskId    Int
+  task      Task     @relation(fields: [taskId], references: [id])
+  workerId  Int
+  worker    User     @relation(fields: [workerId], references: [id])
+}
+
+model Transaction {
+  id        Int      @id @default(autoincrement())
+  amount    Float
+  type      String
+  status    String   @default("SUCCESS")
+  createdAt DateTime @default(now())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+}
