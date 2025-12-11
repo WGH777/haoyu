@@ -8,12 +8,10 @@ import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { TaskModule } from './task/task.module';
 import { OrderModule } from './order/order.module';
-import { WalletModule } from './wallet/wallet.module';
+import { WalletModule } from './wallet/wallet.module'; 
 
 @Module({
   imports: [
-    // 🔥 核心修复：使用 process.cwd() 获取当前运行目录
-    // 这样无论你在哪启动项目，都能精准找到 apps/backend/uploads
     ServeStaticModule.forRoot({
       rootPath: join(process.cwd(), 'uploads'), 
       serveRoot: '/uploads',
@@ -24,7 +22,7 @@ import { WalletModule } from './wallet/wallet.module';
     UserModule,
     TaskModule,
     OrderModule,
-    WalletModule,
+    WalletModule, // 🔥 核心修复：确保 WalletModule 注册
   ],
   controllers: [AppController],
   providers: [AppService],

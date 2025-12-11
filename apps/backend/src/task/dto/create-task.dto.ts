@@ -1,20 +1,24 @@
-// apps/backend/src/task/dto/create-task.dto.ts
-import { IsNotEmpty, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { ApiProperty } from "@nestjs/swagger";
+import { IsNotEmpty, IsNumber, IsString, Min, IsOptional } from "class-validator";
 
 export class CreateTaskDto {
+  @ApiProperty({ description: '任务标题', example: '设计一个App Logo' })
+  @IsNotEmpty()
   @IsString()
-  @IsNotEmpty({ message: '任务标题不能为空' })
-  title!: string;
+  title!: string; 
 
+  @ApiProperty({ description: '任务详细描述', example: '需要简约、科技感的设计，颜色用蓝色系' })
+  @IsNotEmpty()
   @IsString()
-  @IsOptional()
-  description?: string;
+  description!: string; 
 
-  /**
-   * 赏金金额，单位：分
-   * 前端用「元」* 100 后传进来
-   */
+  @ApiProperty({ description: '任务赏金（分），例如 10000 = 100元' })
   @IsNumber()
-  @Min(1, { message: '赏金至少为 1 分' })
-  price!: number;
+  @Min(100) 
+  price!: number; 
+  
+  @ApiProperty({ description: '任务配图 URL（可选）', required: false, nullable: true })
+  @IsOptional()
+  @IsString()
+  image?: string | null;
 }

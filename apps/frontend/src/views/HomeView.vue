@@ -49,49 +49,106 @@
       </el-header>
 
       <el-main class="main">
-        <router-view v-if="$route.path !== '/' && $route.path !== '/task'" />
-        <div v-else class="task-container">
+        <div v-if="$route.path === '/' || $route.path === '/task'" class="task-container">
           <el-card class="box-card">
             <template #header>
               <div class="card-header">
                 <h2>📝 任务广场</h2>
-                <el-button type="primary" size="large" @click="showCreateDialog = true">+ 发布悬赏</el-button>
+                <el-button type="primary" size="large" @click="openCreateDialog">
+                  + 发布悬赏
+                </el-button>
               </div>
             </template>
+
             <div v-loading="loading">
               <el-empty v-if="tasks.length === 0" description="暂无任务，快来发布第一个吧！" />
+              
               <div v-else class="task-grid">
                 <el-card v-for="task in tasks" :key="task.id" class="task-item" shadow="hover">
-                  <template #header>
-                    <div class="task-header">
-                      <span class="task-title">{{ task.title }}</span>
-                      <el-tag v-if="task.status === 'PENDING'" type="success">待领取</el-tag>
-                      <el-tag v-else-if="task.status === 'ONGOING'" type="warning">进行中</el-tag>
-                      <el-tag v-else type="info">已完成</el-tag>
+                  <div class="task-content">
+                    <div class="task-image-wrapper" v-if="task.image">
+                      <img :src="getFullUrl(task.image)" class="task-image" alt="任务配图" />
                     </div>
-                  </template>
-                  <p class="task-desc">{{ task.description }}</p>
-                  <div class="task-meta"><el-tag type="danger" effect="plain" size="small">💰 赏金 {{ ((task.price || 0) / 100).toFixed(2) }} 元</el-tag></div>
-                  <div class="task-footer"><span class="author">👤 {{ task.publisher?.nickname || '神秘人' }}</span><span class="time">{{ new Date(task.createdAt).toLocaleDateString() }}</span></div>
+
+                    <div class="task-info">
+                      <div class="task-header">
+                        <span class="task-title">{{ task.title }}</span>
+                        <el-tag v-if="task.status === 'PENDING'" type="success">待领取</el-tag>
+                        <el-tag v-else-if="task.status === 'ONGOING'" type="warning">进行中</el-tag>
+                        <el-tag v-else type="info">已完成</el-tag>
+                      </div>
+                      
+                      <p class="task-desc">{{ task.description }}</p>
+                      
+                      <div class="task-meta">
+                        <el-tag type="danger" effect="plain" size="small">
+                          💰 赏金 {{ ((task.price || 0) / 100).toFixed(2) }} 元
+                        </el-tag>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="task-footer">
+                    <span class="author">👤 {{ task.publisher?.nickname || '神秘人' }}</span>
+                    <span class="time">{{ new Date(task.createdAt).toLocaleDateString() }}</span>
+                  </div>
+
                   <div style="margin-top: 15px;">
-                    <el-button v-if="task.status === 'PENDING'" type="primary" class="w-100" @click="handleAssign(task.id)">🚀 立即抢单</el-button>
-                    <el-button v-else disabled class="w-100">{{ task.status === 'ONGOING' ? '🏃 正在进行中' : '🏁 已结束' }}</el-button>
+                    <el-button 
+                      v-if="task.status === 'PENDING'"
+                      type="primary" 
+                      class="w-100" 
+                      @click="handleAssign(task.id)"
+                    >
+                      🚀 立即抢单
+                    </el-button>
+                    <el-button v-else disabled class="w-100">
+                      {{ task.status === 'ONGOING' ? '🏃 正在进行中' : '🏁 已结束' }}
+                    </el-button>
                   </div>
                 </el-card>
               </div>
             </div>
           </el-card>
         </div>
+        
+        <router-view v-else />
       </el-main>
     </el-container>
 
     <el-dialog v-model="showCreateDialog" title="发布新悬赏" width="500px">
       <el-form :model="form" label-position="top">
-        <el-form-item label="任务标题"><el-input v-model="form.title" /></el-form-item>
-        <el-form-item label="任务描述"><el-input v-model="form.description" type="textarea" rows="4" /></el-form-item>
+        <el-form-item label="任务标题"><el-input v-model="form.title" placeholder="例如：帮我设计一个Logo" /></el-form-item>
+        <el-form-item label="任务描述"><el-input v-model="form.description" type="textarea" rows="4" placeholder="详细描述您的需求..." /></el-form-item>
+        
+        <el-form-item label="配图 (可选)">
+          <el-upload
+            class="image-uploader"
+            :show-file-list="false"
+            :http-request="handleImageUpload"
+            :before-upload="beforeImageUpload"
+          >
+            <img v-if="form.image" :src="getFullUrl(form.image)" class="uploaded-image" />
+            <el-icon v-else class="uploader-icon"><Plus /></el-icon>
+          </el-upload>
+          <el-button 
+            v-if="form.image" 
+            type="danger" 
+            size="small" 
+            plain 
+            style="margin-left: 10px;"
+            @click="form.image = ''"
+          >
+            移除图片
+          </el-button>
+        </el-form-item>
+
         <el-form-item label="赏金预算 (元)"><el-input-number v-model="form.price" :min="1" :step="10" style="width: 100%" /></el-form-item>
       </el-form>
-      <template #footer><el-button @click="showCreateDialog = false">取消</el-button><el-button type="primary" @click="handleCreate" :loading="submitting">确认发布</el-button></template>
+      <template #footer>
+        <el-button @click="showCreateDialog = false">取消</el-button>
+        <el-button type="primary" @click="handleCreate" :loading="submitting">确认发布</el-button>
+      </template>
     </el-dialog>
   </el-container>
 </template>
@@ -99,24 +156,18 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getTaskList, createTask } from '@/api/task'
+import { getTaskList, createTask, uploadTaskImage, type Task } from '@/api/task'
 import { createOrder } from '@/api/order'
 import { getProfile } from '@/api/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { UserFilled, CaretBottom, List, Checked, Wallet, User } from '@element-plus/icons-vue'
+import { Plus } from '@element-plus/icons-vue' 
+import { 
+  UserFilled, CaretBottom, List, Checked, Wallet, User 
+} from '@element-plus/icons-vue'
 
-const route = useRoute(); const router = useRouter();
-const currentUser = ref<any>(null)
-const activeMenu = computed(() => route.path === '/' ? '/task' : route.path)
-const canSeeUserManage = computed(() => currentUser.value?.role === 'ADMIN' || currentUser.value?.role === 'SUPER_ADMIN')
-
-// 🔥 核心工具：获取完整图片地址
+// ========== 工具函数 ==========
 const getFullUrl = (path: string) => (!path ? '' : path.startsWith('http') ? path : `http://localhost:3000${path}`)
-
-// 🔥 核心工具：获取首字母
 const getFirstLetter = (email: string) => (email ? email.charAt(0).toUpperCase() : '?')
-
-// 🔥 核心工具：根据名字生成固定颜色 (同一个邮箱永远是一个颜色)
 const getNameColor = (str: string) => {
   if (!str) return '#409EFF'
   const colors = ['#409EFF', '#67C23A', '#E6A23C', '#F56C6C', '#909399', '#9C27B0', '#3F51B5', '#009688']
@@ -124,6 +175,12 @@ const getNameColor = (str: string) => {
   for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash)
   return colors[Math.abs(hash) % colors.length]
 }
+
+// ========== 状态 & 路由 ==========
+const route = useRoute(); const router = useRouter();
+const currentUser = ref<any>(null)
+const activeMenu = computed(() => route.path === '/' ? '/task' : route.path)
+const canSeeUserManage = computed(() => currentUser.value?.role === 'ADMIN' || currentUser.value?.role === 'SUPER_ADMIN')
 
 const fetchProfile = async () => {
   try { const res = await getProfile(); currentUser.value = res; localStorage.setItem('currentUser', JSON.stringify(res)) } catch (e) {}
@@ -134,22 +191,79 @@ const handleCommand = (cmd: string) => {
   } else if (cmd === 'profile') router.push('/profile')
 }
 
-// 任务逻辑
-const loading = ref(false); const tasks = ref<any[]>([]); const showCreateDialog = ref(false); const submitting = ref(false)
-const form = reactive({ title: '', description: '', price: 100 })
+// ========== 任务广场逻辑 ==========
+const loading = ref(false)
+const tasks = ref<Task[]>([]) 
+const showCreateDialog = ref(false)
+const submitting = ref(false)
+
+const form = reactive({
+  title: '',
+  description: '',
+  price: 100, // 元
+  image: '' as string | null
+})
+
+const openCreateDialog = () => {
+  form.title = ''
+  form.description = ''
+  form.price = 100
+  form.image = null
+  showCreateDialog.value = true
+}
+
 const fetchData = async () => {
   try { loading.value = true; const res: any = await getTaskList(); tasks.value = Array.isArray(res) ? res : (res.data || []) } finally { loading.value = false }
 }
+
 const handleCreate = async () => {
-  if (!form.title) return ElMessage.warning('请补全信息');
-  try { submitting.value = true; await createTask({ title: form.title, description: form.description, price: form.price * 100 }); ElMessage.success('发布成功'); showCreateDialog.value = false; fetchData(); fetchProfile() } catch(e){} finally { submitting.value = false }
+  if (!form.title) return ElMessage.warning('请输入标题');
+  try { 
+    submitting.value = true; 
+    await createTask({ 
+      title: form.title, 
+      description: form.description, 
+      price: form.price,
+      image: form.image || undefined 
+    }); 
+    ElMessage.success('发布成功'); 
+    showCreateDialog.value = false; 
+    fetchData(); 
+    fetchProfile() 
+  } catch(e){} finally { submitting.value = false }
 }
+
 const handleAssign = (id: number) => {
   ElMessageBox.confirm('确定抢单吗？', '确认').then(async () => {
     await createOrder(id); ElMessage.success('抢单成功'); fetchData()
   }).catch(() => {})
 }
 
+const handleImageUpload = async (options: any) => {
+  const formData = new FormData()
+  formData.append('file', options.file)
+  try {
+    const res: any = await uploadTaskImage(formData)
+    form.image = res.url 
+    ElMessage.success('图片上传成功！')
+  } catch (error) {
+    ElMessage.error('图片上传失败')
+  }
+}
+
+const beforeImageUpload = (rawFile: any) => {
+  if (!['image/jpeg', 'image/png', 'image/gif'].includes(rawFile.type)) {
+    ElMessage.error('图片必须是 JPG/PNG/GIF 格式!')
+    return false
+  }
+  if (rawFile.size / 1024 / 1024 > 5) {
+    ElMessage.error('图片大小不能超过 5MB!')
+    return false
+  }
+  return true
+}
+
+// ========== 生命周期 & 事件监听 ==========
 onMounted(() => {
   const cached = localStorage.getItem('currentUser'); if (cached) currentUser.value = JSON.parse(cached)
   fetchProfile(); fetchData(); window.addEventListener('balance-change', fetchProfile)
@@ -169,14 +283,28 @@ onUnmounted(() => window.removeEventListener('balance-change', fetchProfile))
 .balance-amount { font-weight: bold; margin-left: 4px; }
 .user-dropdown { display: flex; align-items: center; cursor: pointer; padding: 4px 8px; border-radius: 4px; transition: background 0.3s; }
 .user-dropdown:hover { background-color: #f5f7fa; }
-.avatar-img { margin-right: 8px; border: 1px solid #e0e0e0; object-fit: cover; } /* 关键：防止图片变形 */
+.avatar-img { margin-right: 8px; border: 1px solid #e0e0e0; object-fit: cover; } 
 .nickname { font-size: 14px; margin-left: 8px; margin-right: 4px; color: #333; }
 .main { background-color: #f0f2f5; padding: 20px; }
 .card-header { display: flex; justify-content: space-between; align-items: center; }
 .task-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; margin-top: 20px; }
-.task-header { display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
-.task-desc { color: #666; margin: 15px 0; height: 40px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; }
-.task-meta { margin-bottom: 15px; }
+
+.task-content { display: flex; flex-direction: column; }
+.task-info { padding: 10px 0; }
+.task-image-wrapper { width: 100%; height: 150px; overflow: hidden; border-radius: 4px; margin-bottom: 10px; }
+.task-image { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s; }
+.task-item:hover .task-image { transform: scale(1.05); }
+
+.task-header { display: flex; justify-content: space-between; align-items: flex-start; font-weight: bold; }
+.task-title { font-size: 16px; margin-right: 10px; }
+.task-desc { color: #666; margin: 10px 0; height: 40px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; font-size: 14px; }
+.task-meta { margin-bottom: 10px; }
 .task-footer { display: flex; justify-content: space-between; color: #999; font-size: 12px; margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee; }
 .w-100 { width: 100%; }
+
+/* 上传组件样式 */
+.image-uploader { width: 150px; height: 150px; border: 1px dashed var(--el-border-color); border-radius: 6px; cursor: pointer; overflow: hidden; transition: var(--el-transition-duration-fast); }
+.image-uploader:hover { border-color: var(--el-color-primary); }
+.uploader-icon { font-size: 28px; color: #8c939d; width: 150px; height: 150px; text-align: center; line-height: 150px; }
+.uploaded-image { width: 100%; height: 100%; object-fit: cover; display: block; }
 </style>
