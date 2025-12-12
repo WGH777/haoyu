@@ -2,7 +2,14 @@
   <el-container class="layout-container">
     <el-aside width="200px" class="aside">
       <div class="logo">浩煜平台</div>
-      <el-menu :default-active="activeMenu" class="menu" router background-color="#001529" text-color="#fff" active-text-color="#409eff">
+      <el-menu 
+        :default-active="activeMenu" 
+        class="menu" 
+        router 
+        background-color="#001529" 
+        text-color="#fff" 
+        active-text-color="#409eff"
+      >
         <el-menu-item index="/task"><el-icon><List /></el-icon><span>任务大厅</span></el-menu-item>
         <el-menu-item index="/my-task"><el-icon><Checked /></el-icon><span>我的任务</span></el-menu-item>
         <el-menu-item index="/wallet"><el-icon><Wallet /></el-icon><span>钱包中心</span></el-menu-item>
@@ -64,7 +71,13 @@
               <el-empty v-if="tasks.length === 0" description="暂无任务，快来发布第一个吧！" />
               
               <div v-else class="task-grid">
-                <el-card v-for="task in tasks" :key="task.id" class="task-item" shadow="hover">
+                <el-card 
+                  v-for="task in tasks" 
+                  :key="task.id" 
+                  class="task-item" 
+                  shadow="hover"
+                  @click="goToDetail(task.id)" 
+                >
                   <div class="task-content">
                     <div class="task-image-wrapper" v-if="task.image">
                       <img :src="getFullUrl(task.image)" class="task-image" alt="任务配图" />
@@ -75,6 +88,7 @@
                         <span class="task-title">{{ task.title }}</span>
                         <el-tag v-if="task.status === 'PENDING'" type="success">待领取</el-tag>
                         <el-tag v-else-if="task.status === 'ONGOING'" type="warning">进行中</el-tag>
+                        <el-tag v-else-if="task.status === 'SUBMITTED'" type="primary">待验收</el-tag>
                         <el-tag v-else type="info">已完成</el-tag>
                       </div>
                       
@@ -98,12 +112,12 @@
                       v-if="task.status === 'PENDING'"
                       type="primary" 
                       class="w-100" 
-                      @click="handleAssign(task.id)"
+                      @click.stop="handleAssign(task.id)"
                     >
                       🚀 立即抢单
                     </el-button>
-                    <el-button v-else disabled class="w-100">
-                      {{ task.status === 'ONGOING' ? '🏃 正在进行中' : '🏁 已结束' }}
+                    <el-button v-else disabled class="w-100" @click.stop="">
+                      {{ task.status === 'ONGOING' || task.status === 'SUBMITTED' ? '🏃 正在进行中' : '🏁 已结束' }}
                     </el-button>
                   </div>
                 </el-card>
@@ -154,7 +168,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed, onUnmounted } from 'vue'
+import { ref, reactive, onMounted, computed, onUnmounted, watch } from 'vue' 
 import { useRoute, useRouter } from 'vue-router'
 import { getTaskList, createTask, uploadTaskImage, type Task } from '@/api/task'
 import { createOrder } from '@/api/order'
@@ -162,7 +176,7 @@ import { getProfile } from '@/api/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue' 
 import { 
-  UserFilled, CaretBottom, List, Checked, Wallet, User 
+  CaretBottom, List, Checked, Wallet, User 
 } from '@element-plus/icons-vue'
 
 // ========== 工具函数 ==========
@@ -179,16 +193,35 @@ const getNameColor = (str: string) => {
 // ========== 状态 & 路由 ==========
 const route = useRoute(); const router = useRouter();
 const currentUser = ref<any>(null)
-const activeMenu = computed(() => route.path === '/' ? '/task' : route.path)
+
+// 菜单激活状态
+const activeMenu = computed(() => {
+    // 如果当前路径是 /task/123 这种详情页，菜单应该高亮 /task
+    if (route.path.startsWith('/task/')) return '/task';
+    return route.path === '/' ? '/task' : route.path
+})
+
 const canSeeUserManage = computed(() => currentUser.value?.role === 'ADMIN' || currentUser.value?.role === 'SUPER_ADMIN')
 
+// 获取用户信息（用于Header）
 const fetchProfile = async () => {
-  try { const res = await getProfile(); currentUser.value = res; localStorage.setItem('currentUser', JSON.stringify(res)) } catch (e) {}
+  try { 
+    const res = await getProfile(); 
+    currentUser.value = res; 
+    localStorage.setItem('currentUser', JSON.stringify(res)) 
+  } catch (e) {}
 }
+
+// 顶部下拉菜单操作
 const handleCommand = (cmd: string) => {
   if (cmd === 'logout') {
-    localStorage.clear(); router.push('/login'); ElMessage.success('已退出')
-  } else if (cmd === 'profile') router.push('/profile')
+    localStorage.clear(); 
+    // 确保使用正确的 LoginView 路径
+    router.push('/login'); 
+    ElMessage.success('已退出')
+  } else if (cmd === 'profile') {
+    router.push('/profile')
+  }
 }
 
 // ========== 任务广场逻辑 ==========
@@ -212,10 +245,24 @@ const openCreateDialog = () => {
   showCreateDialog.value = true
 }
 
-const fetchData = async () => {
-  try { loading.value = true; const res: any = await getTaskList(); tasks.value = Array.isArray(res) ? res : (res.data || []) } finally { loading.value = false }
+// 跳转到任务详情页
+const goToDetail = (taskId: number) => {
+  router.push(`/task/${taskId}`)
 }
 
+// 获取任务列表
+const fetchData = async () => {
+  try { 
+    loading.value = true; 
+    const res: any = await getTaskList(); 
+    // 🔥 确保在控制台看不到 404/403 错误，如果看不到，可能任务列表是空的
+    tasks.value = Array.isArray(res) ? res : (res.data || []) 
+  } finally { 
+    loading.value = false 
+  }
+}
+
+// 发布任务
 const handleCreate = async () => {
   if (!form.title) return ElMessage.warning('请输入标题');
   try { 
@@ -230,15 +277,21 @@ const handleCreate = async () => {
     showCreateDialog.value = false; 
     fetchData(); 
     fetchProfile() 
-  } catch(e){} finally { submitting.value = false }
+  } catch(e){} finally { 
+    submitting.value = false 
+  }
 }
 
+// 抢单操作 (通过订单模块)
 const handleAssign = (id: number) => {
   ElMessageBox.confirm('确定抢单吗？', '确认').then(async () => {
-    await createOrder(id); ElMessage.success('抢单成功'); fetchData()
+    await createOrder(id); 
+    ElMessage.success('抢单成功'); 
+    fetchData()
   }).catch(() => {})
 }
 
+// 图片上传
 const handleImageUpload = async (options: any) => {
   const formData = new FormData()
   formData.append('file', options.file)
@@ -251,6 +304,7 @@ const handleImageUpload = async (options: any) => {
   }
 }
 
+// 图片上传前校验
 const beforeImageUpload = (rawFile: any) => {
   if (!['image/jpeg', 'image/png', 'image/gif'].includes(rawFile.type)) {
     ElMessage.error('图片必须是 JPG/PNG/GIF 格式!')
@@ -265,10 +319,27 @@ const beforeImageUpload = (rawFile: any) => {
 
 // ========== 生命周期 & 事件监听 ==========
 onMounted(() => {
-  const cached = localStorage.getItem('currentUser'); if (cached) currentUser.value = JSON.parse(cached)
-  fetchProfile(); fetchData(); window.addEventListener('balance-change', fetchProfile)
+  const cached = localStorage.getItem('currentUser'); 
+  if (cached) currentUser.value = JSON.parse(cached)
+  
+  fetchProfile(); 
+  // 确保在 HomeView 首次加载时获取任务列表
+  if (route.path === '/' || route.path === '/task') {
+      fetchData(); 
+  }
+  // 监听钱包页面的余额变动事件
+  window.addEventListener('balance-change', fetchProfile)
 })
+
 onUnmounted(() => window.removeEventListener('balance-change', fetchProfile))
+
+// 🔥 核心修复：监听路由变化，确保任务列表在切换回来时被刷新
+watch(() => route.path, (newPath) => { // 确保监听的是 path 字符串
+    // 只有当路径切换到任务广场时，才重新加载数据
+    if (newPath === '/task' || newPath === '/') {
+        fetchData();
+    }
+})
 </script>
 
 <style scoped>
@@ -307,4 +378,6 @@ onUnmounted(() => window.removeEventListener('balance-change', fetchProfile))
 .image-uploader:hover { border-color: var(--el-color-primary); }
 .uploader-icon { font-size: 28px; color: #8c939d; width: 150px; height: 150px; text-align: center; line-height: 150px; }
 .uploaded-image { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.task-item { cursor: pointer; } 
 </style>

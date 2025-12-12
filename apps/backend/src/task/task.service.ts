@@ -15,16 +15,16 @@ export class TaskService {
   async create(userId: number, createTaskDto: CreateTaskDto) {
     // 包含 title, description, price, image
     const { title, description, price, image } = createTaskDto;
-
+    
     // 服务费比例：10%（这里可后续抽出来做配置）
     const SERVICE_FEE_RATE = 0.1;
 
     // 服务费：按比例计算，向最近的 1 分取整，最少为 0
     const serviceFee = Math.max(0, Math.round(price * SERVICE_FEE_RATE));
-
+    
     // 总扣款 = 赏金 + 服务费
     const totalCost = price + serviceFee;
-
+    
     // 使用事务保证扣款和任务创建的原子性
     return this.prisma.$transaction(async (tx: any) => {
       // 1. 检查余额是否足够
@@ -64,7 +64,7 @@ export class TaskService {
           price,
           serviceFee,
           // 🔥 融合点：保存图片 URL
-          image: image || null, 
+          image: image || null,
           publisherId: userId,
           status: 'PENDING',
         },
@@ -82,7 +82,7 @@ export class TaskService {
       },
       include: {
         publisher: {
-          select: { nickname: true, email: true, id: true, avatar: true }, // 🔥 包含头像信息
+          select: { nickname: true, email: true, id: true, avatar: true }, // 包含头像信息
         },
       },
       orderBy: { createdAt: 'desc' },
@@ -90,18 +90,19 @@ export class TaskService {
   }
 
   /**
-   * 查询单个任务
+   * 查询单个任务 (兼容所有状态，用于详情页)
    */
   async findOne(id: number) {
     const task = await this.prisma.task.findUnique({
       where: { id },
       include: {
-        publisher: { select: { nickname: true, email: true, avatar: true } }, // 🔥 包含头像信息
+        publisher: { select: { nickname: true, email: true, avatar: true } }, // 包含头像信息
       },
     });
     if (!task) {
       throw new NotFoundException('任务不存在');
     }
+    // 允许返回 SUBMITTED 或 COMPLETED 状态的任务
     return task;
   }
 
@@ -117,7 +118,6 @@ export class TaskService {
   
   /**
    * 查询我抢到的任务（通过订单表）
-   * 注意：此方法应由 OrderService 提供更专业的实现
    */
   async findAssignedTo(userId: number) {
     // 兼容旧接口：直接调用 Order 表，但更建议将此逻辑移到 OrderService

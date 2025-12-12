@@ -5,8 +5,12 @@ import { ElMessage } from 'element-plus';
 
 // 1. 创建 axios 实例
 const instance: AxiosInstance = axios.create({
-  baseURL: 'http://localhost:3000',
+  // 🔥 核心修复：添加全局 API 前缀 /api
+  baseURL: 'http://localhost:3000/api',
   timeout: 5000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
 });
 
 // 2. 请求拦截器：自动带上 Token
@@ -17,7 +21,10 @@ instance.interceptors.request.use(
       if (!config.headers) {
         config.headers = {} as any;
       }
-      (config.headers as any).Authorization = `Bearer ${token}`;
+      
+      // 🔥 确保 Token 携带的是 'Bearer xxx' 格式
+      const finalToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
+      (config.headers as any).Authorization = finalToken;
     }
     return config;
   },
@@ -27,13 +34,11 @@ instance.interceptors.request.use(
 );
 
 // 3. 响应拦截器：
-//    - 如果后端返回 { code, message, data }，自动解包成 data
-//    - 否则保持原样（兼容旧接口）
 instance.interceptors.response.use(
   (response) => {
     const resData = response.data;
 
-    // 统一响应结构：{ code, message, data }
+    // 兼容统一响应结构：{ code, message, data } (我们后端没有使用这种结构，但保留逻辑是好的)
     if (resData && typeof resData === 'object' && 'code' in resData && 'data' in resData) {
       const wrapped = resData as { code: number; message?: string; data: any };
 
@@ -48,17 +53,28 @@ instance.interceptors.response.use(
       }
     }
 
-    // 兼容旧格式：直接返回原来的 response.data
+    // 🔥 我们的后端直接返回数据对象（如 User 或 Task），因此返回 resData
     return resData;
   },
   (error) => {
-    if (error.response?.status === 401) {
+    const status = error.response?.status;
+    
+    if (status === 401) {
+      // 登录过期或权限不足
       ElMessage.error('登录已过期，请重新登录');
       localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      localStorage.removeItem('currentUser');
-      window.location.href = '/login';
+      localStorage.removeItem('user'); // 清理旧 user 缓存
+      localStorage.removeItem('currentUser'); // 清理新 currentUser 缓存
+      
+      // 强制跳转到登录页
+      if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 300);
+      }
+      
     } else {
+      // 其他错误（400 Bad Request, 403 Forbidden, 404 Not Found, 500 Internal Server Error）
       const message =
         error.response?.data?.message ||
         error.response?.data?.error ||
@@ -69,7 +85,7 @@ instance.interceptors.response.use(
   },
 );
 
-// 4. 轻量 HttpClient 接口：让调用端拿到的就是 data，不是 AxiosResponse
+// 4. 轻量 HttpClient 接口
 export interface HttpClient {
   get<T = any>(url: string, config?: AxiosRequestConfig): Promise<T>;
   post<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T>;

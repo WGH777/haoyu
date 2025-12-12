@@ -15,39 +15,43 @@ const router = createRouter({
           name: 'task',
           component: HomeView
         },
+        // 🔥 新增：任务详情页路由
+        {
+          path: '/task/:id',
+          name: 'task-detail',
+          component: () => import('@/views/task/TaskDetail.vue')
+        },
         {
           path: '/my-task',
           name: 'my-task',
-          component: () => import('@/views/task/MyTasks.vue') // ✅ 正确路径
+          component: () => import('@/views/task/MyTasks.vue')
         },
         {
           path: '/wallet',
           name: 'wallet',
-          component: () => import('@/views/Wallet.vue') // ✅ 正确路径
+          component: () => import('@/views/Wallet.vue')
         },
         {
           path: '/user',
           name: 'user-list',
-          component: () => import('@/views/user/UserList.vue') // ✅ 正确路径
+          component: () => import('@/views/user/UserList.vue')
         },
         {
           path: '/profile',
           name: 'profile',
-          component: () => import('@/views/user/Profile.vue') // ✅ 正确路径
+          component: () => import('@/views/user/Profile.vue')
         }
       ]
     },
     {
       path: '/login',
       name: 'login',
-      // 🔥 核心修正：使用 LoginView.vue
-      component: () => import('@/views/LoginView.vue') 
+      component: () => import('@/views/LoginView.vue')
     },
     {
       path: '/register',
       name: 'register',
-      // 🔥 核心修正：使用 Register.vue
-      component: () => import('@/views/Register.vue') 
+      component: () => import('@/views/Register.vue')
     }
   ]
 })

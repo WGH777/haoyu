@@ -7,58 +7,85 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ==============================================================
+// 🔥 枚举改为 String，兼容 SQLite
+// 金额字段（balance / price / amount）统一使用「分」为单位
+// ==============================================================
+
 model User {
-  id           Int           @id @default(autoincrement())
-  email        String        @unique
-  password     String
-  nickname     String
-  bio          String?
-  role         String        @default("USER")
-  balance      Float         @default(0)
-  refreshToken String?
+  id             Int           @id @default(autoincrement())
+  email          String        @unique
+  password       String
+  nickname       String
+  bio            String?
+  role           String        @default("USER")
 
-  avatar       String?
+  // 用户余额，单位：分
+  balance        Float         @default(0)
+  refreshToken   String?
 
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  avatar         String?                       // 用户头像 URL
 
-  publishedTasks Task[]      @relation("UserPublishedTasks")
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  publishedTasks Task[]        @relation("UserPublishedTasks")
   orders         Order[]
   transactions   Transaction[]
 }
 
 model Task {
-  id          Int      @id @default(autoincrement())
-  title       String
-  description String
-  price       Float
-  serviceFee  Float    @default(0) // 新增：服务费，单位与 price 一致（分）
-  status      String   @default("PENDING")
-  image       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  publisherId Int
-  publisher   User     @relation("UserPublishedTasks", fields: [publisherId], references: [id])
-  orders      Order[]
+  id            Int           @id @default(autoincrement())
+  title         String
+  description   String
+
+  // 任务赏金，单位：分
+  price         Float
+
+  // 手续费，单位：分
+  serviceFee    Float         @default(0)
+  
+  status        String        @default("PENDING") 
+  
+  image         String?                       // 任务配图 URL
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  publisherId   Int
+  publisher     User          @relation("UserPublishedTasks", fields: [publisherId], references: [id])
+  orders        Order[]
 }
 
 model Order {
-  id        Int      @id @default(autoincrement())
-  status    String   @default("PENDING")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  taskId    Int
-  task      Task     @relation(fields: [taskId], references: [id])
-  workerId  Int
-  worker    User     @relation(fields: [workerId], references: [id])
+  id                Int           @id @default(autoincrement())
+  status            String        @default("ASSIGNED") 
+  
+  submissionContent String?                       // 成果提交：文本/链接
+  submissionImage   String?                       // 成果提交：图片 URL
+  submittedAt       DateTime?                     // 成果提交时间
+
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  taskId            Int
+  task              Task          @relation(fields: [taskId], references: [id])
+
+  workerId          Int
+  worker            User          @relation(fields: [workerId], references: [id])
 }
 
 model Transaction {
   id        Int      @id @default(autoincrement())
+
+  // 交易金额，单位：分；收入为正，支出为负
   amount    Float
+
+  // 交易类型：DEPOSIT / WITHDRAW / PUBLISH / INCOME / PAYMENT 等
   type      String
+
   status    String   @default("SUCCESS")
   createdAt DateTime @default(now())
+
   userId    Int
   user      User     @relation(fields: [userId], references: [id])
 }
