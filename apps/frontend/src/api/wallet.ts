@@ -1,40 +1,44 @@
-// apps/frontend/src/api/wallet.ts
-import http from './http'
+import http from '@/api/http'
+
+export type TransactionType = 'DEPOSIT' | 'WITHDRAW' | 'PUBLISH' | 'INCOME'
+
+export type TransactionStatus = 'SUCCESS' | 'PENDING' | 'FAILED'
 
 /**
- * 钱包交易流水
- * - amount 单位：分
+ * 钱包流水记录
+ * amount 单位：分（后端统一使用分，前端展示时除以 100）
  */
-export interface WalletTransaction {
+export interface Transaction {
   id: number
   amount: number
-  type: 'DEPOSIT' | 'WITHDRAW' | 'PUBLISH' | 'INCOME' | 'PAYMENT' | string
-  status: 'SUCCESS' | 'PENDING' | 'FAILED' | string
+  type: TransactionType
+  status: TransactionStatus
   createdAt: string
-  // 后端动态附加的说明字段
-  description?: string
 }
 
 /**
- * 获取当前用户交易流水（最近 50 条）
+ * 获取当前登录用户最近的流水记录
  */
 export const getWalletTransactions = () => {
-  return http.get<WalletTransaction[]>('/wallet/transactions')
+  return http.get<Transaction[]>('/wallet/transactions')
 }
 
 /**
  * 充值
- * @param amountInYuan 金额（元）
+ * 入参：金额（元）
+ * 内部：转换为「分」发送给后端
  */
-export const deposit = (amountInYuan: number) => {
-  // 统一在这里完成 元 -> 分 的转换
-  return http.post('/wallet/deposit', { amount: amountInYuan * 100 })
+export const deposit = (amountYuan: number) => {
+  const cents = Math.round(amountYuan * 100)
+  return http.post('/wallet/deposit', { amount: cents })
 }
 
 /**
  * 提现
- * @param amountInYuan 金额（元）
+ * 入参：金额（元）
+ * 内部：转换为「分」发送给后端
  */
-export const withdraw = (amountInYuan: number) => {
-  return http.post('/wallet/withdraw', { amount: amountInYuan * 100 })
+export const withdraw = (amountYuan: number) => {
+  const cents = Math.round(amountYuan * 100)
+  return http.post('/wallet/withdraw', { amount: cents })
 }

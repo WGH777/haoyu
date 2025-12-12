@@ -1,24 +1,43 @@
-import { ApiProperty } from "@nestjs/swagger";
-import { IsNotEmpty, IsNumber, IsString, Min, IsOptional } from "class-validator";
+import { ApiProperty } from '@nestjs/swagger';
+import {
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MaxLength,
+  Min,
+} from 'class-validator';
 
 export class CreateTaskDto {
-  @ApiProperty({ description: '任务标题', example: '设计一个App Logo' })
-  @IsNotEmpty()
+  @ApiProperty({ description: '任务标题', maxLength: 100 })
   @IsString()
-  title!: string; 
+  @IsNotEmpty({ message: '任务标题不能为空' })
+  @MaxLength(100, { message: '任务标题不能超过 100 个字' })
+  title!: string;
 
-  @ApiProperty({ description: '任务详细描述', example: '需要简约、科技感的设计，颜色用蓝色系' })
-  @IsNotEmpty()
+  @ApiProperty({
+    description: '任务描述',
+    maxLength: 2000,
+    required: false,
+  })
   @IsString()
-  description!: string; 
-
-  @ApiProperty({ description: '任务赏金（分），例如 10000 = 100元' })
-  @IsNumber()
-  @Min(100) 
-  price!: number; 
-  
-  @ApiProperty({ description: '任务配图 URL（可选）', required: false, nullable: true })
   @IsOptional()
+  @MaxLength(2000, { message: '任务描述不能超过 2000 个字' })
+  description?: string;
+
+  @ApiProperty({
+    description: '赏金（单位：分，前端已把元转换为分）',
+    example: 1000,
+  })
+  @IsInt({ message: '赏金必须是整数' })
+  @Min(1, { message: '赏金至少为 1 分' })
+  price!: number;
+
+  @ApiProperty({
+    description: '任务配图 URL',
+    required: false,
+  })
   @IsString()
+  @IsOptional()
   image?: string | null;
 }

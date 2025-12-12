@@ -1,3 +1,5 @@
+// apps/backend/prisma/schema.prisma
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,8 +10,7 @@ datasource db {
 }
 
 // ==============================================================
-// 🔥 枚举改为 String，兼容 SQLite
-// 金额字段（balance / price / amount）统一使用「分」为单位
+//  移除 ENUM 定义，使用 STRING 代替，以兼容 SQLite
 // ==============================================================
 
 model User {
@@ -19,8 +20,6 @@ model User {
   nickname       String
   bio            String?
   role           String        @default("USER")
-
-  // 用户余额，单位：分
   balance        Float         @default(0)
   refreshToken   String?
 
@@ -38,28 +37,42 @@ model Task {
   id            Int           @id @default(autoincrement())
   title         String
   description   String
-
-  // 任务赏金，单位：分
   price         Float
-
-  // 手续费，单位：分
   serviceFee    Float         @default(0)
-  
-  status        String        @default("PENDING") 
-  
+
+  // 任务状态：使用字符串，默认 PENDING
+  status        String        @default("PENDING")
+
   image         String?                       // 任务配图 URL
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
   publisherId   Int
   publisher     User          @relation("UserPublishedTasks", fields: [publisherId], references: [id])
+
   orders        Order[]
+  subTasks      SubTask[]
+}
+
+// 新增：子任务模型，用于任务拆分
+model SubTask {
+  id        Int      @id @default(autoincrement())
+  title     String
+  isDone    Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  taskId    Int
+  task      Task     @relation(fields: [taskId], references: [id])
 }
 
 model Order {
   id                Int           @id @default(autoincrement())
-  status            String        @default("ASSIGNED") 
-  
+
+  // 订单状态：ASSIGNED / SUBMITTED / COMPLETED / CANCELLED
+  status            String        @default("ASSIGNED")
+
   submissionContent String?                       // 成果提交：文本/链接
   submissionImage   String?                       // 成果提交：图片 URL
   submittedAt       DateTime?                     // 成果提交时间
@@ -69,23 +82,16 @@ model Order {
 
   taskId            Int
   task              Task          @relation(fields: [taskId], references: [id])
-
   workerId          Int
   worker            User          @relation(fields: [workerId], references: [id])
 }
 
 model Transaction {
   id        Int      @id @default(autoincrement())
-
-  // 交易金额，单位：分；收入为正，支出为负
   amount    Float
-
-  // 交易类型：DEPOSIT / WITHDRAW / PUBLISH / INCOME / PAYMENT 等
   type      String
-
   status    String   @default("SUCCESS")
   createdAt DateTime @default(now())
-
   userId    Int
   user      User     @relation(fields: [userId], references: [id])
 }

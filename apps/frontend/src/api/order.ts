@@ -1,56 +1,78 @@
 import http from '@/api/http'
-import type { Task } from './task' 
+import type { Task } from './task'
 
 // =================== 类型定义 ===================
 
+export type OrderStatus = 'ASSIGNED' | 'SUBMITTED' | 'COMPLETED' | 'CANCELLED'
+
 export interface SubmitResultData {
-  content: string;
-  image?: string;
+  content: string
+  image?: string
 }
 
 export interface CompleteResultData {
-    isAccepted: boolean;
-    comment?: string;
+  isAccepted: boolean
+  comment?: string
 }
 
+/**
+ * 订单（执行者针对某个任务的接单记录）
+ */
 export interface OrderItem {
-    id: number;
-    taskId: number;
-    workerId: number;
-    status: 'ASSIGNED' | 'SUBMITTED' | 'COMPLETED' | 'CANCELLED'; 
-    task: Task;
-    // 用于 TaskDetail 展示成果
-    submissionContent?: string | null; 
-    submissionImage?: string | null; 
+  id: number
+  taskId: number
+  workerId: number
+  status: OrderStatus
+  task: Task
+  // 用于 TaskDetail 展示成果
+  submissionContent?: string | null
+  submissionImage?: string | null
+  // 可选：用于列表展示时间（后端有的话会返回，没有则为 undefined）
+  createdAt?: string
+  updatedAt?: string
 }
 
 // =================== 接口函数 ===================
 
+/**
+ * 抢单 / 创建订单
+ */
 export const createOrder = (taskId: number) => {
-  return http.post('/order', { taskId });
-}
-
-export const submitTaskResult = (orderId: number, data: SubmitResultData) => {
-    return http.patch(`/order/${orderId}/submit`, data);
-}
-
-// 获取当前用户针对某个任务的订单状态 (Worker 查询自己的订单)
-export const getMyOrderForTask = (taskId: number) => {
-    return http.get<OrderItem>(`/order/task/${taskId}`);
-}
-
-// 🔥 核心修复：获取指定 Task 的订单详情（发布者/执行者通用）
-export const findTaskOrderForDetail = (taskId: number) => {
-    return http.get<OrderItem>(`/order/task/detail/${taskId}`);
-}
-
-export const getMyOrders = () => {
-    return http.get<OrderItem[]>(`/order/my`);
+  return http.post('/order', { taskId })
 }
 
 /**
- * 🔥 核心修复：验收/结算接口。使用 completeOrder 名称，兼容所有旧引用。
+ * 执行者提交成果
+ */
+export const submitTaskResult = (orderId: number, data: SubmitResultData) => {
+  return http.patch(`/order/${orderId}/submit`, data)
+}
+
+/**
+ * Worker 查询自己针对某个任务的订单
+ */
+export const getMyOrderForTask = (taskId: number) => {
+  return http.get<OrderItem>(`/order/task/${taskId}`)
+}
+
+/**
+ * 获取指定任务的订单详情（用于验收 / 成果展示）
+ * - 发布者 / 执行者都可调用
+ */
+export const findTaskOrderForDetail = (taskId: number) => {
+  return http.get<OrderItem>(`/order/task/detail/${taskId}`)
+}
+
+/**
+ * 获取我接取的所有订单
+ */
+export const getMyOrders = () => {
+  return http.get<OrderItem[]>(`/order/my`)
+}
+
+/**
+ * 验收 / 结算订单
  */
 export const completeOrder = (orderId: number, data: CompleteResultData) => {
-    return http.patch(`/order/${orderId}/complete`, data);
+  return http.patch(`/order/${orderId}/complete`, data)
 }
