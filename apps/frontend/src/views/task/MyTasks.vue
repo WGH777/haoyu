@@ -1,63 +1,125 @@
 <template>
   <div class="my-tasks-container">
-    <el-card>
+    <el-card class="box-card">
       <template #header>
-        <h2>📂 我的任务中心</h2>
+        <div class="card-header">
+          <h2>🎯 我的任务</h2>
+          <el-button :icon="Refresh" @click="fetchData" circle />
+        </div>
       </template>
 
-      <el-tabs v-model="activeTab" @tab-click="handleTabClick">
-        <el-tab-pane label="我发布的" name="published">
+      <el-tabs v-model="activeTab" @tab-change="fetchData">
+        <el-tab-pane label="我接取的任务" name="assigned">
           <div v-loading="loading">
-            <el-empty v-if="publishedTasks.length === 0" description="您还没发布过任务" />
+            <el-empty v-if="assignedOrders.length === 0" description="您还没有接取任何任务" />
             
-            <div v-else class="task-list">
-              <el-card v-for="task in publishedTasks" :key="task.id" shadow="hover" class="task-card">
-                <div class="card-content">
-                  <div>
-                    <h3 class="title">{{ task.title }}</h3>
-                    <p class="desc">{{ task.description }}</p>
-                    <el-tag type="danger" size="small">💰 赏金 {{ (task.price / 100).toFixed(2) }}</el-tag>
-                  </div>
-                  <div class="status-box">
-                    <el-tag v-if="task.status === 'PENDING'" type="success">待领取</el-tag>
-                    <el-tag v-else-if="task.status === 'ONGOING'" type="warning">进行中</el-tag>
-                    <el-tag v-else type="info">已结束</el-tag>
-                  </div>
-                </div>
-              </el-card>
-            </div>
+            <el-table v-else :data="assignedOrders" stripe style="width: 100%">
+              <el-table-column label="任务标题" min-width="180">
+                <template #default="scope">
+                  <el-link type="primary" @click="goToDetail(scope.row.taskId)">
+                    {{ scope.row.task.title }}
+                  </el-link>
+                </template>
+              </el-table-column>
+              <el-table-column label="发布人" width="120">
+                <template #default="scope">
+                  {{ scope.row.task.publisher?.nickname || 'N/A' }}
+                </template>
+              </el-table-column>
+              <el-table-column label="赏金" width="100">
+                <template #default="scope">
+                  ¥ {{ (scope.row.task.price / 100).toFixed(2) }}
+                </template>
+              </el-table-column>
+              <el-table-column label="状态" width="120">
+                <template #default="scope">
+                  <el-tag :type="getStatusTag(scope.row.status)">
+                    {{ getStatusText(scope.row.status) }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" width="180">
+                <template #default="scope">
+                  <el-button 
+                    v-if="scope.row.status === 'ASSIGNED'" 
+                    type="success" 
+                    size="small"
+                    @click="goToDetail(scope.row.taskId)"
+                  >
+                    去提交成果
+                  </el-button>
+                  <el-button 
+                    v-else-if="scope.row.status === 'SUBMITTED'" 
+                    type="warning" 
+                    size="small"
+                    disabled
+                  >
+                    待验收
+                  </el-button>
+                  <el-button 
+                    v-else-if="scope.row.status === 'COMPLETED'" 
+                    type="info" 
+                    size="small"
+                    disabled
+                  >
+                    已结算
+                  </el-button>
+                </template>
+              </el-table-column>
+            </el-table>
           </div>
         </el-tab-pane>
 
-        <el-tab-pane label="我抢到的" name="orders">
+        <el-tab-pane label="我发布的任务" name="published">
           <div v-loading="loading">
-            <el-empty v-if="myOrders.length === 0" description="您还没抢过单，去广场看看吧！" />
+            <el-empty v-if="publishedTasks.length === 0" description="您还没有发布任何任务" />
             
-            <div v-else class="task-list">
-              <el-card v-for="order in myOrders" :key="order.id" shadow="hover" class="task-card">
-                <div class="card-content">
-                  <div>
-                    <h3 class="title">{{ order.task.title }}</h3>
-                    <p class="desc">{{ order.task.description }}</p>
-                    <el-tag type="danger" size="small">💰 赏金 {{ (order.task.price / 100).toFixed(2) }}</el-tag>
-                  </div>
-                  <div class="action-box">
-                    <el-tag v-if="order.status === 'COMPLETED'" type="success">✅ 已完成</el-tag>
-                    <el-tag v-else type="warning" effect="dark">🏃 进行中</el-tag>
-                    
-                    <el-button 
-                      v-if="order.status === 'PENDING'" 
-                      type="primary" 
-                      size="small" 
-                      style="margin-top: 10px;"
-                      @click="handleComplete(order.id)"
-                    >
-                      提交验收
-                    </el-button>
-                  </div>
-                </div>
-              </el-card>
-            </div>
+            <el-table v-else :data="publishedTasks" stripe style="width: 100%">
+              <el-table-column label="任务标题" min-width="180">
+                <template #default="scope">
+                  <el-link type="primary" @click="goToDetail(scope.row.id)">
+                    {{ scope.row.title }}
+                  </el-link>
+                </template>
+              </el-table-column>
+              <el-table-column label="赏金" width="100">
+                <template #default="scope">
+                  ¥ {{ (scope.row.price / 100).toFixed(2) }}
+                </template>
+              </el-table-column>
+              <el-table-column label="状态" width="120">
+                <template #default="scope">
+                  <el-tag :type="getStatusTag(scope.row.status)">
+                    {{ getStatusText(scope.row.status) }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column label="发布时间" width="180">
+                <template #default="scope">
+                  {{ new Date(scope.row.createdAt).toLocaleDateString() }}
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" width="180">
+                <template #default="scope">
+                  <el-button 
+                    v-if="scope.row.status === 'SUBMITTED'" 
+                    type="danger" 
+                    size="small"
+                    @click="goToDetail(scope.row.id)"
+                  >
+                    去验收
+                  </el-button>
+                  <el-button 
+                    v-else 
+                    type="info" 
+                    size="small"
+                    disabled
+                  >
+                    查看详情
+                  </el-button>
+                </template>
+              </el-table-column>
+            </el-table>
           </div>
         </el-tab-pane>
       </el-tabs>
@@ -67,80 +129,72 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import http from '../../api/http'
-// 🔥 引入新加的接口
-import { getMyOrders, completeOrder, type Order } from '../../api/order'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { useRouter } from 'vue-router'
+import { getMyOrders } from '@/api/order' 
+import { getMyPublishedTasks } from '@/api/task' 
+import { ElMessage } from 'element-plus'
+import { Refresh } from '@element-plus/icons-vue'
 
-const activeTab = ref('orders')
+const router = useRouter()
+const activeTab = ref('assigned') // 默认显示接取的任务
+
+const assignedOrders = ref<any[]>([]) 
+const publishedTasks = ref<any[]>([]) 
+
 const loading = ref(false)
-const publishedTasks = ref<any[]>([])
-const myOrders = ref<Order[]>([])
 
-const fetchPublished = async () => {
+const fetchData = async () => {
   loading.value = true
   try {
-    const res: any = await http.get('/task/my-published')
-    publishedTasks.value = Array.isArray(res) ? res : (res.data || [])
-  } finally {
-    loading.value = false
-  }
-}
-
-const fetchOrders = async () => {
-  loading.value = true
-  try {
-    const res: any = await getMyOrders()
-    myOrders.value = Array.isArray(res) ? res : (res.data || [])
-  } finally {
-    loading.value = false
-  }
-}
-
-const handleTabClick = (tab: any) => {
-  if (tab.paneName === 'published') {
-    fetchPublished()
-  } else {
-    fetchOrders()
-  }
-}
-
-// 🔥 核心：点击完成任务
-const handleComplete = async (orderId: number) => {
-  try {
-    await ElMessageBox.confirm('确认任务已完成？系统将自动发放赏金。', '结算确认', {
-      type: 'success',
-      confirmButtonText: '确认提交'
-    })
-    
-    loading.value = true
-    await completeOrder(orderId) // 调用接口
-    
-    ElMessage.success('结算成功！赏金已到账 💰')
-    
-    // 刷新列表，按钮会变成“已完成”
-    await fetchOrders()
-  } catch (error) {
-    if (error !== 'cancel') {
-      console.error(error)
-      ElMessage.error('操作失败')
+    if (activeTab.value === 'assigned') {
+      const res: any = await getMyOrders()
+      assignedOrders.value = Array.isArray(res) ? res : []
+    } else if (activeTab.value === 'published') {
+      const res: any = await getMyPublishedTasks()
+      publishedTasks.value = Array.isArray(res) ? res : []
     }
+  } catch (error) {
+    console.error('获取我的任务失败:', error)
+    ElMessage.error('获取任务列表失败')
   } finally {
     loading.value = false
   }
+}
+
+const getStatusTag = (status: string) => {
+  const map: any = { 
+    PENDING: 'success',    
+    ASSIGNED: 'warning',   
+    ONGOING: 'warning',    
+    SUBMITTED: 'primary',  
+    COMPLETED: 'info',
+    CANCELLED: 'danger'
+  }
+  return map[status] || 'info'
+}
+
+const getStatusText = (status: string) => {
+  const map: any = { 
+    PENDING: '待领取', 
+    ASSIGNED: '进行中', 
+    ONGOING: '进行中', 
+    SUBMITTED: '待验收', 
+    COMPLETED: '已完成',
+    CANCELLED: '已取消'
+  }
+  return map[status] || status
+}
+
+const goToDetail = (taskId: number) => {
+  router.push(`/task/${taskId}`)
 }
 
 onMounted(() => {
-  fetchOrders()
+  fetchData()
 })
 </script>
 
 <style scoped>
-.my-tasks-container { max-width: 800px; margin: 20px auto; }
-.task-list { display: flex; flex-direction: column; gap: 15px; }
-.task-card { border-left: 5px solid #409EFF; }
-.card-content { display: flex; justify-content: space-between; align-items: flex-start; }
-.title { margin: 0 0 10px 0; font-size: 18px; }
-.desc { color: #666; margin-bottom: 10px; font-size: 14px; }
-.status-box, .action-box { display: flex; flex-direction: column; align-items: flex-end; }
+.my-tasks-container { max-width: 1200px; margin: 20px auto; }
+.card-header { display: flex; justify-content: space-between; align-items: center; }
 </style>

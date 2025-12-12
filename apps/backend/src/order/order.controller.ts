@@ -1,35 +1,86 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Req } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, ParseIntPipe, Req, UseGuards } from '@nestjs/common';
 import { OrderService } from './order.service';
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { CreateOrderDto } from './dto/create-order.dto';
+import { SubmitResultDto } from './dto/submit-result.dto';
+import { CompleteOrderDto } from './dto/complete-order.dto'; 
 
-@ApiTags('订单管理')
-@Controller('order')
+@ApiTags('订单与任务流转')
+@Controller('order') 
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}
 
-  @UseGuards(JwtAuthGuard)
   @Post()
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: '抢单（创建订单）' })
-  create(@Body() body: { taskId: number }, @Req() req: any) {
-    const workerId = req.user.id;
-    return this.orderService.create(workerId, body.taskId);
+  @ApiOperation({ summary: '抢单/创建订单' })
+  @ApiBody({ type: CreateOrderDto })
+  create(@Body() dto: CreateOrderDto, @Req() req: any) {
+    return this.orderService.create(req.user.id, dto.taskId);
+  }
+
+  @Patch(':id/submit')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '提交任务成果' })
+  @ApiParam({ name: 'id', description: '订单 ID', type: Number })
+  @ApiBody({ type: SubmitResultDto })
+  submit(
+    @Param('id', ParseIntPipe) orderId: number,
+    @Body() dto: SubmitResultDto,
+    @Req() req: any,
+  ) {
+    return this.orderService.submitResult(orderId, req.user.id, dto);
+  }
+
+  @Patch(':id/complete')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '验收任务成果并结算 (由发布者调用)' })
+  @ApiParam({ name: 'id', description: '订单 ID', type: Number })
+  @ApiBody({ type: CompleteOrderDto })
+  complete(
+    @Param('id', ParseIntPipe) orderId: number,
+    @Body() dto: CompleteOrderDto,
+    @Req() req: any,
+  ) {
+    return this.orderService.completeOrder(orderId, req.user.id, dto);
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get('my-orders')
+  @Get('my')
   @ApiBearerAuth()
-  @ApiOperation({ summary: '查询我抢到的订单' })
+  @ApiOperation({ summary: '获取我的所有订单/任务 (我接取的)' })
   findMyOrders(@Req() req: any) {
     return this.orderService.findMyOrders(req.user.id);
   }
-
+  
+  /**
+   * 🔥 核心修复：这个接口是关键！路径 /api/order/task/detail/:taskId
+   */
   @UseGuards(JwtAuthGuard)
-  @Post(':id/complete')
+  @Get('task/detail/:taskId')
   @ApiBearerAuth()
-  @ApiOperation({ summary: '完成订单（结算赏金）' })
-  complete(@Param('id') id: string, @Req() req: any) {
-    return this.orderService.complete(+id, req.user.id);
+  @ApiOperation({ summary: '获取指定 Task 的订单详情（用于验收/成果展示）' })
+  @ApiParam({ name: 'taskId', description: '任务 ID', type: Number })
+  findTaskOrder(
+    @Param('taskId', ParseIntPipe) taskId: number,
+    @Req() req: any
+  ) {
+    // 确保调用 Service 中正确的 findOrderByTaskId 方法
+    return this.orderService.findOrderByTaskId(taskId, req.user.id);
+  }
+  
+  @UseGuards(JwtAuthGuard)
+  @Get('task/:taskId')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '获取当前用户针对某个任务的订单状态 (仅供 Worker)' })
+  @ApiParam({ name: 'taskId', description: '任务 ID', type: Number })
+  findMyOrderForTask(
+    @Param('taskId', ParseIntPipe) taskId: number,
+    @Req() req: any
+  ) {
+    return this.orderService.findMyOrderForTask(taskId, req.user.id);
   }
 }
