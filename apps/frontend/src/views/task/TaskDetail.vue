@@ -1,415 +1,1148 @@
 <template>
-  <div class="task-detail-container" v-loading="loading">
-    <el-card v-if="task" class="detail-card" :key="task.id + task.status">
-      
+  <div class="task-detail-page" v-loading="pageLoading">
+    <!-- 返回与标题 -->
+    <el-page-header
+      class="page-header"
+      @back="goBack"
+      content="任务详情"
+    />
+
+    <!-- 任务主体 -->
+    <el-card v-if="task" class="task-card">
       <template #header>
-        <div class="card-header">
-          <h2>{{ task.title }}</h2>
-          <div class="status-meta">
+        <div class="task-card-header">
+          <div class="left">
             <el-tag :type="getStatusTag(task.status)">
               {{ getStatusText(task.status) }}
             </el-tag>
-            <el-tag type="danger" effect="plain" size="large" style="margin-left: 15px;">
-              💰 赏金 {{ (task.price / 100).toFixed(2) }} 元
+            <span class="task-id">ID：{{ task.id }}</span>
+          </div>
+          <div class="right">
+            <el-tag type="danger" effect="dark">
+              💰 赏金：¥ {{ (task.price / 100).toFixed(2) }}
             </el-tag>
           </div>
         </div>
       </template>
 
-      <el-row :gutter="30">
-        <el-col :span="task.image ? 14 : 24">
-          <h3>需求描述</h3>
-          <p class="description-text">{{ task.description }}</p>
+      <div class="task-body">
+        <!-- 左侧：任务信息 + 子任务 -->
+        <div class="task-main">
+          <h2 class="task-title">{{ task.title }}</h2>
 
-          <el-divider />
+          <!-- 发布者信息 -->
+          <div class="publisher-info">
+            <span class="label">发布者：</span>
+            <span class="value">
+              {{ task.publisher?.nickname || task.publisher?.email || '未知用户' }}
+            </span>
+            <span class="time">
+              发布时间：{{ formatTime(task.createdAt) }}
+            </span>
+          </div>
 
-          <el-descriptions :column="1" border class="publisher-info">
-            <el-descriptions-item label="发布者">
-              <div class="publisher-avatar">
-                <el-avatar 
-                  :size="24"
-                  :src="getAvatarUrl(task.publisher)"
-                  :style="{ backgroundColor: getNameColor(task.publisher?.email), color: '#fff', fontSize: '12px' }"
-                >
-                  {{ getFirstLetter(task.publisher?.email) }}
-                </el-avatar>
-                <span style="margin-left: 8px;">{{ task.publisher.nickname }}</span>
-              </div>
-            </el-descriptions-item>
-            <el-descriptions-item label="发布时间">
-              {{ new Date(task.createdAt).toLocaleString() }}
-            </el-descriptions-item>
-          </el-descriptions>
-
-          <div v-if="task.status === 'SUBMITTED' || task.status === 'COMPLETED' || task.status === 'ASSIGNED'">
-            <el-divider />
-            <h3>成果提交：</h3>
-            <el-alert 
-              v-if="myOrder?.submissionContent"
-              :title="myOrder.submissionContent" 
-              :type="task.status === 'COMPLETED' ? 'success' : 'info'"
-              show-icon 
-              :closable="false"
+          <!-- 任务图片 -->
+          <div v-if="task.image" class="task-image">
+            <el-image
+              :src="getFullUrl(task.image)"
+              fit="cover"
+              :preview-src-list="[getFullUrl(task.image)]"
+              preview-teleported
             />
-            <p v-else-if="task.status === 'SUBMITTED'">等待发布者验收，成果内容未显示。</p>
-            <p v-else>执行者尚未提交成果内容。</p>
           </div>
 
-        </el-col>
+          <!-- 任务描述 -->
+          <el-card class="desc-card" shadow="never">
+            <template #header>
+              <div class="desc-header">
+                <span>任务说明</span>
+              </div>
+            </template>
+            <p class="task-desc">
+              {{ task.description || '暂无任务描述' }}
+            </p>
+          </el-card>
 
-        <el-col :span="10" v-if="task.image">
-          <h3 style="margin-bottom: 10px;">任务配图</h3>
-          <div class="image-preview" @click="showImageDialog = true">
-            <img :src="getFullUrl(task.image)" alt="任务配图" class="task-image-lg" />
-            <div class="zoom-mask">
-              <el-icon><ZoomIn /></el-icon>点击放大
+          <!-- 子任务区域 -->
+          <el-card class="subtask-card" shadow="never">
+            <template #header>
+              <div class="subtask-header">
+                <span>子任务拆分</span>
+                <el-tag
+                  v-if="hasSubTasks"
+                  size="small"
+                  type="success"
+                  effect="plain"
+                >
+                  已拆分 {{ task.subTasks?.length || 0 }} 项
+                </el-tag>
+                <el-tag
+                  v-else
+                  size="small"
+                  type="info"
+                  effect="plain"
+                >
+                  当前未拆分子任务
+                </el-tag>
+              </div>
+            </template>
+
+            <!-- 没有子任务 -->
+            <el-empty
+              v-if="!hasSubTasks"
+              description="暂无子任务"
+            />
+
+            <!-- 已有子任务 -->
+            <ul v-else class="subtask-list">
+              <li
+                v-for="sub in task.subTasks"
+                :key="sub.id"
+                class="subtask-item"
+              >
+                <div class="subtask-main">
+                  <el-checkbox
+                    v-if="canManageSubTasks"
+                    :model-value="sub.isDone"
+                    :disabled="updatingSubTask"
+                    @change="handleToggleSubTask(sub, $event)"
+                  >
+                    <span :class="{ 'subtask-done': sub.isDone }">
+                      {{ sub.title }}
+                    </span>
+                  </el-checkbox>
+
+                  <span
+                    v-else
+                    :class="{ 'subtask-done': sub.isDone }"
+                  >
+                    {{ sub.title }}
+                  </span>
+                </div>
+
+                <div
+                  v-if="canManageSubTasks"
+                  class="subtask-actions"
+                >
+                  <el-button
+                    type="text"
+                    size="small"
+                    @click="handleDeleteSubTask(sub)"
+                  >
+                    删除
+                  </el-button>
+                </div>
+              </li>
+            </ul>
+
+            <!-- 发布者可新增子任务 -->
+            <div
+              v-if="canManageSubTasks"
+              class="subtask-input"
+            >
+              <el-input
+                v-model="newSubTaskTitle"
+                placeholder="输入子任务标题，回车或点击添加"
+                @keyup.enter="handleCreateSubTask"
+              />
+              <el-button
+                type="primary"
+                class="ml-8"
+                :loading="creatingSubTask"
+                @click="handleCreateSubTask"
+              >
+                添加
+              </el-button>
             </div>
-          </div>
-        </el-col>
-      </el-row>
-
-      <el-divider />
-
-      <div class="action-footer">
-        <!-- 待领取：非发布者才能抢单 -->
-        <el-button 
-          v-if="isPending"
-          type="primary" 
-          size="large" 
-          @click="handleAssign"
-        >
-          🚀 立即抢单 (托管中)
-        </el-button>
-
-        <!-- 我作为执行者，已抢单 -->
-        <div v-else-if="isAssigned">
-          <el-alert title="您已抢单成功，请尽快完成任务！" type="success" :closable="false" style="margin-bottom: 15px;" />
-          <el-button 
-            type="success"
-            size="large" 
-            @click="openSubmitDialog"
-          >
-            🏁 提交任务成果
-          </el-button>
-        </div>
-        
-        <!-- 任务已提交成果：根据是否为发布者展示不同按钮 -->
-        <div v-else-if="task.status === 'SUBMITTED'">
-          <div v-if="isPublisher">
-            <el-alert title="执行者已提交成果，请您确认验收。" type="warning" :closable="false" style="margin-bottom: 15px;" />
-            <el-button type="success" size="large" @click="handleComplete(true)">
-              ✅ 验收通过并结算
-            </el-button>
-            <el-button type="danger" size="large" @click="handleComplete(false)" style="margin-left: 15px;">
-              ❌ 拒绝验收 (要求返工)
-            </el-button>
-          </div>
-
-          <el-button 
-            v-else 
-            type="warning" 
-            size="large" 
-            disabled
-          >
-            等待发布者验收中...
-          </el-button>
+          </el-card>
         </div>
 
-        <el-button 
-          v-else-if="task.status === 'COMPLETED'"
-          type="info" 
-          size="large" 
-          disabled
-        >
-          交易已完成
-        </el-button>
-        
-        <el-button 
-          v-else-if="task.status === 'CANCELLED'"
-          type="danger" 
-          size="large" 
-          disabled
-        >
-          任务已取消/失败
-        </el-button>
+        <!-- 右侧：订单状态 & 操作区 -->
+        <div class="task-side">
+          <el-card shadow="never" class="order-card">
+            <template #header>
+              <div class="order-header">
+                <span>任务进度与操作</span>
+              </div>
+            </template>
+
+            <!-- 未登录 -->
+            <div v-if="!isLogin" class="section">
+              <el-alert
+                title="您还未登录，登录后可接单 / 提交 / 验收任务"
+                type="info"
+                :closable="false"
+                show-icon
+              />
+              <el-button
+                class="mt-12"
+                type="primary"
+                @click="goLogin"
+              >
+                去登录
+              </el-button>
+            </div>
+
+            <!-- 游客视角 -->
+            <div
+              v-else-if="viewMode === 'guest'"
+              class="section"
+            >
+              <el-alert
+                v-if="task.status === 'PENDING'"
+                title="当前任务还未被接取，您可以抢单成为执行者"
+                type="success"
+                :closable="false"
+                show-icon
+              />
+              <el-alert
+                v-else
+                title="您不是该任务的发布者或执行者，仅可查看任务信息"
+                type="info"
+                :closable="false"
+                show-icon
+                class="mt-12"
+              />
+              <el-button
+                v-if="canRobOrder"
+                class="mt-16"
+                type="primary"
+                :loading="opLoading"
+                @click="handleAssign"
+              >
+                立即接单
+              </el-button>
+            </div>
+
+            <!-- 执行者视角 -->
+            <div
+              v-else-if="viewMode === 'worker'"
+              class="section"
+            >
+              <el-descriptions
+                title="我的任务进度"
+                :column="1"
+                size="small"
+                border
+              >
+                <el-descriptions-item label="当前状态">
+                  <el-tag :type="getStatusTag(myOrder?.status || '')">
+                    {{ getStatusText(myOrder?.status || '') }}
+                  </el-tag>
+                </el-descriptions-item>
+
+                <el-descriptions-item label="子任务完成情况">
+                  <span v-if="subTaskProgressText">
+                    {{ subTaskProgressText }}
+                  </span>
+                  <span v-else>暂无子任务拆分</span>
+                </el-descriptions-item>
+              </el-descriptions>
+
+              <div class="section mt-16">
+                <!-- 状态：进行中（ASSIGNED） -->
+                <template v-if="isOrderAssigned">
+                  <el-alert
+                    v-if="hasSubmissionHistory"
+                    title="您之前提交的成果已被驳回，请根据发布者意见修改后重新提交。"
+                    type="warning"
+                    :closable="false"
+                    show-icon
+                  />
+                  <el-alert
+                    v-else
+                    title="请按需求完成任务后提交成果，提交后等待发布者验收。"
+                    type="info"
+                    :closable="false"
+                    show-icon
+                    class="mt-8"
+                  />
+                  <el-button
+                    class="mt-16"
+                    type="primary"
+                    @click="openSubmitDialog"
+                  >
+                    {{ hasSubmissionHistory ? '重新提交任务成果' : '提交任务成果' }}
+                  </el-button>
+
+                  <!-- 如果有历史提交，作为参考展示出来 -->
+                  <div
+                    v-if="hasSubmissionHistory"
+                    class="submission-view mt-12"
+                  >
+                    <div class="submission-content">
+                      <div class="label">上次提交内容：</div>
+                      <div class="value">
+                        {{ currentSubmissionContent || '无' }}
+                      </div>
+                    </div>
+                    <div
+                      v-if="currentSubmissionImage"
+                      class="submission-image"
+                    >
+                      <div class="label">上次提交截图：</div>
+                      <el-image
+                        :src="getFullUrl(currentSubmissionImage)"
+                        fit="cover"
+                        :preview-src-list="[getFullUrl(currentSubmissionImage)]"
+                        preview-teleported
+                      />
+                    </div>
+                  </div>
+                </template>
+
+                <!-- 状态：已提交待验收（SUBMITTED） -->
+                <template v-else-if="isOrderSubmitted">
+                  <el-alert
+                    title="您已提交成果，等待发布者验收。"
+                    type="success"
+                    :closable="false"
+                    show-icon
+                  />
+                  <div class="submission-view mt-12">
+                    <div class="submission-content">
+                      <div class="label">提交内容：</div>
+                      <div class="value">
+                        {{ currentSubmissionContent || '无' }}
+                      </div>
+                    </div>
+                    <div
+                      v-if="currentSubmissionImage"
+                      class="submission-image"
+                    >
+                      <div class="label">提交截图：</div>
+                      <el-image
+                        :src="getFullUrl(currentSubmissionImage)"
+                        fit="cover"
+                        :preview-src-list="[getFullUrl(currentSubmissionImage)]"
+                        preview-teleported
+                      />
+                    </div>
+                  </div>
+                </template>
+
+                <!-- 状态：已完成（COMPLETED） -->
+                <template v-else-if="isOrderCompleted">
+                  <el-alert
+                    title="任务已完成，赏金已结算到您的账户。"
+                    type="success"
+                    :closable="false"
+                    show-icon
+                  />
+                  <div class="submission-view mt-12">
+                    <div class="submission-content">
+                      <div class="label">最终提交内容：</div>
+                      <div class="value">
+                        {{ currentSubmissionContent || '无' }}
+                      </div>
+                    </div>
+                    <div
+                      v-if="currentSubmissionImage"
+                      class="submission-image"
+                    >
+                      <div class="label">最终提交截图：</div>
+                      <el-image
+                        :src="getFullUrl(currentSubmissionImage)"
+                        fit="cover"
+                        :preview-src-list="[getFullUrl(currentSubmissionImage)]"
+                        preview-teleported
+                      />
+                    </div>
+                  </div>
+                </template>
+
+                <!-- 其他状态（理论上不会出现） -->
+                <template v-else>
+                  <el-alert
+                    class="mt-8"
+                    title="当前状态暂不可提交成果。"
+                    type="warning"
+                    :closable="false"
+                    show-icon
+                  />
+                </template>
+              </div>
+            </div>
+
+            <!-- 发布者视角 -->
+            <div
+              v-else-if="viewMode === 'publisher'"
+              class="section"
+            >
+              <el-descriptions
+                title="任务与订单状态"
+                :column="1"
+                size="small"
+                border
+              >
+                <el-descriptions-item label="任务状态">
+                  <el-tag :type="getStatusTag(task.status)">
+                    {{ getStatusText(task.status) }}
+                  </el-tag>
+                </el-descriptions-item>
+
+                <el-descriptions-item label="执行者">
+                  <span v-if="publisherOrder">
+                    {{ publisherOrder.workerId }}（用户 ID）
+                  </span>
+                  <span v-else>暂无执行者或订单已失效</span>
+                </el-descriptions-item>
+              </el-descriptions>
+
+              <div class="section mt-16">
+                <!-- 还没有人接单 -->
+                <template v-if="task.status === 'PENDING'">
+                  <el-alert
+                    title="当前任务尚未被任何人接取。"
+                    type="info"
+                    :closable="false"
+                    show-icon
+                  />
+                </template>
+
+                <!-- 已接单但未提交 -->
+                <template v-else-if="task.status === 'ASSIGNED'">
+                  <el-alert
+                    title="执行者正在进行任务，还未提交成果。"
+                    type="info"
+                    :closable="false"
+                    show-icon
+                  />
+                </template>
+
+                <!-- 已提交待验收 -->
+                <template v-else-if="task.status === 'SUBMITTED' && publisherOrder">
+                  <el-alert
+                    title="执行者已提交成果，请验收后结算或驳回返工。"
+                    type="warning"
+                    :closable="false"
+                    show-icon
+                  />
+
+                  <div class="submission-view mt-12">
+                    <div class="submission-content">
+                      <div class="label">提交内容：</div>
+                      <div class="value">
+                        {{ publisherOrder.submissionContent || '无' }}
+                      </div>
+                    </div>
+                    <div
+                      v-if="publisherOrder.submissionImage"
+                      class="submission-image"
+                    >
+                      <div class="label">提交截图：</div>
+                      <el-image
+                        :src="getFullUrl(publisherOrder.submissionImage)"
+                        fit="cover"
+                        :preview-src-list="[getFullUrl(publisherOrder.submissionImage)]"
+                        preview-teleported
+                      />
+                    </div>
+                  </div>
+
+                  <div class="mt-16 buttons-row">
+                    <el-button
+                      type="success"
+                      :loading="opLoading"
+                      @click="handleAccept"
+                    >
+                      验收并结算
+                    </el-button>
+                    <el-button
+                      type="danger"
+                      :loading="opLoading"
+                      @click="handleReject"
+                    >
+                      驳回返工
+                    </el-button>
+                  </div>
+                </template>
+
+                <!-- 已完成 -->
+                <template v-else-if="task.status === 'COMPLETED'">
+                  <el-alert
+                    title="任务已完成，赏金已结算给执行者。"
+                    type="success"
+                    :closable="false"
+                    show-icon
+                  />
+                </template>
+
+                <!-- 其他状态 -->
+                <template v-else>
+                  <el-alert
+                    title="暂无可操作项。"
+                    type="info"
+                    :closable="false"
+                    show-icon
+                  />
+                </template>
+              </div>
+            </div>
+
+            <!-- 兜底：不应该出现，但防御一下 -->
+            <div v-else class="section">
+              <el-alert
+                title="当前身份无法识别，仅可查看任务信息。"
+                type="info"
+                :closable="false"
+                show-icon
+              />
+            </div>
+          </el-card>
+        </div>
       </div>
-
     </el-card>
 
-    <!-- 提交成果弹窗 -->
-    <el-dialog v-model="submitDialogVisible" title="提交任务成果" width="600px">
-      <el-form :model="submitForm" label-position="top">
-        <el-form-item label="成果说明">
+    <!-- 任务不存在 -->
+    <el-empty
+      v-else
+      description="任务不存在或已被删除"
+    />
+
+    <!-- 执行者提交成果弹窗 -->
+    <el-dialog
+      v-model="submitDialogVisible"
+      title="提交任务成果"
+      width="600px"
+      destroy-on-close
+    >
+      <el-form label-width="80px">
+        <el-form-item label="说明">
           <el-input
             v-model="submitForm.content"
             type="textarea"
-            rows="4"
-            placeholder="请详细描述您的成果，或提供在线链接..."
+            placeholder="请详细描述您的完成情况"
+            :rows="5"
           />
         </el-form-item>
-        <el-alert title="请确保成果真实有效，否则可能被拒绝验收。" type="warning" :closable="false" />
+        <el-form-item label="截图">
+          <el-input
+            v-model="submitForm.image"
+            placeholder="可填写成果截图 URL（后续可接入上传）"
+          />
+        </el-form-item>
       </el-form>
-      <template #footer>
-        <el-button @click="submitDialogVisible = false">取消</el-button>
-        <el-button type="success" @click="handleSubmit" :loading="submitting">确认提交</el-button>
-      </template>
-    </el-dialog>
 
-    <!-- 配图放大 -->
-    <el-dialog v-model="showImageDialog" :title="task?.title" width="80%">
-      <img :src="getFullUrl(task?.image)" style="width: 100%; display: block;" alt="任务配图" />
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="submitDialogVisible = false">取 消</el-button>
+          <el-button
+            type="primary"
+            :loading="submitLoading"
+            @click="handleSubmitResult"
+          >
+            确认提交
+          </el-button>
+        </span>
+      </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, reactive } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getProfile } from '@/api/user'
-import { createOrder, submitTaskResult, findTaskOrderForDetail, completeOrder } from '@/api/order'
-import { type Task, findTaskDetail } from '@/api/task'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ZoomIn } from '@element-plus/icons-vue'
+import {
+  findTaskDetail,
+  createSubTask,
+  updateSubTask,
+  deleteSubTask,
+  type Task,
+  type SubTask,
+} from '@/api/task'
+import {
+  createOrder,
+  getMyOrderForTask,
+  findTaskOrderForDetail,
+  submitTaskResult,
+  completeOrder,
+  type OrderItem,
+} from '@/api/order'
+import { getProfile, type UserProfile } from '@/api/user'
 
-const route = useRoute()
-const router = useRouter()
-const taskId = computed(() => parseInt(route.params.id as string))
+type ViewMode = 'guest' | 'worker' | 'publisher'
 
-const loading = ref(true)
-const task = ref<Task | null>(null)
-const myOrder = ref<any>(null)
-const submitDialogVisible = ref(false)
-const submitting = ref(false)
+// ========== 工具函数 ==========
+const getFullUrl = (path?: string | null): string => {
+  if (!path) return ''
+  return path.startsWith('http') ? path : `http://localhost:3000${path}`
+}
 
-const submitForm = reactive({
-  content: ''
-})
+const formatTime = (iso: string) => {
+  if (!iso) return '-'
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return '-'
+  return d.toLocaleString()
+}
 
-// === 核心状态判断 ===
-
-// 使用 Task.publisherId + localStorage.currentUser.id 来判断是否为发布者
-const isPublisher = computed(() => {
-  if (!task.value) return false
-
-  const raw = localStorage.getItem('currentUser')
-  if (!raw) return false
-
-  let currentUserId: number | null = null
-  try {
-    const parsed = JSON.parse(raw)
-    currentUserId = Number(parsed.id) || null
-  } catch {
-    return false
+const getStatusText = (status: string) => {
+  const map: Record<string, string> = {
+    PENDING: '待领取',
+    ASSIGNED: '进行中',
+    ONGOING: '进行中',
+    SUBMITTED: '待验收',
+    COMPLETED: '已完成',
+    CANCELLED: '已取消',
   }
-
-  const publisherId = Number((task.value as any).publisherId) || null
-
-  if (!currentUserId || !publisherId) return false
-  return currentUserId === publisherId
-})
-
-// 待领取（且不是发布者本人）
-const isPending = computed(() => task.value?.status === 'PENDING' && !isPublisher.value)
-
-// 当前用户作为执行者，已抢单但未提交成果
-const isAssigned = computed(() => {
-  return myOrder.value && myOrder.value.status === 'ASSIGNED'
-})
-
-// === 数据获取 ===
-
-const fetchTaskDetail = async () => {
-  loading.value = true
-  try {
-    const detail = await findTaskDetail(taskId.value)
-
-    if (detail) {
-      task.value = detail
-      await fetchMyOrderStatus()
-    } else {
-      ElMessage.error('任务不存在或已完成')
-      router.push('/task')
-    }
-  } catch (e) {
-    console.error('获取任务详情失败:', e)
-    if (router.currentRoute.value.path !== '/task') {
-      router.push('/task')
-    }
-  } finally {
-    loading.value = false
-  }
+  return map[status] || status || '-'
 }
 
-const fetchMyOrderStatus = async () => {
-  try {
-    // 发布者 / 执行者 通用的订单详情接口
-    const order = await findTaskOrderForDetail(taskId.value)
-    myOrder.value = order
-  } catch (e) {
-    myOrder.value = null
-  }
-}
-
-// === 操作处理 ===
-
-// 抢单
-const handleAssign = async () => {
-  ElMessageBox.confirm('确定要抢单吗？', '抢单确认')
-    .then(async () => {
-      await createOrder(taskId.value)
-      ElMessage.success('抢单成功！请尽快完成任务')
-      await fetchTaskDetail()
-    })
-    .catch(() => {})
-}
-
-// 打开提交弹窗
-const openSubmitDialog = () => {
-  submitForm.content = ''
-  submitDialogVisible.value = true
-}
-
-// 提交成果
-const handleSubmit = async () => {
-  if (!submitForm.content) return ElMessage.warning('请填写成果说明')
-  if (!myOrder.value || !myOrder.value.id) return ElMessage.error('订单状态异常，无法提交')
-
-  submitting.value = true
-  try {
-    await submitTaskResult(myOrder.value.id, { content: submitForm.content })
-    await fetchTaskDetail()
-    ElMessage.success('成果已提交，等待发布者验收')
-    submitDialogVisible.value = false
-  } catch (e) {
-    console.error('提交成果时发生错误:', e)
-  } finally {
-    submitting.value = false
-  }
-}
-
-// 发布者验收 / 拒绝验收
-const handleComplete = async (isAccepted: boolean) => {
-  if (!myOrder.value || !myOrder.value.id) {
-    return ElMessage.error('无法结算：未找到关联的订单 ID 或订单状态异常。')
-  }
-
-  const action = isAccepted ? '验收通过' : '拒绝验收'
-  const type = isAccepted ? 'success' : 'warning'
-
-  ElMessageBox.confirm(`确定要${action}吗？`, `${action}确认`, { type })
-    .then(async () => {
-      await completeOrder(myOrder.value.id, { isAccepted, comment: `${action}操作` })
-
-      if (isAccepted) {
-        ElMessage.success('验收成功，赏金已结算给执行者。')
-      } else {
-        ElMessage.warning('已拒绝验收，任务将进入返工状态。')
-      }
-
-      await fetchTaskDetail()
-
-      // 通知首页 Header 刷新余额
-      window.dispatchEvent(new Event('balance-change'))
-      // 兼容：单纯调用一次 profile 接口（即使没用返回值也无碍）
-      getProfile().catch(() => {})
-    })
-    .catch(() => {})
-}
-
-// === 辅助函数 ===
-const showImageDialog = ref(false)
-const getFullUrl = (path: string | null | undefined) =>
-  !path ? '' : path.startsWith('http') ? path : `http://localhost:3000${path}`
-const getAvatarUrl = (user: any) => (user?.avatar ? getFullUrl(user.avatar) : '')
-const getFirstLetter = (email: string) => (email ? email.charAt(0).toUpperCase() : '?')
-const getNameColor = (str: string) => {
-  if (!str) return '#409EFF'
-  const colors = ['#409EFF', '#67C23A', '#E6A23C', '#F56C6C', '#909399', '#9C27B0', '#3F51B5', '#009688']
-  let hash = 0
-  for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash)
-  return colors[Math.abs(hash) % colors.length]
-}
-
-const getStatusTag = (status: string | undefined) => {
-  if (!status) return 'info'
-  const map: any = {
-    PENDING: 'success',
-    ONGOING: 'warning',
+const getStatusTag = (status: string) => {
+  const map: Record<string, 'info' | 'success' | 'warning' | 'danger'> = {
+    PENDING: 'info',
     ASSIGNED: 'warning',
-    SUBMITTED: 'primary',
-    COMPLETED: 'info',
+    ONGOING: 'warning',
+    SUBMITTED: 'warning',
+    COMPLETED: 'success',
     CANCELLED: 'danger',
   }
   return map[status] || 'info'
 }
 
-const getStatusText = (status: string | undefined) => {
-  if (!status) return '加载中'
-  const map: any = {
-    PENDING: '待领取',
-    ONGOING: '进行中',
-    ASSIGNED: '进行中',
-    SUBMITTED: '待验收',
-    COMPLETED: '已完成',
-    CANCELLED: '已取消',
+// ========== 路由 & 基本状态 ==========
+const route = useRoute()
+const router = useRouter()
+
+const task = ref<Task | null>(null)
+const myOrder = ref<OrderItem | null>(null)
+const publisherOrder = ref<OrderItem | null>(null)
+const currentUser = ref<UserProfile | null>(null)
+
+const pageLoading = ref(false)
+const opLoading = ref(false)
+
+// 子任务相关
+const newSubTaskTitle = ref('')
+const creatingSubTask = ref(false)
+const updatingSubTask = ref(false)
+
+// 提交成果弹窗
+const submitDialogVisible = ref(false)
+const submitLoading = ref(false)
+const submitForm = ref({
+  content: '',
+  image: '',
+})
+
+// ========== 计算属性 ==========
+const isLogin = computed(() => !!currentUser.value)
+
+const isPublisher = computed(() => {
+  if (!task.value || !currentUser.value) return false
+  const publisherEmail = (task.value.publisher as any)?.email
+  return !!publisherEmail && publisherEmail === (currentUser.value as any).email
+})
+
+const isWorker = computed(() => !!myOrder.value && isLogin.value)
+
+const viewMode = computed<ViewMode>(() => {
+  if (!isLogin.value) return 'guest'
+  if (isPublisher.value) return 'publisher'
+  if (isWorker.value) return 'worker'
+  return 'guest'
+})
+
+const hasSubTasks = computed(
+  () => !!task.value && Array.isArray(task.value.subTasks) && task.value.subTasks.length > 0,
+)
+
+const subTaskProgressText = computed(() => {
+  if (!task.value || !task.value.subTasks || task.value.subTasks.length === 0) return ''
+  const total = task.value.subTasks.length
+  const done = task.value.subTasks.filter((s) => s.isDone).length
+  return `${done} / ${total} 已完成`
+})
+
+const canManageSubTasks = computed(() => isPublisher.value)
+
+const canRobOrder = computed(
+  () =>
+    !!task.value &&
+    task.value.status === 'PENDING' &&
+    !isPublisher.value &&
+    !isWorker.value,
+)
+
+// 当前视角下的订单
+const currentOrder = computed<OrderItem | null>(() => {
+  if (viewMode.value === 'worker') return myOrder.value
+  if (viewMode.value === 'publisher') return publisherOrder.value
+  return null
+})
+
+// 是否有提交历史（无论当前状态）
+const hasSubmissionHistory = computed(
+  () =>
+    !!currentOrder.value &&
+    (!!currentOrder.value.submissionContent ||
+      !!currentOrder.value.submissionImage),
+)
+
+const isOrderAssigned = computed(
+  () => currentOrder.value?.status === 'ASSIGNED',
+)
+const isOrderSubmitted = computed(
+  () => currentOrder.value?.status === 'SUBMITTED',
+)
+const isOrderCompleted = computed(
+  () => currentOrder.value?.status === 'COMPLETED',
+)
+
+const currentSubmissionContent = computed(
+  () => currentOrder.value?.submissionContent || '',
+)
+
+const currentSubmissionImage = computed(
+  () => currentOrder.value?.submissionImage || '',
+)
+
+// ========== 加载数据 ==========
+const loadCurrentUser = async () => {
+  try {
+    const cached = localStorage.getItem('currentUser')
+    if (cached) {
+      currentUser.value = JSON.parse(cached) as UserProfile
+      return
+    }
+    const res = await getProfile()
+    currentUser.value = res
+    localStorage.setItem('currentUser', JSON.stringify(res))
+  } catch {
+    currentUser.value = null
   }
-  return map[status] || status
+}
+
+const getTaskIdFromRoute = () => {
+  const idParam = route.params.id
+  const id = Number(idParam)
+  if (!id || Number.isNaN(id)) {
+    return null
+  }
+  return id
+}
+
+const loadTask = async () => {
+  const taskId = getTaskIdFromRoute()
+  if (!taskId) {
+    throw new Error('任务 ID 无效')
+  }
+  const res = await findTaskDetail(taskId)
+  task.value = res as Task
+}
+
+const loadOrders = async () => {
+  const taskId = getTaskIdFromRoute()
+  if (!taskId || !currentUser.value) {
+    myOrder.value = null
+    publisherOrder.value = null
+    return
+  }
+
+  // 当前用户作为执行者的订单
+  try {
+    const resWorker = await getMyOrderForTask(taskId)
+    myOrder.value = (resWorker || null) as OrderItem | null
+  } catch {
+    myOrder.value = null
+  }
+
+  // 发布者视角订单
+  try {
+    const resPublisher = await findTaskOrderForDetail(taskId)
+    publisherOrder.value = (resPublisher || null) as OrderItem | null
+  } catch {
+    publisherOrder.value = null
+  }
+}
+
+const loadPage = async () => {
+  pageLoading.value = true
+  try {
+    await loadCurrentUser()
+    await loadTask()
+    await loadOrders()
+  } catch (error) {
+    console.error('加载任务详情失败:', error)
+    ElMessage.error('加载任务详情失败')
+  } finally {
+    pageLoading.value = false
+  }
+}
+
+// ========== 子任务操作 ==========
+const handleCreateSubTask = async () => {
+  if (!task.value) return
+  const title = newSubTaskTitle.value.trim()
+  if (!title) {
+    ElMessage.warning('请输入子任务标题')
+    return
+  }
+  creatingSubTask.value = true
+  try {
+    await createSubTask(task.value.id, title)
+    ElMessage.success('子任务添加成功')
+    newSubTaskTitle.value = ''
+    await loadTask()
+  } catch (error) {
+    console.error('添加子任务失败:', error)
+    ElMessage.error('添加子任务失败')
+  } finally {
+    creatingSubTask.value = false
+  }
+}
+
+const handleToggleSubTask = async (subTask: SubTask, value: boolean) => {
+  if (!task.value) return
+  updatingSubTask.value = true
+  try {
+    await updateSubTask(task.value.id, subTask.id, { isDone: !!value })
+    await loadTask()
+  } catch (error) {
+    console.error('更新子任务失败:', error)
+    ElMessage.error('更新子任务失败')
+  } finally {
+    updatingSubTask.value = false
+  }
+}
+
+const handleDeleteSubTask = async (subTask: SubTask) => {
+  if (!task.value) return
+  try {
+    await ElMessageBox.confirm(
+      '确定要删除该子任务吗？此操作不可恢复。',
+      '提示',
+      {
+        type: 'warning',
+      },
+    )
+  } catch {
+    return
+  }
+
+  updatingSubTask.value = true
+  try {
+    await deleteSubTask(task.value.id, subTask.id)
+    ElMessage.success('子任务已删除')
+    await loadTask()
+  } catch (error) {
+    console.error('删除子任务失败:', error)
+    ElMessage.error('删除子任务失败')
+  } finally {
+    updatingSubTask.value = false
+  }
+}
+
+// ========== 订单相关操作 ==========
+const handleAssign = async () => {
+  if (!task.value) return
+  if (!isLogin.value) {
+    ElMessage.warning('请先登录再接单')
+    router.push('/login')
+    return
+  }
+  opLoading.value = true
+  try {
+    await createOrder(task.value.id)
+    ElMessage.success('抢单成功，已成为该任务执行者')
+    await loadTask()
+    await loadOrders()
+  } catch (error) {
+    console.error('抢单失败:', error)
+    ElMessage.error('抢单失败')
+  } finally {
+    opLoading.value = false
+  }
+}
+
+// 打开提交成果弹窗
+const openSubmitDialog = () => {
+  if (!currentOrder.value) return
+  submitForm.value.content = currentOrder.value.submissionContent || ''
+  submitForm.value.image = currentOrder.value.submissionImage || ''
+  submitDialogVisible.value = true
+}
+
+const handleSubmitResult = async () => {
+  if (!currentOrder.value) return
+  const content = submitForm.value.content.trim()
+  if (!content) {
+    ElMessage.warning('请填写提交内容')
+    return
+  }
+  submitLoading.value = true
+  try {
+    await submitTaskResult(currentOrder.value.id, {
+      content,
+      image: submitForm.value.image || undefined,
+    })
+    ElMessage.success('提交成功，等待发布者验收')
+    submitDialogVisible.value = false
+    await loadTask()
+    await loadOrders()
+  } catch (error) {
+    console.error('提交成果失败:', error)
+    ElMessage.error('提交成果失败')
+  } finally {
+    submitLoading.value = false
+  }
+}
+
+// 发布者验收通过
+const handleAccept = async () => {
+  if (!publisherOrder.value) return
+  try {
+    await ElMessageBox.confirm(
+      '确认验收通过并结算赏金给执行者？',
+      '提示',
+      { type: 'warning' },
+    )
+  } catch {
+    return
+  }
+
+  opLoading.value = true
+  try {
+    await completeOrder(publisherOrder.value.id, {
+      isAccepted: true,
+      comment: '',
+    })
+    ElMessage.success('验收成功，赏金已结算')
+    await loadTask()
+    await loadOrders()
+  } catch (error) {
+    console.error('验收失败:', error)
+    ElMessage.error('验收失败')
+  } finally {
+    opLoading.value = false
+  }
+}
+
+// 发布者驳回返工
+const handleReject = async () => {
+  if (!publisherOrder.value) return
+  try {
+    const { value } = await ElMessageBox.prompt(
+      '请输入驳回原因（会展示给执行者）',
+      '驳回返工',
+      {
+        inputType: 'textarea',
+        inputPlaceholder: '例如：提交内容与需求不符，请补充说明或补充截图等',
+        inputValidator: (val: string) =>
+          val.trim().length > 0 || '驳回原因不能为空',
+      },
+    )
+    opLoading.value = true
+    await completeOrder(publisherOrder.value.id, {
+      isAccepted: false,
+      comment: value.trim(),
+    })
+    ElMessage.success('已驳回，任务回到进行中状态')
+    await loadTask()
+    await loadOrders()
+  } catch (error: any) {
+    if (error === 'cancel') return
+    console.error('驳回失败:', error)
+    ElMessage.error('驳回失败')
+  } finally {
+    opLoading.value = false
+  }
+}
+
+// ========== 路由相关 ==========
+const goBack = () => {
+  router.back()
+}
+
+const goLogin = () => {
+  router.push('/login')
 }
 
 onMounted(() => {
-  if (taskId.value) {
-    fetchTaskDetail()
-  } else {
-    router.push('/task')
-  }
+  loadPage()
 })
 </script>
 
 <style scoped>
-.task-detail-container { max-width: 1200px; margin: 20px auto; }
-.detail-card { margin-top: 20px; }
-.card-header { display: flex; justify-content: space-between; align-items: center; }
-.card-header h2 { margin: 0; font-size: 24px; }
-.status-meta { display: flex; align-items: center; }
-.description-text { white-space: pre-wrap; line-height: 1.8; color: #303133; }
-.publisher-avatar { display: flex; align-items: center; }
+.task-detail-page {
+  max-width: 1200px;
+  margin: 20px auto;
+}
 
-.image-preview { 
-  position: relative; 
-  cursor: pointer; 
-  height: 300px; 
-  border-radius: 6px; 
+.page-header {
+  margin-bottom: 16px;
+}
+
+.task-card {
+  border-radius: 8px;
+}
+
+.task-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.task-card-header .left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.task-card-header .task-id {
+  font-size: 13px;
+  color: #909399;
+}
+
+.task-body {
+  display: flex;
+  gap: 16px;
+}
+
+.task-main {
+  flex: 2;
+}
+
+.task-side {
+  flex: 1;
+}
+
+.task-title {
+  font-size: 22px;
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+
+.publisher-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  color: #606266;
+  margin-bottom: 12px;
+}
+
+.publisher-info .label {
+  color: #909399;
+}
+
+.publisher-info .time {
+  margin-left: auto;
+}
+
+.task-image {
+  margin-bottom: 16px;
+}
+
+.task-image .el-image {
+  width: 100%;
+  max-height: 260px;
+  border-radius: 6px;
   overflow: hidden;
 }
-.task-image-lg { 
-  width: 100%; 
-  height: 100%; 
-  object-fit: cover; 
-  display: block;
-  transition: transform 0.3s;
+
+.desc-card {
+  margin-bottom: 16px;
 }
-.image-preview:hover .task-image-lg {
-  transform: scale(1.05);
+
+.desc-header {
+  font-weight: 500;
 }
-.zoom-mask {
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0, 0, 0, 0.4);
-  color: #fff;
+
+.task-desc {
+  white-space: pre-wrap;
+  line-height: 1.6;
+  color: #303133;
+}
+
+.subtask-card {
+  margin-top: 8px;
+}
+
+.subtask-header {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity 0.3s;
-  font-size: 14px;
+  gap: 8px;
 }
-.image-preview:hover .zoom-mask {
-  opacity: 1;
+
+.subtask-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
-.action-footer {
+
+.subtask-item {
   display: flex;
-  justify-content: center;
-  padding-top: 20px;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px dashed #ebeef5;
+}
+
+.subtask-item:last-child {
+  border-bottom: none;
+}
+
+.subtask-main {
+  flex: 1;
+}
+
+.subtask-done {
+  text-decoration: line-through;
+  color: #909399;
+}
+
+.subtask-input {
+  display: flex;
+  align-items: center;
+  margin-top: 12px;
+}
+
+.order-card .section + .section {
+  margin-top: 16px;
+}
+
+.buttons-row {
+  display: flex;
+  gap: 12px;
+}
+
+.submission-view {
+  font-size: 13px;
+}
+
+.submission-content,
+.submission-image {
+  margin-bottom: 8px;
+}
+
+.submission-content .label,
+.submission-image .label {
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.submission-image .el-image {
+  width: 100%;
+  max-height: 220px;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.mt-8 {
+  margin-top: 8px;
+}
+
+.mt-12 {
+  margin-top: 12px;
+}
+
+.mt-16 {
+  margin-top: 16px;
+}
+
+.ml-8 {
+  margin-left: 8px;
 }
 </style>
