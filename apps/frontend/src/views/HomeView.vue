@@ -182,6 +182,16 @@
                         />
                       </el-select>
                     </div>
+
+                    <!-- 刷新 / 重置 -->
+                    <el-button
+                      :icon="Refresh"
+                      size="small"
+                      @click="refreshList"
+                    >
+                      刷新
+                    </el-button>
+                    <el-button size="small" @click="resetFilters">重置</el-button>
                   </div>
                 </div>
 
@@ -384,7 +394,7 @@ import { getTaskList, createTask, uploadTaskImage, type Task } from '@/api/task'
 import { createOrder } from '@/api/order'
 import { getProfile } from '@/api/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus } from '@element-plus/icons-vue'
+import { Plus, Refresh } from '@element-plus/icons-vue'
 import {
   CaretBottom,
   List,
@@ -593,6 +603,21 @@ const fetchData = async () => {
   } finally {
     loading.value = false
   }
+}
+
+// 刷新列表：重新拉取任务 + 同步顶部余额
+const refreshList = async () => {
+  await Promise.all([fetchData(), fetchProfile()])
+}
+
+// 重置筛选条件（仅影响前端展示）
+const resetFilters = async () => {
+  searchKeyword.value = ''
+  priceFilter.value = 'all'
+  customMinPrice.value = null
+  customMaxPrice.value = null
+  sortBy.value = 'latest'
+  await refreshList()
 }
 
 // 发布任务

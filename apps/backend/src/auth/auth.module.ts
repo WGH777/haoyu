@@ -1,4 +1,3 @@
-// 路径：src/auth/auth.module.ts
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
@@ -10,6 +9,7 @@ import { JwtStrategy } from './jwt.strategy';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 
+// 注意：auth 与 user/prisma 是同级目录，所以这里必须用 ../
 import { UserModule } from '../user/user.module';
 import { PrismaModule } from '../prisma/prisma.module';
 
@@ -24,17 +24,7 @@ import { PrismaModule } from '../prisma/prisma.module';
     }),
   ],
   controllers: [AuthController],
-  providers: [
-    AuthService,
-    JwtStrategy,
-    JwtAuthGuard,
-    RolesGuard, // ✅ 注册 RolesGuard
-  ],
-  exports: [
-    AuthService,
-    JwtModule,
-    JwtAuthGuard,
-    RolesGuard, // ✅ 导出给其他模块用（可选，但很方便）
-  ],
+  providers: [AuthService, JwtStrategy, JwtAuthGuard, RolesGuard],
+  exports: [AuthService, JwtModule, JwtAuthGuard, RolesGuard],
 })
 export class AuthModule {}

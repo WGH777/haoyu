@@ -4,5 +4,4 @@ export const ROLES_KEY = 'roles';
 
 export type Role = 'USER' | 'ADMIN' | 'SUPER_ADMIN';
 
-// 使用方式：@Roles('ADMIN', 'SUPER_ADMIN')
 export const Roles = (...roles: Role[]) => SetMetadata(ROLES_KEY, roles);
