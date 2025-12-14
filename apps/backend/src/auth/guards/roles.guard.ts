@@ -1,3 +1,4 @@
+// apps/backend/src/auth/guards/roles.guard.ts
 import {
   CanActivate,
   ExecutionContext,
@@ -12,26 +13,23 @@ export class RolesGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    // 1. 读取接口上要求的角色
     const requiredRoles = this.reflector.getAllAndOverride<Role[]>(ROLES_KEY, [
       context.getHandler(),
       context.getClass(),
     ]);
 
-    // 如果没贴 @Roles 标签，直接放行
-    if (!requiredRoles || requiredRoles.length === 0) {
-      return true;
-    }
+    // 没贴 @Roles 就放行
+    if (!requiredRoles || requiredRoles.length === 0) return true;
 
-    // 2. 获取用户信息 (由 JwtStrategy 从数据库查出来的)
     const request = context.switchToHttp().getRequest();
-    const user = request.user as { role?: Role };
+    const user = request.user as { role?: string } | undefined;
 
-    // 3. 检查权限
-    if (!user || !user.role || !requiredRoles.includes(user.role)) {
+    // 兼容：DB role 是 string，这里按 Role 进行判断
+    const role = (user?.role || 'USER') as Role;
+
+    if (!requiredRoles.includes(role)) {
       throw new ForbiddenException('权限不足：您没有访问此接口的角色权限');
     }
-
     return true;
   }
 }

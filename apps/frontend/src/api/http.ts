@@ -1,11 +1,11 @@
-// 路径：apps/frontend/src/api/http.ts
+// 路径：src/api/http.ts
 import axios from 'axios';
 import type { AxiosInstance, AxiosRequestConfig } from 'axios';
 import { ElMessage } from 'element-plus';
 
 // 1. 创建 axios 实例
 const instance: AxiosInstance = axios.create({
-  // 核心：全局 API 前缀 /api
+  // 🔥 核心修复：添加全局 API 前缀 /api
   baseURL: 'http://localhost:3000/api',
   timeout: 5000,
   headers: {
@@ -13,86 +13,88 @@ const instance: AxiosInstance = axios.create({
   },
 });
 
-// 2. 请求拦截器：自动带上 Token + 禁用浏览器缓存（解决 304 导致 axios 报错/身份识别异常）
+// 2. 请求拦截器：自动带上 Token
 instance.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
-
-    if (!config.headers) {
-      config.headers = {} as any;
-    }
-
-    // 禁用缓存：避免 /user/profile、/order/my 等接口出现 304（axios 默认会把 304 当作错误）
-    (config.headers as any)['Cache-Control'] = 'no-cache';
-    (config.headers as any)['Pragma'] = 'no-cache';
-
-    // GET 请求强制加时间戳参数，确保每次请求都拿到最新数据
-    const method = (config.method || 'get').toLowerCase();
-    if (method === 'get') {
-      const params = (config.params || {}) as Record<string, any>;
-      // 不覆盖用户自己传入的 _t
-      if (params._t === undefined) {
-        params._t = Date.now();
-      }
-      config.params = params;
-    }
-
     if (token) {
-      // 确保 Token 携带的是 'Bearer xxx' 格式
+      if (!config.headers) {
+        config.headers = {} as any;
+      }
+      
+      // 🔥 确保 Token 携带的是 'Bearer xxx' 格式
       const finalToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
       (config.headers as any).Authorization = finalToken;
     }
-
     return config;
   },
-  (error) => Promise.reject(error),
+  (error) => {
+    return Promise.reject(error);
+  },
 );
 
-// 3. 响应拦截器
+// 3. 响应拦截器：
 instance.interceptors.response.use(
   (response) => {
     const resData = response.data;
 
-    // 兼容统一响应结构：{ code, message, data }
+    // 兼容统一响应结构：{ code, message, data } (我们后端没有使用这种结构，但保留逻辑是好的)
     if (resData && typeof resData === 'object' && 'code' in resData && 'data' in resData) {
       const wrapped = resData as { code: number; message?: string; data: any };
 
       if (wrapped.code === 0) {
+        // 成功：返回真正的业务数据
         return wrapped.data;
       } else {
+        // 业务失败：弹错误并中断 Promise 链
         const msg = wrapped.message || '请求失败';
         ElMessage.error(msg);
         return Promise.reject(new Error(msg));
       }
     }
 
-    // 后端直接返回数据对象
+    // 🔥 我们的后端直接返回数据对象（如 User 或 Task），因此返回 resData
     return resData;
   },
   (error) => {
     const status = error.response?.status;
-
+    
     if (status === 401) {
-      // 仅用于“未登录/登录过期/Token 无效”
-      ElMessage.error('登录已过期，请重新登录');
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      localStorage.removeItem('currentUser');
+      // 401：未登录或 token 过期
+      const hadToken = !!localStorage.getItem('token')
 
-      if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
+      // 游客态：不强制跳转，交由页面自行处理（例如提示登录）
+      if (!hadToken) {
+        // 仅在“非 GET 操作”时提示一次即可，避免游客浏览被打扰
+        const method = (error.config?.method || 'get').toLowerCase()
+        if (method !== 'get') {
+          ElMessage.warning('请先登录后再操作')
+        }
+        return Promise.reject(error)
+      }
+
+      // 登录态：token 过期，清理并回登录页
+      ElMessage.error('登录已过期，请重新登录')
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+      localStorage.removeItem('currentUser')
+
+      if (
+        window.location.pathname !== '/login' &&
+        window.location.pathname !== '/register'
+      ) {
         setTimeout(() => {
-          window.location.href = '/login';
-        }, 300);
+          router.push('/login')
+        }, 300)
       }
     } else {
-      // 其他错误（400 / 403 / 404 / 500）
+      // 其他错误（400 Bad Request, 403 Forbidden, 404 Not Found, 500 Internal Server Error）
       const message =
         error.response?.data?.message ||
         error.response?.data?.error ||
         '网络出小差了';
       ElMessage.error(message);
     }
-
     return Promise.reject(error);
   },
 );
