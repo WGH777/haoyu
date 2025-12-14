@@ -1,8 +1,9 @@
+// apps/backend/src/order/order.service.ts
 import {
   BadRequestException,
   Injectable,
   NotFoundException,
-  UnauthorizedException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { SubmitResultDto } from './dto/submit-result.dto';
@@ -60,7 +61,8 @@ export class OrderService {
 
     if (!order) throw new NotFoundException('订单不存在');
     if (order.workerId !== workerId) {
-      throw new UnauthorizedException('您无权操作此订单');
+      // 权限不足：403（不要用 401，避免前端误判“登录过期”）
+      throw new ForbiddenException('您无权操作此订单');
     }
     if (order.status !== 'ASSIGNED') {
       throw new BadRequestException(
@@ -103,7 +105,7 @@ export class OrderService {
 
     // 1. 权限校验：必须是任务发布者本人
     if (order.task.publisherId !== publisherId) {
-      throw new UnauthorizedException('您无权验收此任务');
+      throw new ForbiddenException('您无权验收此任务');
     }
 
     // 2. 状态校验：必须是 SUBMITTED
@@ -167,7 +169,8 @@ export class OrderService {
   /**
    * 查询任务的订单，用于发布者/执行者在详情页查看提交内容
    *
-   * 没有订单时返回 null（正常场景），只有权限不合法时才抛异常。
+   * 没有订单 => 返回 null
+   * 有订单但旁观者 => 也返回 null（不抛 401/403，避免前端强退/弹错）
    */
   async findOrderByTaskId(taskId: number, userId: number) {
     const order = await this.prisma.order.findFirst({
@@ -179,14 +182,14 @@ export class OrderService {
       },
     });
 
-    // 没有订单：说明任务尚未被接取，这是正常情况，直接返回 null
+    // 没有订单：正常情况
     if (!order) {
       return null;
     }
 
-    // 有订单，但当前用户既不是执行者也不是发布者 => 权限异常
+    // 有订单，但当前用户既不是执行者也不是发布者：作为“旁观者”不返回订单信息
     if (order.workerId !== userId && order.task.publisherId !== userId) {
-      throw new UnauthorizedException('您无权查询此任务订单');
+      return null;
     }
 
     return {
@@ -239,7 +242,7 @@ export class OrderService {
             status: true,
             image: true,
             publisher: true,
-            subTasks: true, // 带出子任务，前端可算完成度
+            subTasks: true,
           },
         },
       },
