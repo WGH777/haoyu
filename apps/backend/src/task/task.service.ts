@@ -3,7 +3,7 @@ import {
   Injectable,
   BadRequestException,
   NotFoundException,
-  UnauthorizedException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateTaskDto } from './dto/create-task.dto';
@@ -50,17 +50,16 @@ export class TaskService {
       await tx.transaction.create({
         data: {
           amount: -totalCost,
-          type: 'PUBLISH', // 发布任务
+          type: 'PUBLISH',
           status: 'SUCCESS',
           userId,
         },
       });
 
-      // 4. 创建任务记录，落库 serviceFee 和 image URL
+      // 4. 创建任务记录
       return tx.task.create({
         data: {
           title,
-          // description 是必填字段，这里确保一定是字符串
           description: description ?? '',
           price,
           serviceFee,
@@ -78,16 +77,11 @@ export class TaskService {
   async findAll() {
     return this.prisma.task.findMany({
       where: {
-        status: { in: ['PENDING', 'ONGOING'] },
+        status: { in: ['PENDING', 'ASSIGNED', 'SUBMITTED', 'ONGOING'] },
       },
       include: {
         publisher: {
-          select: {
-            nickname: true,
-            email: true,
-            id: true,
-            avatar: true,
-          },
+          select: { nickname: true, email: true, id: true, avatar: true },
         },
         subTasks: true,
       },
@@ -103,23 +97,13 @@ export class TaskService {
       where: { id },
       include: {
         publisher: {
-          select: {
-            nickname: true,
-            email: true,
-            id: true,
-            avatar: true,
-          },
+          select: { nickname: true, email: true, id: true, avatar: true },
         },
-        subTasks: {
-          orderBy: { id: 'asc' },
-        },
+        subTasks: { orderBy: { id: 'asc' } },
       },
     });
 
-    if (!task) {
-      throw new NotFoundException('任务不存在');
-    }
-
+    if (!task) throw new NotFoundException('任务不存在');
     return task;
   }
 
@@ -128,9 +112,7 @@ export class TaskService {
    */
   async update(id: number, updateTaskDto: UpdateTaskDto) {
     const existing = await this.prisma.task.findUnique({ where: { id } });
-    if (!existing) {
-      throw new NotFoundException('任务不存在');
-    }
+    if (!existing) throw new NotFoundException('任务不存在');
 
     return this.prisma.task.update({
       where: { id },
@@ -142,34 +124,20 @@ export class TaskService {
     });
   }
 
-  /**
-   * 删除任务（如后续需要再开放）
-   */
   async remove(id: number) {
     const existing = await this.prisma.task.findUnique({ where: { id } });
-    if (!existing) {
-      throw new NotFoundException('任务不存在');
-    }
-
+    if (!existing) throw new NotFoundException('任务不存在');
     return this.prisma.task.delete({ where: { id } });
   }
 
-  /**
-   * 我发布的任务列表（带子任务）
-   */
   async findCreatedBy(userId: number) {
     return this.prisma.task.findMany({
       where: { publisherId: userId },
-      include: {
-        subTasks: true,
-      },
+      include: { subTasks: true },
       orderBy: { createdAt: 'desc' },
     });
   }
 
-  /**
-   * 我接取的任务（老接口，当前前端已用 /order/my，可以保留兼容）
-   */
   async findAssignedTo(userId: number) {
     return this.prisma.order.findMany({
       where: { workerId: userId },
@@ -178,12 +146,7 @@ export class TaskService {
           include: {
             subTasks: true,
             publisher: {
-              select: {
-                nickname: true,
-                email: true,
-                id: true,
-                avatar: true,
-              },
+              select: { nickname: true, email: true, id: true, avatar: true },
             },
           },
         },
@@ -192,9 +155,6 @@ export class TaskService {
     });
   }
 
-  /**
-   * 旧版本 completeTask 占位，提示使用订单结算接口
-   */
   async completeTask(_taskId: number, _userId: number) {
     throw new BadRequestException(
       '接口已升级，请使用 POST /order/:id/complete 接口结算',
@@ -208,23 +168,26 @@ export class TaskService {
    */
   async createSubTask(taskId: number, userId: number, title: string) {
     const task = await this.prisma.task.findUnique({ where: { id: taskId } });
-    if (!task) {
-      throw new NotFoundException('任务不存在');
-    }
+    if (!task) throw new NotFoundException('任务不存在');
+
     if (task.publisherId !== userId) {
-      throw new UnauthorizedException('只有发布者才能管理子任务');
+      throw new ForbiddenException('只有发布者才能管理子任务');
     }
 
+    const safeTitle = (title || '').trim();
+    if (!safeTitle) throw new BadRequestException('子任务标题不能为空');
+
     return this.prisma.subTask.create({
-      data: {
-        title,
-        taskId,
-      },
+      data: { title: safeTitle, taskId },
     });
   }
 
   /**
    * 更新子任务（标题 / 完成状态）
+   *
+   * 规则：
+   * - 发布者：可改 title、isDone
+   * - 执行者（已接单/已提交）：只能改 isDone
    */
   async updateSubTask(
     taskId: number,
@@ -233,36 +196,85 @@ export class TaskService {
     payload: { title?: string; isDone?: boolean },
   ) {
     const task = await this.prisma.task.findUnique({ where: { id: taskId } });
-    if (!task) {
-      throw new NotFoundException('任务不存在');
+    if (!task) throw new NotFoundException('任务不存在');
+
+    const subTask = await this.prisma.subTask.findUnique({
+      where: { id: subTaskId },
+    });
+    if (!subTask || subTask.taskId !== taskId) {
+      throw new NotFoundException('子任务不存在');
     }
-    if (task.publisherId !== userId) {
-      throw new UnauthorizedException('只有发布者才能管理子任务');
+
+    const hasTitle = payload.title !== undefined;
+    const hasIsDone = payload.isDone !== undefined;
+
+    if (!hasTitle && !hasIsDone) {
+      throw new BadRequestException('请至少提交一个可更新字段');
+    }
+
+    const isPublisher = task.publisherId === userId;
+
+    // 发布者：可更新 title / isDone
+    if (isPublisher) {
+      if (hasTitle) {
+        const t = (payload.title || '').trim();
+        if (!t) throw new BadRequestException('子任务标题不能为空');
+      }
+
+      return this.prisma.subTask.update({
+        where: { id: subTaskId },
+        data: {
+          ...(hasTitle ? { title: payload.title!.trim() } : {}),
+          ...(hasIsDone ? { isDone: payload.isDone } : {}),
+        },
+      });
+    }
+
+    // 执行者：必须是该任务当前执行者（ASSIGNED 或 SUBMITTED），且只能改 isDone
+    const order = await this.prisma.order.findFirst({
+      where: {
+        taskId,
+        workerId: userId,
+        status: { in: ['ASSIGNED', 'SUBMITTED'] },
+      },
+      select: { id: true },
+    });
+
+    if (!order) {
+      throw new ForbiddenException('只有发布者或当前执行者才能更新子任务');
+    }
+
+    if (hasTitle) {
+      throw new BadRequestException('执行者只能修改完成状态（isDone）');
+    }
+    if (!hasIsDone) {
+      throw new BadRequestException('执行者更新子任务必须提供 isDone');
     }
 
     return this.prisma.subTask.update({
       where: { id: subTaskId },
-      data: {
-        ...(payload.title !== undefined ? { title: payload.title } : {}),
-        ...(payload.isDone !== undefined ? { isDone: payload.isDone } : {}),
-      },
+      data: { isDone: payload.isDone },
     });
   }
 
   /**
-   * 删除子任务
+   * 删除子任务（仅发布者）
    */
   async deleteSubTask(taskId: number, subTaskId: number, userId: number) {
     const task = await this.prisma.task.findUnique({ where: { id: taskId } });
-    if (!task) {
-      throw new NotFoundException('任务不存在');
-    }
+    if (!task) throw new NotFoundException('任务不存在');
+
     if (task.publisherId !== userId) {
-      throw new UnauthorizedException('只有发布者才能管理子任务');
+      throw new ForbiddenException('只有发布者才能管理子任务');
     }
 
-    return this.prisma.subTask.delete({
+    const subTask = await this.prisma.subTask.findUnique({
       where: { id: subTaskId },
     });
+    if (!subTask || subTask.taskId !== taskId) {
+      throw new NotFoundException('子任务不存在');
+    }
+
+    return this.prisma.subTask.delete({ where: { id: subTaskId } });
   }
 }

@@ -40,6 +40,9 @@ model Task {
   price         Float
   serviceFee    Float         @default(0)
 
+  // 热度：浏览量（打开详情页自动 +1）
+  views         Int           @default(0)
+
   // 任务状态：使用字符串，默认 PENDING
   status        String        @default("PENDING")
 

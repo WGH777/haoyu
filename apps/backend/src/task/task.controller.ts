@@ -1,3 +1,4 @@
+// apps/backend/src/task/task.controller.ts
 import {
   Body,
   Controller,
@@ -13,13 +14,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { TaskService } from './task.service';
-import {
-  ApiBearerAuth,
-  ApiBody,
-  ApiOperation,
-  ApiParam,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
@@ -43,7 +38,7 @@ export class TaskController {
     return this.taskService.create(req.user.id, createTaskDto);
   }
 
-  // 任务大厅列表
+  // 任务大厅列表（当前版本：仅后端按状态返回，筛选/排序继续由前端完成）
   @Get()
   @ApiOperation({ summary: '获取任务列表（任务大厅）' })
   findAll() {
@@ -56,6 +51,29 @@ export class TaskController {
   @ApiParam({ name: 'id', description: '任务 ID', type: Number })
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.taskService.findOne(id);
+  }
+
+  // 更新任务基础信息（保留接口，当前未强制校验发布者身份）
+  @Patch(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '更新任务基础信息（标题/描述/图片）' })
+  @ApiParam({ name: 'id', description: '任务 ID', type: Number })
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateTaskDto: UpdateTaskDto,
+  ) {
+    return this.taskService.update(id, updateTaskDto);
+  }
+
+  // 删除任务（保留接口）
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '删除任务（保留接口）' })
+  @ApiParam({ name: 'id', description: '任务 ID', type: Number })
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.taskService.remove(id);
   }
 
   // 我发布的任务
@@ -87,7 +105,9 @@ export class TaskController {
   @Patch(':taskId/subtasks/:subTaskId')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: '更新子任务（标题 / 完成状态）' })
+  @ApiOperation({
+    summary: '更新子任务（发布者：标题/完成状态；执行者：仅完成状态 isDone）',
+  })
   @ApiParam({ name: 'taskId', description: '任务 ID', type: Number })
   @ApiParam({ name: 'subTaskId', description: '子任务 ID', type: Number })
   updateSubTask(
@@ -103,7 +123,7 @@ export class TaskController {
   @Delete(':taskId/subtasks/:subTaskId')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: '删除子任务' })
+  @ApiOperation({ summary: '删除子任务（仅发布者）' })
   @ApiParam({ name: 'taskId', description: '任务 ID', type: Number })
   @ApiParam({ name: 'subTaskId', description: '子任务 ID', type: Number })
   deleteSubTask(
@@ -124,8 +144,7 @@ export class TaskController {
       storage: diskStorage({
         destination: 'uploads',
         filename: (_req, file, cb) => {
-          const uniqueSuffix =
-            Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
           cb(null, uniqueSuffix + extname(file.originalname));
         },
       }),
@@ -136,15 +155,11 @@ export class TaskController {
     schema: {
       type: 'object',
       properties: {
-        file: {
-          type: 'string',
-          format: 'binary',
-        },
+        file: { type: 'string', format: 'binary' },
       },
     },
   })
   uploadImage(@UploadedFile() file: Express.Multer.File) {
-    // 返回图片访问 URL
     return { url: `/uploads/${file.filename}` };
   }
 }
