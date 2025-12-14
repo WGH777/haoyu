@@ -1,3 +1,4 @@
+// apps/backend/src/user/user.controller.ts
 import {
   Controller,
   Get,
@@ -9,6 +10,7 @@ import {
   UseGuards,
   Req,
   ParseIntPipe,
+  BadRequestException,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -27,13 +29,16 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 
+type RoleStr = 'USER' | 'ADMIN' | 'SUPER_ADMIN';
+const ROLE_ALLOWLIST: RoleStr[] = ['USER', 'ADMIN', 'SUPER_ADMIN'];
+
 @ApiTags('用户管理')
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
   /**
-   * （可选）创建用户接口：通常只给内部或超级管理员用
+   * （超级管理员）创建用户
    */
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SUPER_ADMIN')
@@ -63,10 +68,7 @@ export class UserController {
   @Patch('profile')
   @ApiBearerAuth()
   @ApiOperation({ summary: '当前用户修改自己的资料（昵称/简介）' })
-  async updateProfile(
-    @Req() req: any,
-    @Body() dto: UpdateProfileDto,
-  ) {
+  async updateProfile(@Req() req: any, @Body() dto: UpdateProfileDto) {
     const userId = req.user.id;
     return this.userService.updateProfile(userId, dto);
   }
@@ -115,7 +117,6 @@ export class UserController {
 
   /**
    * ★ 修改用户角色（仅 SUPER_ADMIN）
-   * 对应前端 /user/{id}/role
    */
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SUPER_ADMIN')
@@ -138,14 +139,18 @@ export class UserController {
   @ApiOperation({ summary: '（超级管理员）修改用户角色' })
   changeRole(
     @Param('id', ParseIntPipe) id: number,
-    @Body() body: { role: 'USER' | 'ADMIN' | 'SUPER_ADMIN' },
+    @Body() body: { role: RoleStr },
   ) {
+    if (!body?.role || !ROLE_ALLOWLIST.includes(body.role)) {
+      throw new BadRequestException(
+        `role 非法，可选值：${ROLE_ALLOWLIST.join(', ')}`,
+      );
+    }
     return this.userService.update(id, { role: body.role } as any);
   }
 
   /**
    * ★ 超级管理员重置指定用户密码（无需旧密码）
-   * 对应前端 /user/{id}/reset-password
    */
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SUPER_ADMIN')

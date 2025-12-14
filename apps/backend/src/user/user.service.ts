@@ -23,24 +23,21 @@ export class UserService {
   constructor(private prisma: PrismaService) {}
 
   /**
-   * 创建用户（一般由注册流程或超级管理员调用）
-   * 默认角色为 USER（由数据库默认值控制）
+   * 创建用户
    */
   async create(createUserDto: CreateUserDto) {
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
-
     return this.prisma.user.create({
       data: {
         ...createUserDto,
         password: hashedPassword,
-        // 不显式写 role，走 Prisma schema 里的默认 USER
       },
       select: safeUserSelect,
     });
   }
 
   /**
-   * 获取所有用户列表（后台管理用）
+   * 获取所有用户列表
    */
   async findAll() {
     return this.prisma.user.findMany({
@@ -50,8 +47,7 @@ export class UserService {
   }
 
   /**
-   * 根据 ID 查询用户（扩展了最近 20 条交易记录）
-   * 用于 /user/profile 和后台查看详情
+   * 根据 ID 查询用户
    */
   async findById(id: number) {
     return this.prisma.user.findUnique({
@@ -74,8 +70,7 @@ export class UserService {
   }
 
   /**
-   * 根据邮箱查询（登录 / 业务内部使用）
-   * 注意：这里仍然需要 password，所以不做字段裁剪
+   * 根据邮箱查询
    */
   async findByEmail(email: string) {
     return this.prisma.user.findUnique({
@@ -84,12 +79,10 @@ export class UserService {
   }
 
   /**
-   * 更新用户信息（仅后台使用）
-   * - 如果传入了 password，会自动加密
+   * 更新用户信息
    */
   async update(id: number, updateUserDto: UpdateUserDto) {
     const data: any = { ...updateUserDto };
-
     if (updateUserDto.password) {
       data.password = await bcrypt.hash(updateUserDto.password, 10);
     }
@@ -102,20 +95,55 @@ export class UserService {
   }
 
   /**
-   * 删除用户（仅限后台管理使用）
+   * 🔥 核心修复：级联删除用户
+   * 在删除用户前，必须先删除他产生的所有关联数据（流水、订单、任务、子任务）
    */
   async remove(id: number) {
-    return this.prisma.user.delete({
-      where: { id },
+    // 使用事务，确保要么全删，要么都不删
+    return this.prisma.$transaction(async (tx) => {
+      // 1. 删除该用户的资金流水 (Transactions)
+      await tx.transaction.deleteMany({ where: { userId: id } });
+
+      // 2. 删除该用户作为【执行者】接的单 (Orders as worker)
+      await tx.order.deleteMany({ where: { workerId: id } });
+
+      // 3. 处理该用户作为【发布者】发布的任务
+      // 先找到他发布的所有任务ID
+      const myTasks = await tx.task.findMany({
+        where: { publisherId: id },
+        select: { id: true }
+      });
+      const myTaskIds = myTasks.map(t => t.id);
+
+      if (myTaskIds.length > 0) {
+        // 3.1 删除这些任务下的所有子任务
+        await tx.subTask.deleteMany({
+          where: { taskId: { in: myTaskIds } }
+        });
+
+        // 3.2 删除这些任务下的所有订单 (哪怕是别人接的，任务都没了，订单也得删)
+        await tx.order.deleteMany({
+          where: { taskId: { in: myTaskIds } }
+        });
+
+        // 3.3 删除任务本身
+        await tx.task.deleteMany({
+          where: { id: { in: myTaskIds } }
+        });
+      }
+
+      // 4. 一切清理干净后，最后删除用户本体
+      return tx.user.delete({
+        where: { id },
+      });
     });
   }
 
   /**
-   * ★ 当前登录用户修改自己的资料（昵称 / 简介等）
+   * 修改个人资料
    */
   async updateProfile(userId: number, dto: UpdateProfileDto) {
     const data: any = {};
-
     if (typeof dto.nickname !== 'undefined') {
       data.nickname = dto.nickname;
     }
@@ -131,12 +159,10 @@ export class UserService {
   }
 
   /**
-   * ★ 超级管理员重置指定用户密码
-   * 不需要旧密码，直接覆盖为新密码
+   * 重置密码
    */
   async adminResetPassword(userId: number, newPassword: string) {
     const hashed = await bcrypt.hash(newPassword, 10);
-
     await this.prisma.user.update({
       where: { id: userId },
       data: { password: hashed },

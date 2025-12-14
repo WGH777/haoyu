@@ -31,6 +31,9 @@ model User {
   publishedTasks Task[]        @relation("UserPublishedTasks")
   orders         Order[]
   transactions   Transaction[]
+
+  // ✅ 新增：管理员审计日志（一个管理员可产生多条日志）
+  adminActionLogs AdminActionLog[] @relation("AdminActionLogs")
 }
 
 model Task {
@@ -97,4 +100,29 @@ model Transaction {
   createdAt DateTime @default(now())
   userId    Int
   user      User     @relation(fields: [userId], references: [id])
+}
+
+// ✅ 新增：管理员审计日志（RBAC 第 6 步）
+model AdminActionLog {
+  id         Int      @id @default(autoincrement())
+
+  // action 建议使用固定值：FORCE_CANCEL_TASK / FORCE_COMPLETE_ORDER / FORCE_REJECT_ORDER 等
+  action     String
+
+  // targetType: TASK / ORDER / USER / TRANSACTION 等
+  targetType String
+  targetId   Int?
+
+  reason     String?
+  // 这里用 String 存 JSON，避免 sqlite/json 兼容坑
+  detailJson String?
+
+  createdAt  DateTime @default(now())
+
+  adminId    Int
+  admin      User     @relation("AdminActionLogs", fields: [adminId], references: [id])
+
+  @@index([adminId])
+  @@index([targetType, targetId])
+  @@index([createdAt])
 }
