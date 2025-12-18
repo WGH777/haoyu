@@ -79,7 +79,7 @@ export class UserService {
   }
 
   /**
-   * 更新用户信息
+   * 更新用户信息 (通用)
    */
   async update(id: number, updateUserDto: UpdateUserDto) {
     const data: any = { ...updateUserDto };
@@ -90,6 +90,17 @@ export class UserService {
     return this.prisma.user.update({
       where: { id },
       data,
+      select: safeUserSelect,
+    });
+  }
+
+  /**
+   * ★ 专门用于更新余额 (God Mode)
+   */
+  async updateBalance(id: number, amount: number) {
+    return this.prisma.user.update({
+      where: { id },
+      data: { balance: amount },
       select: safeUserSelect,
     });
   }

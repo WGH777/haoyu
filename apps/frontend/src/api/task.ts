@@ -1,127 +1,192 @@
 // apps/frontend/src/api/task.ts
-import http from '@/api/http';
-import type { UserItem } from './user';
+import http from '@/api/http'
+import type { UserItem } from '@/api/user'
 
-// =================== 类型定义 ===================
+export type TaskStatus =
+  | 'PENDING'
+  | 'ASSIGNED'
+  | 'SUBMITTED'
+  | 'ONGOING'
+  | 'COMPLETED'
+  | 'CANCELLED'
+  | string
 
 export interface SubTask {
-  id: number;
-  title: string;
-  isDone: boolean;
-  taskId: number;
-  createdAt: string;
-  updatedAt: string;
+  id: number
+  title: string
+  isDone: boolean
+  taskId: number
+  createdAt?: string
+  updatedAt?: string
 }
 
-export interface Task {
-  id: number;
-  title: string;
-  description: string;
-  price: number; // 分（后端用分存）
-  // 任务状态
-  status:
-    | 'PENDING'
-    | 'ONGOING'
-    | 'COMPLETED'
-    | 'ASSIGNED'
-    | 'SUBMITTED'
-    | 'CANCELLED';
+/**
+ * 任务发布者（用于任务列表/详情展示）
+ * - 关键：avatar 必须是 string，避免 HomeView 头像 getFullUrl(...) 触发 TS 严格检查错误
+ */
+export type TaskPublisher = Omit<UserItem, 'avatar'> & { avatar: string }
 
-  image?: string | null;
-  publisherId: number;
-  publisher: UserItem;
-  createdAt: string;
-  updatedAt: string;
+/**
+ * 任务模型（任务大厅 / 任务详情通用）
+ * 关键：publisher 必须包含 avatar，否则 HomeView Task 列表展示头像会报错
+ */
+export interface TaskItem {
+  id: number
+  title: string
+  description: string
+  /**
+   * 赏金金额：单位「分」
+   * （注意：显示时前端除以 100；提交给后端也应为分）
+   */
+  price: number
+  /** 服务费：单位「分」 */
+  serviceFee?: number
+  /** 热度：浏览量 */
+  views?: number
+  status: TaskStatus
+  image?: string | null
+  createdAt: string
+  updatedAt: string
 
-  // 热度（可选：如果后端未实现/未迁移，该字段可能不存在）
-  views?: number;
+  publisherId: number
+  /** 注意：这里改为必有，且 avatar 永远 string（通过 normalizeTaskItem 保证） */
+  publisher: TaskPublisher
 
-  // 子任务列表（部分接口会 include）
-  subTasks?: SubTask[];
+  subTasks?: SubTask[]
 }
+
+/**
+ * 兼容旧代码：部分页面 import { type Task } from '@/api/task'
+ */
+export type Task = TaskItem
 
 export interface CreateTaskDto {
-  title: string;
-  description: string;
-  price: number; // 元（前端输入）
-  image?: string | null;
+  title: string
+  description?: string
+  /**
+   * 赏金金额：单位「分」
+   */
+  price: number
+  image?: string | null
 }
 
-// =================== 接口函数 ===================
+export interface UpdateTaskDto {
+  title?: string
+  description?: string
+  image?: string | null
+}
+
+/** ========== 归一化：兼容后端可能缺失 publisher / avatar 的返回 ========== */
+
+type TaskItemFromServer = Omit<TaskItem, 'publisher' | 'subTasks'> & {
+  publisher?: Partial<UserItem> | null
+  subTasks?: SubTask[] | null
+}
+
+const normalizePublisher = (p: Partial<UserItem> | null | undefined, publisherId: number): TaskPublisher => {
+  const u = (p ?? {}) as Partial<UserItem>
+
+  return {
+    id: typeof u.id === 'number' ? u.id : publisherId,
+    email: typeof u.email === 'string' ? u.email : '',
+    nickname: u.nickname ?? null,
+    role: (u.role as any) ?? 'USER',
+    balance: typeof u.balance === 'number' ? u.balance : undefined,
+    avatar: typeof u.avatar === 'string' ? u.avatar : '',
+    createdAt: typeof u.createdAt === 'string' ? u.createdAt : undefined,
+    updatedAt: typeof u.updatedAt === 'string' ? u.updatedAt : undefined,
+  }
+}
+
+const normalizeTaskItem = (t: TaskItemFromServer): TaskItem => {
+  const publisherId = typeof t.publisherId === 'number' ? t.publisherId : 0
+  const publisher = normalizePublisher(t.publisher, publisherId)
+
+  return {
+    ...(t as any),
+    publisherId,
+    publisher,
+    subTasks: Array.isArray(t.subTasks) ? t.subTasks : undefined,
+  }
+}
 
 /**
- * 任务大厅列表（用于任务广场 / 任务大厅）
+ * 任务大厅列表
  */
-export const getTaskList = () => {
-  return http.get<Task[]>('/task');
-};
+export const getTaskList = async () => {
+  const list = await http.get<TaskItemFromServer[]>('/task')
+  return Array.isArray(list) ? list.map(normalizeTaskItem) : []
+}
 
 /**
- * 创建任务（前端以「元」为单位，发送给后端时转为「分」）
+ * 任务详情
  */
-export const createTask = (data: CreateTaskDto) => {
-  return http.post('/task', {
-    ...data,
-    price: Math.round((data.price || 0) * 100), // 元转分
-  });
-};
+export const getTaskDetail = async (id: number) => {
+  const t = await http.get<TaskItemFromServer>(`/task/detail/${id}`)
+  return normalizeTaskItem(t)
+}
 
 /**
- * 某些老页面如果从 task.ts 引用 createOrder 也仍然可用
+ * 兼容旧代码：findTaskDetail = getTaskDetail
  */
-export const createOrder = (taskId: number) => {
-  return http.post('/order', { taskId });
-};
+export const findTaskDetail = (id: number) => {
+  return getTaskDetail(id)
+}
+
+/**
+ * 我发布的任务（含子任务）
+ */
+export const getMyPublishedTasks = async () => {
+  const list = await http.get<TaskItemFromServer[]>('/task/my-published')
+  return Array.isArray(list) ? list.map(normalizeTaskItem) : []
+}
+
+/**
+ * 创建任务
+ */
+export const createTask = async (data: CreateTaskDto) => {
+  const t = await http.post<TaskItemFromServer>('/task', data)
+  return normalizeTaskItem(t)
+}
+
+/**
+ * 更新任务
+ */
+export const updateTask = async (id: number, data: UpdateTaskDto) => {
+  const t = await http.patch<TaskItemFromServer>(`/task/${id}`, data)
+  return normalizeTaskItem(t)
+}
 
 /**
  * 上传任务图片
+ * - 兼容两种调用方式：
+ *   1) uploadTaskImage(file: File)
+ *   2) uploadTaskImage(formData: FormData) 其中必须含 key=file
  */
-export const uploadTaskImage = (formData: FormData) => {
-  return http.post<{ url: string }>('/task/upload-image', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  });
-};
+export const uploadTaskImage = (input: File | FormData) => {
+  const formData = input instanceof FormData ? input : new FormData()
+  if (!(input instanceof FormData)) {
+    formData.append('file', input)
+  }
+  // 不手动设置 Content-Type，让浏览器/axios 自动附带 boundary
+  return http.post<{ url: string }>('/task/upload-image', formData)
+}
 
 /**
- * 任务详情接口，对应后端 /task/detail/:id
- * - 返回值中包含 subTasks
- */
-export const findTaskDetail = (id: number) => {
-  return http.get<Task>(`/task/detail/${id}`);
-};
-
-/**
- * 获取我发布的任务列表
- */
-export const getMyPublishedTasks = () => {
-  return http.get<Task[]>('/task/my-published');
-};
-
-// =================== 子任务相关接口 ===================
-
-/**
- * （发布者）新增子任务
+ * ============ 子任务相关 ============
  */
 export const createSubTask = (taskId: number, title: string) => {
-  return http.post<SubTask>(`/task/${taskId}/subtasks`, { title });
-};
+  return http.post<SubTask>(`/task/${taskId}/subtasks`, { title })
+}
 
-/**
- * 更新子任务（发布者：标题 / 完成状态；执行者：仅完成状态 isDone）
- */
 export const updateSubTask = (
   taskId: number,
   subTaskId: number,
-  payload: { title?: string; isDone?: boolean },
+  data: { title?: string; isDone?: boolean },
 ) => {
-  return http.patch<SubTask>(`/task/${taskId}/subtasks/${subTaskId}`, payload);
-};
+  return http.patch<SubTask>(`/task/${taskId}/subtasks/${subTaskId}`, data)
+}
 
-/**
- * （发布者）删除子任务
- */
 export const deleteSubTask = (taskId: number, subTaskId: number) => {
-  return http.delete(`/task/${taskId}/subtasks/${subTaskId}`);
-};
+  return http.delete(`/task/${taskId}/subtasks/${subTaskId}`)
+}

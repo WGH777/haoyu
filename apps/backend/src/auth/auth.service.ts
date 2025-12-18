@@ -6,14 +6,21 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
-import { UserService } from '../user/user.service';
+import { randomUUID } from 'crypto';
+
+type JwtPayload = {
+  sub: number;
+  email: string;
+  iat?: number;
+  exp?: number;
+  jti?: string;
+};
 
 @Injectable()
 export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwt: JwtService,
-    private userService: UserService,
   ) {}
 
   // 注册
@@ -27,16 +34,15 @@ export class AuthService {
         email,
         password: hashed,
         nickname: nickname || '新用户',
-        balance: 100000, // 送 1000 元体验金
+        balance: 100000,
         role: 'USER',
       },
     });
 
     const tokens = await this.generateTokens(user.id, user.email);
     await this.updateRefreshToken(user.id, tokens.refreshToken);
-    
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password, refreshToken, ...result } = user;
+
+    const { password, refreshToken, ...result } = user as any;
     return { user: result, ...tokens };
   }
 
@@ -50,10 +56,62 @@ export class AuthService {
 
     const tokens = await this.generateTokens(user.id, user.email);
     await this.updateRefreshToken(user.id, tokens.refreshToken);
-    
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password, refreshToken, ...result } = user;
+
+    const { password, refreshToken, ...result } = user as any;
     return { user: result, ...tokens };
+  }
+
+  // ✅ Refresh：用 refreshToken 换新 accessToken（并轮换 refreshToken，一次性）
+  async refreshTokens(refreshToken: string) {
+    if (!refreshToken) throw new UnauthorizedException('refreshToken is required');
+
+    // 1) 验签 refreshToken（含 exp）
+    let payload: JwtPayload;
+    try {
+      payload = (await this.jwt.verifyAsync(refreshToken)) as JwtPayload;
+    } catch {
+      throw new UnauthorizedException('refreshToken 无效或已过期');
+    }
+
+    const userId = Number(payload?.sub);
+    if (!userId) throw new UnauthorizedException('refreshToken payload 无效');
+
+    // 2) 查用户 + compare（必须匹配 DB hash）
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new UnauthorizedException('用户不存在');
+
+    if (!user.refreshToken) {
+      throw new UnauthorizedException('refreshToken 已失效，请重新登录');
+    }
+
+    const ok = await bcrypt.compare(refreshToken, user.refreshToken);
+    if (!ok) {
+      throw new UnauthorizedException('refreshToken 不匹配或已被轮换，请重新登录');
+    }
+
+    // 3) 生成新 tokens（refreshToken 带 jti，确保每次都不同）
+    const tokens = await this.generateTokens(user.id, user.email);
+
+    // 4) ✅ 原子轮换：仅当 refreshToken hash 仍为“当前这份”时才更新成功
+    //    这样并发/重复请求时，旧 RT 只能成功一次
+    const newHashed = await bcrypt.hash(tokens.refreshToken, 10);
+
+    const updated = await this.prisma.user.updateMany({
+      where: {
+        id: user.id,
+        refreshToken: user.refreshToken, // 条件：必须还是旧 hash
+      },
+      data: {
+        refreshToken: newHashed,
+      },
+    });
+
+    if (updated.count !== 1) {
+      // 说明在你生成新 token 前后，refreshToken 已被别的请求轮换了
+      throw new UnauthorizedException('refreshToken 已被轮换，请重新登录');
+    }
+
+    return tokens;
   }
 
   // 修改密码
@@ -67,8 +125,17 @@ export class AuthService {
     const hashed = await bcrypt.hash(newPassword, 10);
     await this.prisma.user.update({
       where: { id: userId },
-      data: { password: hashed, refreshToken: null }, // 修改后强制重新登录
+      data: { password: hashed, refreshToken: null },
     });
+  }
+
+  // ✅ 退出登录：清空 refreshToken
+  async logout(userId: number) {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { refreshToken: null },
+    });
+    return { ok: true };
   }
 
   // 管理员重置密码
@@ -84,14 +151,20 @@ export class AuthService {
   }
 
   private async generateTokens(userId: number, email: string) {
-    const payload = { sub: userId, email };
-    const accessToken = await this.jwt.signAsync(payload, { expiresIn: '15m' });
-    const refreshToken = await this.jwt.signAsync(payload, { expiresIn: '7d' });
+    const accessPayload: JwtPayload = { sub: userId, email };
+    const refreshPayload: JwtPayload = { sub: userId, email, jti: randomUUID() };
+
+    const accessToken = await this.jwt.signAsync(accessPayload, { expiresIn: '15m' });
+    const refreshToken = await this.jwt.signAsync(refreshPayload, { expiresIn: '7d' });
+
     return { accessToken, refreshToken };
   }
 
   private async updateRefreshToken(userId: number, token: string) {
     const hashed = await bcrypt.hash(token, 10);
-    await this.prisma.user.update({ where: { id: userId }, data: { refreshToken: hashed } });
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { refreshToken: hashed },
+    });
   }
 }

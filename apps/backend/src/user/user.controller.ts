@@ -1,4 +1,3 @@
-// apps/backend/src/user/user.controller.ts
 import {
   Controller,
   Get,
@@ -100,7 +99,6 @@ export class UserController {
 
   /**
    * （管理员）更新指定用户（例如封号、改邮箱等）
-   * 注意：普通用户修改自己的资料走 /user/profile
    */
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'SUPER_ADMIN')
@@ -113,6 +111,39 @@ export class UserController {
     @Body() updateUserDto: UpdateUserDto,
   ) {
     return this.userService.update(id, updateUserDto);
+  }
+
+  /**
+   * ★ （管理员）修改用户余额 (God Mode)
+   * 这里的 amount 单位是分，例如 100 代表 1元
+   */
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
+  @Patch(':id/balance')
+  @ApiBearerAuth()
+  @ApiParam({ name: 'id', type: Number, description: '用户 ID' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        amount: {
+          type: 'number',
+          example: 9999999,
+          description: '新的余额（单位：分）。例：9999999 代表 99999.99元',
+        },
+      },
+      required: ['amount'],
+    },
+  })
+  @ApiOperation({ summary: '（管理员）直接修改用户余额' })
+  updateBalance(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { amount: number },
+  ) {
+    if (typeof body.amount !== 'number') {
+      throw new BadRequestException('amount 必须是数字');
+    }
+    return this.userService.updateBalance(id, body.amount);
   }
 
   /**

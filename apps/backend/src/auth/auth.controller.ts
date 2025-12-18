@@ -1,4 +1,6 @@
+// apps/backend/src/auth/auth.controller.ts
 import {
+  BadRequestException,
   Body,
   Controller,
   HttpCode,
@@ -14,8 +16,20 @@ import { AuthService } from './auth.service';
 import { Roles } from './decorators/roles.decorator';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
-import { LoginDto, RegisterDto, ChangePasswordDto, AdminResetPasswordDto } from './dto/auth.dto';
-import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags, ApiParam } from '@nestjs/swagger';
+import {
+  LoginDto,
+  RegisterDto,
+  ChangePasswordDto,
+  AdminResetPasswordDto,
+} from './dto/auth.dto';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiOperation,
+  ApiTags,
+  ApiParam,
+} from '@nestjs/swagger';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
 
 @ApiTags('认证与登录')
 @Controller('auth')
@@ -27,6 +41,9 @@ export class AuthController {
   @ApiOperation({ summary: '用户登录' })
   @ApiBody({ type: LoginDto })
   async signIn(@Body() dto: LoginDto) {
+    if (!dto || !dto.email || !dto.password) {
+      throw new BadRequestException('email/password required');
+    }
     return this.authService.signIn(dto.email, dto.password);
   }
 
@@ -34,9 +51,21 @@ export class AuthController {
   @ApiOperation({ summary: '用户注册' })
   @ApiBody({ type: RegisterDto })
   async signUp(@Body() dto: RegisterDto) {
-    // 🔥 核心修复：如果 nickname 为空，就给默认值 '新用户'
-    // 这样类型就是 string 了，不再是 string | undefined
+    if (!dto || !dto.email || !dto.password) {
+      throw new BadRequestException('email/password required');
+    }
     return this.authService.signUp(dto.email, dto.password, dto.nickname || '新用户');
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('refresh')
+  @ApiOperation({ summary: '使用 refreshToken 换取新的 accessToken（并轮换 refreshToken）' })
+  @ApiBody({ type: RefreshTokenDto })
+  async refresh(@Body() dto: RefreshTokenDto) {
+    if (!dto || !dto.refreshToken) {
+      throw new BadRequestException('refreshToken is required');
+    }
+    return this.authService.refreshTokens(dto.refreshToken);
   }
 
   @UseGuards(JwtAuthGuard)
