@@ -1,9 +1,10 @@
+// apps/frontend/src/api/order.ts
 import http from '@/api/http'
 import type { Task } from './task'
 
 // =================== 类型定义 ===================
 
-export type OrderStatus = 'ASSIGNED' | 'SUBMITTED' | 'COMPLETED' | 'CANCELLED'
+export type OrderStatus = 'ASSIGNED' | 'SUBMITTED' | 'COMPLETED' | 'CANCELLED' | string
 
 export interface SubmitResultData {
   content: string

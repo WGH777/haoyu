@@ -1,3 +1,4 @@
+// apps/backend/src/admin/admin.service.ts
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -12,13 +13,13 @@ export class AdminService {
       where: { id: userId },
     });
 
-    // 如果找不到人，或者不是管理员，直接报错
-    if (!user || user.role !== 'ADMIN') {
+    // ✅ 修复：兼容 SUPER_ADMIN（不改变 ADMIN 原有行为，只是放开 SUPER_ADMIN）
+    if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
       throw new UnauthorizedException('您不是管理员，无权查看核心数据');
     }
 
     // --- 第二步：身份核实通过，开始统计 ---
-    
+
     // 1. 统计人头
     const totalUsers = await this.prisma.user.count();
 
@@ -43,9 +44,9 @@ export class AdminService {
     return {
       users: { total: totalUsers },
       tasks: { total: totalTasks, completed: completedTasks },
-      finance: { 
+      finance: {
         revenue: netProfit, // 利润
-        currency: 'CNY (分)' 
+        currency: 'CNY (分)',
       },
       generatedAt: new Date(),
     };

@@ -1,3 +1,4 @@
+// apps/backend/src/wallet/wallet.service.ts
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -99,6 +100,13 @@ export class WalletService {
         return '任务支付';
       case 'INCOME':
         return '任务结算收入';
+
+      // ✅ 新增：管理员仲裁相关（不影响功能，只提升可读性）
+      case 'ADMIN_REFUND':
+        return '管理员仲裁退款（给发布者）';
+      case 'ADMIN_PAYOUT':
+        return '管理员仲裁打款（给执行者）';
+
       default:
         return '账户变动';
     }

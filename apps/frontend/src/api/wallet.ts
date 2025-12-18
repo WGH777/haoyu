@@ -1,8 +1,16 @@
+// apps/frontend/src/api/wallet.ts
 import http from '@/api/http'
 
-export type TransactionType = 'DEPOSIT' | 'WITHDRAW' | 'PUBLISH' | 'INCOME'
+export type TransactionType =
+  | 'DEPOSIT'
+  | 'WITHDRAW'
+  | 'PUBLISH'
+  | 'INCOME'
+  | 'ADMIN_REFUND'
+  | 'ADMIN_PAYOUT'
+  | string
 
-export type TransactionStatus = 'SUCCESS' | 'PENDING' | 'FAILED'
+export type TransactionStatus = 'SUCCESS' | 'PENDING' | 'FAILED' | string
 
 /**
  * 钱包流水记录
