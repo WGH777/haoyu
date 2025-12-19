@@ -151,15 +151,20 @@ export class UserService {
   }
 
   /**
-   * 修改个人资料
+   * 修改个人资料（仅本人）
    */
   async updateProfile(userId: number, dto: UpdateProfileDto) {
     const data: any = {};
+
     if (typeof dto.nickname !== 'undefined') {
       data.nickname = dto.nickname;
     }
     if (typeof dto.bio !== 'undefined') {
       data.bio = dto.bio;
+    }
+    // ✅ 新增：头像（允许传 null 清空）
+    if (typeof (dto as any).avatar !== 'undefined') {
+      data.avatar = (dto as any).avatar;
     }
 
     return this.prisma.user.update({

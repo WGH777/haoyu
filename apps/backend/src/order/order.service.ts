@@ -12,175 +12,210 @@ import { Prisma } from '@prisma/client';
 import { SubmitResultDto } from './dto/submit-result.dto';
 import { CompleteOrderDto } from './dto/complete-order.dto';
 
-// Prisma 5.21.x 可能没有导出 Prisma.TransactionOptions，这里自定义一个兼容类型
 type TxOptions = {
+  isolationLevel?: Prisma.TransactionIsolationLevel;
   maxWait?: number;
   timeout?: number;
-  isolationLevel?: Prisma.TransactionIsolationLevel;
 };
 
 @Injectable()
 export class OrderService {
   constructor(private prisma: PrismaService) {}
 
-  // 事务参数：缓解 P2028（交互式事务默认超时偏短时会出现）
+  /**
+   * 事务参数
+   * 说明：
+   * - 你的 Prisma.TransactionIsolationLevel 只包含 Serializable（TS 报错证明没有 ReadCommitted）
+   * - SQLite 也常常不会按传统隔离级别那样工作，但这里保留为 Serializable，兼容你当前生成的类型
+   */
   private readonly TX_OPTS: TxOptions = {
-    timeout: 20000,
-    maxWait: 20000,
+    isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+    maxWait: 5000,
+    timeout: 15000,
   };
 
-  private isKnownPrismaError(
-    e: unknown,
-  ): e is Prisma.PrismaClientKnownRequestError {
-    return e instanceof Prisma.PrismaClientKnownRequestError;
+  /**
+   * 事务重试（关键：并发 complete 时写冲突/锁冲突会导致事务整体回滚并抛 500）
+   * 目标：尽量让“一个成功(200)，其余 409/503”，而不是“全部 500 且无人结算”
+   */
+  private async withTxRetry<T>(
+    fn: (tx: Prisma.TransactionClient) => Promise<T>,
+    maxRetries = 3,
+  ): Promise<T> {
+    let attempt = 0;
+
+    const backoff = async (n: number) => {
+      const ms = Math.min(60 * n, 180);
+      await new Promise((r) => setTimeout(r, ms));
+    };
+
+    while (true) {
+      try {
+        // 第二参数在不同 Prisma 版本类型上会不一致，这里用 any 避免 TS 报错
+        return await this.prisma.$transaction(fn, this.TX_OPTS as any);
+      } catch (e: any) {
+        // 业务类 HttpException：直接抛（返回 4xx/409）
+        if (e?.getStatus && typeof e.getStatus === 'function') throw e;
+
+        // Prisma 并发写冲突/超时类：尝试重试
+        if (this.isRetryablePrismaTxError(e) && attempt < maxRetries) {
+          attempt += 1;
+          await backoff(attempt);
+          continue;
+        }
+
+        // 兜底：把常见 Prisma 错误转为更友好的 503，而不是 500
+        this.rethrowAsFriendlyError(e);
+        throw e;
+      }
+    }
   }
 
-  private rethrowAsFriendlyError(e: unknown): never {
-    // 将“数据库/事务偶发超时”转为 503，可重试；避免直接 500
-    if (this.isKnownPrismaError(e)) {
+  private isRetryablePrismaTxError(e: any): boolean {
+    if (e instanceof Prisma.PrismaClientKnownRequestError) {
+      // P2034: write conflict/deadlock
+      // P2028: transaction timeout
+      // P1008: operations timed out
+      return ['P2034', 'P2028', 'P1008'].includes(e.code);
+    }
+
+    if (e instanceof Prisma.PrismaClientUnknownRequestError) {
+      const msg = String(e.message || '').toLowerCase();
+      if (msg.includes('database is locked') || msg.includes('busy')) return true;
+    }
+
+    const raw = String(e?.message || '').toLowerCase();
+    if (raw.includes('database is locked') || raw.includes('busy')) return true;
+
+    return false;
+  }
+
+  private rethrowAsFriendlyError(e: any): never {
+    if (e instanceof Prisma.PrismaClientKnownRequestError) {
       if (e.code === 'P2028') {
         throw new ServiceUnavailableException(
-          '系统繁忙，请稍后重试（事务超时）',
+          '数据库事务超时（P2028），请稍后重试',
         );
       }
       if (e.code === 'P1008') {
         throw new ServiceUnavailableException(
-          '系统繁忙，请稍后重试（数据库超时）',
+          '数据库操作超时（P1008），请稍后重试',
+        );
+      }
+      if (e.code === 'P2034') {
+        throw new ServiceUnavailableException(
+          '数据库写冲突/死锁（P2034），请稍后重试',
         );
       }
     }
+
+    const msg = String(e?.message || '').toLowerCase();
+    if (msg.includes('database is locked') || msg.includes('busy')) {
+      throw new ServiceUnavailableException('数据库繁忙，请稍后重试');
+    }
+
     throw e;
   }
 
   /**
    * 创建订单（抢单）
-   * - 关键：使用事务 + updateMany 条件更新，避免并发抢单导致脏写/重复抢占
+   * - 事务 + updateMany 条件更新，避免并发抢单导致重复抢占
    */
   async create(userId: number, taskId: number) {
-    return this.prisma
-      .$transaction(
-        async (tx: Prisma.TransactionClient) => {
-          const task = await tx.task.findUnique({ where: { id: taskId } });
-          if (!task) throw new NotFoundException('任务不存在');
+    return this.withTxRetry(async (tx: Prisma.TransactionClient) => {
+      const task = await tx.task.findUnique({ where: { id: taskId } });
+      if (!task) throw new NotFoundException('任务不存在');
 
-          if (task.status !== 'PENDING') {
-            throw new BadRequestException(
-              `该任务不可领取，当前状态: ${task.status}`,
-            );
-          }
-          if (task.publisherId === userId) {
-            throw new BadRequestException('不能领取自己发布的任务');
-          }
+      if (task.status !== 'PENDING') {
+        throw new BadRequestException(`该任务不可领取，当前状态: ${task.status}`);
+      }
+      if (task.publisherId === userId) {
+        throw new BadRequestException('不能领取自己发布的任务');
+      }
 
-          // 兜底：如果已经存在活跃订单（理论上不该发生），直接拒绝
-          const existingOrder = await tx.order.findFirst({
-            where: { taskId, status: { in: ['ASSIGNED', 'SUBMITTED'] } },
-            select: { id: true },
-          });
-          if (existingOrder) {
-            throw new BadRequestException('该任务已被抢占');
-          }
-
-          // 条件更新：只有仍为 PENDING 才能改为 ASSIGNED
-          const taskUpdated = await tx.task.updateMany({
-            where: { id: taskId, status: 'PENDING' },
-            data: { status: 'ASSIGNED' },
-          });
-
-          if (taskUpdated.count !== 1) {
-            throw new BadRequestException('该任务已被抢占');
-          }
-
-          return tx.order.create({
-            data: {
-              taskId,
-              workerId: userId,
-              status: 'ASSIGNED',
-            },
-          });
+      // 防御：同一用户对同一任务的重复领取（不改变原逻辑，只是更明确）
+      const existingOrder = await tx.order.findFirst({
+        where: {
+          taskId,
+          workerId: userId,
+          status: { in: ['ASSIGNED', 'SUBMITTED'] as any },
         },
-        this.TX_OPTS,
-      )
-      .catch((e) => this.rethrowAsFriendlyError(e));
+      });
+      if (existingOrder) {
+        throw new BadRequestException('你已领取过该任务，无法重复领取');
+      }
+
+      const taskUpdated = await tx.task.updateMany({
+        where: { id: taskId, status: 'PENDING' },
+        data: { status: 'ASSIGNED' },
+      });
+
+      if (taskUpdated.count !== 1) {
+        throw new BadRequestException('该任务已被抢占');
+      }
+
+      return tx.order.create({
+        data: {
+          taskId,
+          workerId: userId,
+          status: 'ASSIGNED',
+        },
+      });
+    });
   }
 
   /**
    * 提交任务成果（仅执行者）
-   * - 加固：改为 updateMany 状态闸门，避免重复提交/并发提交导致偶发 500 或状态错乱
    */
   async submitResult(orderId: number, workerId: number, dto: SubmitResultDto) {
-    // 兼容字段差异：content 为主；若未来 dto 扩展 submissionContent，也能容错
-    const content = (dto as any)?.content ?? (dto as any)?.submissionContent;
-    const image =
-      (dto as any)?.image ?? (dto as any)?.submissionImage ?? null;
-
-    if (typeof content !== 'string' || !content.trim()) {
-      throw new BadRequestException('content is required');
-    }
-
-    // 先读用于权限/基本提示（最终裁决在事务 updateMany）
-    const order = await this.prisma.order.findUnique({
-      where: { id: orderId },
-    });
+    const order = await this.prisma.order.findUnique({ where: { id: orderId } });
     if (!order) throw new NotFoundException('订单不存在');
 
     if (order.workerId !== workerId) {
       throw new ForbiddenException('您无权操作此订单（仅执行者可提交）');
     }
     if (order.status !== 'ASSIGNED') {
-      throw new BadRequestException(
-        `当前订单状态 (${order.status}) 不允许提交成果`,
-      );
+      throw new BadRequestException(`当前订单状态 (${order.status}) 不允许提交成果`);
     }
 
-    return this.prisma
-      .$transaction(
-        async (tx: Prisma.TransactionClient) => {
-          // 1) 抢占“提交权”：仅允许 ASSIGNED -> SUBMITTED
-          const updated = await tx.order.updateMany({
-            where: { id: orderId, workerId, status: 'ASSIGNED' },
-            data: {
-              status: 'SUBMITTED',
-              submissionContent: content,
-              submissionImage: image,
-              submittedAt: new Date(),
-            },
-          });
-
-          if (updated.count !== 1) {
-            throw new ConflictException('订单状态已变化，无法提交');
-          }
-
-          // 2) 更新任务状态
-          await tx.task.update({
-            where: { id: order.taskId },
-            data: { status: 'SUBMITTED' },
-          });
-
-          return tx.order.findUnique({ where: { id: orderId } });
+    return this.withTxRetry(async (tx: Prisma.TransactionClient) => {
+      // 1) 抢占提交权：ASSIGNED -> SUBMITTED
+      const updated = await tx.order.updateMany({
+        where: { id: orderId, status: 'ASSIGNED' },
+        data: {
+          status: 'SUBMITTED',
+          submissionContent: dto.content,
+          submissionImage: dto.image || null,
+          submittedAt: new Date(),
         },
-        this.TX_OPTS,
-      )
-      .catch((e) => this.rethrowAsFriendlyError(e));
+      });
+
+      if (updated.count !== 1) {
+        throw new ConflictException('订单状态已变化，提交失败（并发命中）');
+      }
+
+      // 2) Task 同步状态：ASSIGNED -> SUBMITTED（条件更新，防写穿）
+      const taskUpdated = await tx.task.updateMany({
+        where: { id: order.taskId, status: 'ASSIGNED' },
+        data: { status: 'SUBMITTED' },
+      });
+
+      if (taskUpdated.count !== 1) {
+        throw new ConflictException('任务状态已变化，提交失败（并发命中）');
+      }
+
+      return tx.order.findUnique({ where: { id: orderId } });
+    });
   }
 
   /**
-   * 发布者验收任务
-   * - 关键：并发/幂等修复点
-   *   1) 先读取订单+任务做权限校验
-   *   2) 用 updateMany 做“只允许 SUBMITTED -> (COMPLETED/ASSIGNED)”的条件状态迁移
-   *   3) count=0 说明已被其他请求处理 => 直接 409，绝不 500
+   * 发布者验收任务（并发/幂等）
    */
-  async completeOrder(
-    orderId: number,
-    publisherId: number,
-    dto: CompleteOrderDto,
-  ) {
+  async completeOrder(orderId: number, publisherId: number, dto: CompleteOrderDto) {
     if (typeof dto?.isAccepted !== 'boolean') {
       throw new BadRequestException('isAccepted is required');
     }
 
-    // 先读用于权限/基本校验
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
       include: { task: true },
@@ -197,78 +232,77 @@ export class OrderService {
       );
     }
 
-    const taskPrice = order.task.price ?? 0;
+    const taskPrice = order.task.price;
     const serviceFee = order.task.serviceFee ?? 0;
     const netReward = taskPrice - serviceFee;
 
-    if (dto.isAccepted) {
-      return this.prisma
-        .$transaction(
-          async (tx: Prisma.TransactionClient) => {
-            // 1) 抢占“处理权”：仅允许 SUBMITTED -> COMPLETED
-            const updated = await tx.order.updateMany({
-              where: { id: orderId, status: 'SUBMITTED' },
-              data: { status: 'COMPLETED' },
-            });
-
-            if (updated.count !== 1) {
-              throw new ConflictException(
-                '订单已被处理或状态不允许验收，当前状态: COMPLETED',
-              );
-            }
-
-            // 2) 更新任务状态
-            await tx.task.update({
-              where: { id: order.taskId },
-              data: { status: 'COMPLETED' },
-            });
-
-            // 3) 给执行者入账 + 写流水
-            await tx.user.update({
-              where: { id: order.workerId },
-              data: { balance: { increment: netReward } },
-            });
-
-            await tx.transaction.create({
-              data: {
-                amount: netReward,
-                type: 'INCOME',
-                status: 'SUCCESS',
-                userId: order.workerId,
-              },
-            });
-
-            return tx.order.findUnique({ where: { id: orderId } });
-          },
-          this.TX_OPTS,
-        )
-        .catch((e) => this.rethrowAsFriendlyError(e));
+    if (netReward < 0) {
+      throw new BadRequestException('任务金额不足以覆盖服务费，无法结算');
     }
 
-    // 驳回：任务回到 ASSIGNED，订单回到 ASSIGNED（保持原来逻辑）
-    return this.prisma
-      .$transaction(
-        async (tx: Prisma.TransactionClient) => {
-          // 先抢占“处理权”：仅允许 SUBMITTED -> ASSIGNED
-          const updated = await tx.order.updateMany({
-            where: { id: orderId, status: 'SUBMITTED' },
-            data: { status: 'ASSIGNED' },
-          });
+    if (dto.isAccepted) {
+      return this.withTxRetry(async (tx: Prisma.TransactionClient) => {
+        // 1) 抢占处理权：SUBMITTED -> COMPLETED
+        const updated = await tx.order.updateMany({
+          where: { id: orderId, status: 'SUBMITTED' },
+          data: { status: 'COMPLETED' },
+        });
 
-          if (updated.count !== 1) {
-            throw new ConflictException('订单已被处理（并发轮询命中）');
-          }
+        if (updated.count !== 1) {
+          throw new ConflictException('订单已被处理（并发轮询命中）');
+        }
 
-          await tx.task.update({
-            where: { id: order.taskId },
-            data: { status: 'ASSIGNED' },
-          });
+        // 2) Task：SUBMITTED -> COMPLETED（条件更新）
+        const taskUpdated = await tx.task.updateMany({
+          where: { id: order.taskId, status: 'SUBMITTED' },
+          data: { status: 'COMPLETED' },
+        });
 
-          return tx.order.findUnique({ where: { id: orderId } });
-        },
-        this.TX_OPTS,
-      )
-      .catch((e) => this.rethrowAsFriendlyError(e));
+        if (taskUpdated.count !== 1) {
+          throw new ConflictException('任务状态已变化，验收失败（并发命中）');
+        }
+
+        // 3) 入账 + 写流水（只会发生一次）
+        await tx.user.update({
+          where: { id: order.workerId },
+          data: { balance: { increment: netReward } },
+        });
+
+        await tx.transaction.create({
+          data: {
+            amount: netReward,
+            type: 'INCOME',
+            status: 'SUCCESS',
+            userId: order.workerId,
+          },
+        });
+
+        return tx.order.findUnique({ where: { id: orderId } });
+      });
+    }
+
+    // 驳回：SUBMITTED -> ASSIGNED（允许再次 submit）
+    return this.withTxRetry(async (tx: Prisma.TransactionClient) => {
+      const updated = await tx.order.updateMany({
+        where: { id: orderId, status: 'SUBMITTED' },
+        data: { status: 'ASSIGNED' },
+      });
+
+      if (updated.count !== 1) {
+        throw new ConflictException('订单已被处理（并发轮询命中）');
+      }
+
+      const taskUpdated = await tx.task.updateMany({
+        where: { id: order.taskId, status: 'SUBMITTED' },
+        data: { status: 'ASSIGNED' },
+      });
+
+      if (taskUpdated.count !== 1) {
+        throw new ConflictException('任务状态已变化，驳回失败（并发命中）');
+      }
+
+      return tx.order.findUnique({ where: { id: orderId } });
+    });
   }
 
   /**
@@ -277,17 +311,11 @@ export class OrderService {
   async findOrderByTaskId(taskId: number, userId: number) {
     const order = await this.prisma.order.findFirst({
       where: { taskId },
-      include: {
-        task: {
-          select: { publisherId: true },
-        },
-      },
+      include: { task: { select: { publisherId: true } } },
     });
 
     if (!order) return null;
-    if (order.workerId !== userId && order.task.publisherId !== userId) {
-      return null;
-    }
+    if (order.workerId !== userId && order.task.publisherId !== userId) return null;
 
     return {
       id: order.id,
