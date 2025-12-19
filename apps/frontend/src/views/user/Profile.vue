@@ -1,37 +1,137 @@
 <template>
   <div class="profile-page">
     <el-row :gutter="20">
-      <!-- 左边：账号信息 -->
+      <!-- 左边：账号信息 + 编辑资料 -->
       <el-col :span="10">
-        <el-card shadow="hover">
+        <el-card shadow="hover" v-loading="loadingProfile">
           <template #header>
-            <div class="card-header">
+            <div class="card-header header-with-action">
               <span>账号信息</span>
+
+              <div class="header-actions">
+                <el-button
+                  v-if="!editingProfile"
+                  type="primary"
+                  size="small"
+                  :disabled="!profile"
+                  @click="openEditProfile"
+                >
+                  编辑资料
+                </el-button>
+
+                <template v-else>
+                  <el-button
+                    type="success"
+                    size="small"
+                    :loading="savingProfile"
+                    @click="handleSaveProfile"
+                  >
+                    保存
+                  </el-button>
+                  <el-button size="small" @click="cancelEditProfile">
+                    取消
+                  </el-button>
+                </template>
+              </div>
             </div>
           </template>
 
-          <el-descriptions :column="1" border>
-            <el-descriptions-item label="昵称">
-              {{ profile?.nickname || '-' }}
-            </el-descriptions-item>
-            <el-descriptions-item label="邮箱">
-              {{ profile?.email || '-' }}
-            </el-descriptions-item>
-            <el-descriptions-item label="角色">
-              <el-tag v-if="profile" size="small" :type="roleTagType">
-                {{ roleLabel }}
-              </el-tag>
-            </el-descriptions-item>
-            <el-descriptions-item label="余额">
-              <span v-if="profile">
-                {{ (profile.balance || 0) / 100 }} 元
-              </span>
-              <span v-else>-</span>
-            </el-descriptions-item>
-            <el-descriptions-item label="创建时间">
-              {{ profile ? formatTime(profile.createdAt) : '-' }}
-            </el-descriptions-item>
-          </el-descriptions>
+          <!-- 展示模式 -->
+          <div v-if="!editingProfile">
+            <el-descriptions :column="1" border>
+              <el-descriptions-item label="昵称">
+                {{ profile?.nickname || '-' }}
+              </el-descriptions-item>
+
+              <el-descriptions-item label="邮箱">
+                {{ profile?.email || '-' }}
+              </el-descriptions-item>
+
+              <el-descriptions-item label="角色">
+                <el-tag v-if="profile" size="small" :type="roleTagType">
+                  {{ roleLabel }}
+                </el-tag>
+              </el-descriptions-item>
+
+              <el-descriptions-item label="余额">
+                <span v-if="profile">
+                  {{ (profile.balance || 0) / 100 }} 元
+                </span>
+                <span v-else>-</span>
+              </el-descriptions-item>
+
+              <el-descriptions-item label="简介">
+                {{ profile?.bio || '-' }}
+              </el-descriptions-item>
+
+              <el-descriptions-item label="头像">
+                <div class="avatar-row">
+                  <el-image
+                    v-if="profile?.avatar"
+                    :src="profile.avatar"
+                    fit="cover"
+                    class="avatar-img"
+                  />
+                  <span v-else>-</span>
+                </div>
+              </el-descriptions-item>
+
+              <el-descriptions-item label="创建时间">
+                {{ profile ? formatTime(profile.createdAt) : '-' }}
+              </el-descriptions-item>
+            </el-descriptions>
+          </div>
+
+          <!-- 编辑模式 -->
+          <div v-else>
+            <el-form
+              ref="profileFormRef"
+              :model="profileForm"
+              :rules="profileRules"
+              label-width="80px"
+            >
+              <el-form-item label="昵称" prop="nickname">
+                <el-input
+                  v-model="profileForm.nickname"
+                  maxlength="50"
+                  show-word-limit
+                  placeholder="请输入昵称"
+                />
+              </el-form-item>
+
+              <el-form-item label="简介" prop="bio">
+                <el-input
+                  v-model="profileForm.bio"
+                  type="textarea"
+                  :rows="3"
+                  maxlength="200"
+                  show-word-limit
+                  placeholder="请输入个人简介（可选）"
+                />
+              </el-form-item>
+
+              <el-form-item label="头像URL" prop="avatar">
+                <el-input
+                  v-model="profileForm.avatar"
+                  maxlength="500"
+                  show-word-limit
+                  placeholder="请输入头像 URL（可选，留空则清空）"
+                />
+              </el-form-item>
+
+              <el-form-item label="预览">
+                <div class="avatar-row">
+                  <el-image
+                    v-if="profileForm.avatar"
+                    :src="profileForm.avatar"
+                    fit="cover"
+                    class="avatar-img"
+                  />
+                  <span v-else>（无）</span>
+                </div>
+              </el-form-item>
+            </el-form>
+          </div>
         </el-card>
       </el-col>
 
@@ -106,11 +206,54 @@ import { onMounted, reactive, ref, computed } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
 import http from '@/api/http'
-import { getProfile } from '@/api/user'
+import { getProfile, updateProfile } from '@/api/user'
 import type { UserProfile } from '@/api/user'
 
 const profile = ref<UserProfile | null>(null)
 const loadingProfile = ref(false)
+
+const editingProfile = ref(false)
+const savingProfile = ref(false)
+const profileFormRef = ref<FormInstance>()
+const profileForm = reactive({
+  nickname: '',
+  bio: '',
+  avatar: '',
+})
+
+// 基础校验（不改变后端规则，仅做前端友好提示）
+const profileRules: FormRules<typeof profileForm> = {
+  nickname: [
+    {
+      validator: (_rule, value, callback) => {
+        if (typeof value !== 'string') return callback(new Error('昵称必须是字符串'))
+        if (value.length > 50) return callback(new Error('昵称长度不能超过 50 个字符'))
+        return callback()
+      },
+      trigger: 'blur',
+    },
+  ],
+  bio: [
+    {
+      validator: (_rule, value, callback) => {
+        if (typeof value !== 'string') return callback(new Error('简介必须是字符串'))
+        if (value.length > 200) return callback(new Error('简介长度不能超过 200 个字符'))
+        return callback()
+      },
+      trigger: 'blur',
+    },
+  ],
+  avatar: [
+    {
+      validator: (_rule, value, callback) => {
+        if (typeof value !== 'string') return callback(new Error('头像URL必须是字符串'))
+        if (value.length > 500) return callback(new Error('头像 URL 不能超过 500 个字符'))
+        return callback()
+      },
+      trigger: 'blur',
+    },
+  ],
+}
 
 const passwordFormRef = ref<FormInstance>()
 const submitting = ref(false)
@@ -144,7 +287,7 @@ const roleTagType = computed<'success' | 'warning' | ''>(() => {
   return ''
 })
 
-// 表单校验规则
+// 表单校验规则（修改密码）
 const rules: FormRules<typeof passwordForm> = {
   oldPassword: [
     { required: true, message: '请输入原密码', trigger: 'blur' },
@@ -194,6 +337,60 @@ const loadProfile = async () => {
     ElMessage.error('加载个人信息失败，请稍后重试')
   } finally {
     loadingProfile.value = false
+  }
+}
+
+const openEditProfile = () => {
+  if (!profile.value) return
+  profileForm.nickname = profile.value.nickname || ''
+  profileForm.bio = profile.value.bio || ''
+  profileForm.avatar = profile.value.avatar || ''
+  editingProfile.value = true
+}
+
+const cancelEditProfile = () => {
+  editingProfile.value = false
+  // 回填为当前 profile，避免“取消后表单残留”
+  if (profile.value) {
+    profileForm.nickname = profile.value.nickname || ''
+    profileForm.bio = profile.value.bio || ''
+    profileForm.avatar = profile.value.avatar || ''
+  } else {
+    profileForm.nickname = ''
+    profileForm.bio = ''
+    profileForm.avatar = ''
+  }
+}
+
+const handleSaveProfile = async () => {
+  if (!profileFormRef.value) return
+
+  try {
+    await profileFormRef.value.validate()
+  } catch {
+    return
+  }
+
+  savingProfile.value = true
+  try {
+    const payload = {
+      nickname: profileForm.nickname,
+      bio: profileForm.bio,
+      // 约定：留空则清空头像（后端允许 avatar:null）
+      avatar: profileForm.avatar.trim() ? profileForm.avatar.trim() : null,
+    }
+
+    const res = await updateProfile(payload)
+    profile.value = res
+    localStorage.setItem('currentUser', JSON.stringify(res))
+
+    editingProfile.value = false
+    ElMessage.success('个人资料已更新')
+  } catch (error) {
+    console.error('更新个人资料失败:', error)
+    // 具体错误提示由 http.ts 统一处理
+  } finally {
+    savingProfile.value = false
   }
 }
 
@@ -247,6 +444,31 @@ onMounted(() => {
 .card-header {
   font-weight: 600;
   font-size: 15px;
+}
+
+.header-with-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.avatar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.avatar-img {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  overflow: hidden;
 }
 
 @media (max-width: 992px) {

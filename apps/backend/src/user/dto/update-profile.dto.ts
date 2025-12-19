@@ -21,4 +21,15 @@ export class UpdateProfileDto {
   @IsString({ message: '个人简介必须是字符串' })
   @MaxLength(200, { message: '个人简介不能超过 200 个字符' })
   bio?: string;
+
+  @ApiProperty({
+    description: '头像 URL（可选）。传 null 表示清空头像',
+    example: 'https://example.com/avatar.png',
+    required: false,
+    nullable: true,
+  })
+  @IsOptional()
+  @IsString({ message: '头像必须是字符串' })
+  @MaxLength(500, { message: '头像 URL 不能超过 500 个字符' })
+  avatar?: string | null;
 }
