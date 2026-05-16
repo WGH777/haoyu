@@ -66,6 +66,18 @@ export class TaskService {
   async create(userId: number, createTaskDto: CreateTaskDto) {
     const { title, description, price, image } = createTaskDto;
 
+    // 诈骗防范：新用户（注册<7天）首单限额 ¥500
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (user) {
+      const daysSinceReg = (Date.now() - user.createdAt.getTime()) / 86400000;
+      const completedOrders = await this.prisma.order.count({
+        where: { task: { publisherId: userId }, status: 'COMPLETED' },
+      });
+      if (daysSinceReg < 7 && completedOrders < 1 && price > 50000) {
+        throw new BadRequestException('新用户首单金额不能超过 ¥500');
+      }
+    }
+
     // TODO Phase 3: 阶梯费率 (0%/2%/5%/10%)
     const SERVICE_FEE_RATE = 0; // P0 阶段暂免服务费
     const serviceFee = Math.max(0, Math.round(price * SERVICE_FEE_RATE));
