@@ -19,7 +19,7 @@ const isDev = import.meta.env.DEV
 
 export const API_BASE: string = isDev
   ? 'http://localhost:3000/api'
-  : 'https://api.722933.xyz/api'
+  : '/api'
 
 // 1) axios 实例
 const instance: AxiosInstance = axios.create({
