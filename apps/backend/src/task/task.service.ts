@@ -71,7 +71,7 @@ export class TaskService {
     const serviceFee = Math.max(0, Math.round(price * SERVICE_FEE_RATE));
     const totalCost = price + serviceFee;
 
-    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    return this.prisma.$tx(async (tx: Prisma.TransactionClient) => {
       // Phase 2: 通过 Wallet 冻结资金
       const wallet = await tx.wallet.findUnique({
         where: { userId_currency: { userId, currency: 'CNY' } },
