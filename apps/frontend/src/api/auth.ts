@@ -3,6 +3,14 @@ import { defineStore } from 'pinia'
 import http from '@/api/http'
 import type { UserProfile } from '@/api/user'
 
+/** 注册 */
+export const register = (nickname: string, email: string, password: string) =>
+  http.post('/auth/register', { nickname, email, password })
+
+/** 登录 */
+export const login = (email: string, password: string) =>
+  http.post('/auth/login', { email, password })
+
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     accessToken: localStorage.getItem('token') || '',

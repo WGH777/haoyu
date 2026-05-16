@@ -1,150 +1,89 @@
 <template>
-  <div class="login-container">
-    <el-card class="login-card">
-      <template #header>
-        <div class="card-header">
-          <h2>🚀 浩煜平台 | 登录</h2>
-        </div>
-      </template>
+  <div class="login-page">
+    <div class="login-box">
+      <div class="login-header">
+        <span class="logo-mark">煜</span>
+        <h1>欢迎回来</h1>
+        <p>登录浩煜，继续你的协作之旅</p>
+      </div>
 
-      <el-form
-        :model="form"
-        :rules="rules"
-        ref="loginFormRef"
-        label-position="top"
-        autocomplete="off"
-      >
-        <el-form-item label="邮箱 Email" prop="email">
-          <el-input
-            v-model="form.email"
-            placeholder="请输入邮箱"
-            autocomplete="off"
-          />
+      <el-form :model="form" :rules="rules" ref="loginFormRef" label-position="top">
+        <el-form-item label="邮箱" prop="email">
+          <el-input v-model="form.email" placeholder="your@email.com" size="large" />
         </el-form-item>
-
-        <el-form-item label="密码 Password" prop="password">
-          <el-input
-            v-model="form.password"
-            type="password"
-            placeholder="请输入密码"
-            show-password
-            autocomplete="new-password"
-            @keyup.enter="handleLogin"
-          />
+        <el-form-item label="密码" prop="password">
+          <el-input v-model="form.password" type="password" placeholder="输入密码" show-password size="large" />
         </el-form-item>
-
-        <el-button
-          type="primary"
-          class="w-100"
-          size="large"
-          @click="handleLogin"
-          :loading="isLoading"
-        >
-          立即登录
+        <el-button type="primary" size="large" @click="handleLogin" :loading="loading" round block>
+          登录
         </el-button>
-
-        <div class="links">
-          <el-link type="primary" @click="router.push('/register')">
-            注册新账号
-          </el-link>
-        </div>
       </el-form>
-    </el-card>
+
+      <div class="login-footer">
+        <span>还没有账号？</span>
+        <router-link to="/register">免费注册</router-link>
+        <span class="sep">|</span>
+        <router-link to="/task">先看看</router-link>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { ElMessage, type FormInstance } from 'element-plus'
-import http from '../api/http'
+import { ref, reactive } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { login } from '@/api/auth'
+import { ElMessage } from 'element-plus'
 
 const router = useRouter()
-const isLoading = ref(false)
-const loginFormRef = ref<FormInstance>()
+const route = useRoute()
+const loading = ref(false)
+const loginFormRef = ref()
 
-// ✅ 初始值全部为空
-const form = reactive({
-  email: '',
-  password: ''
-})
-
+const form = reactive({ email: '', password: '' })
 const rules = {
   email: [{ required: true, message: '请输入邮箱', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
+  password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
 }
 
-// 每次进入登录页，强制清空一次表单（防止组件缓存带来残留）
-onMounted(() => {
-  form.email = ''
-  form.password = ''
-})
-
 const handleLogin = async () => {
-  if (!loginFormRef.value) return
-
+  const valid = await loginFormRef.value?.validate().catch(() => false)
+  if (!valid) return
+  loading.value = true
   try {
-    const valid = await loginFormRef.value.validate()
-    if (!valid) return
-
-    isLoading.value = true
-
-    // 调用登录接口
-    const res: any = await http.post('/auth/login', {
-      email: form.email,
-      password: form.password
-    })
-
-    const token = res?.accessToken
-    const user = res?.user
-
-    if (!token) {
-      ElMessage.error('登录失败：后端未返回令牌')
-      return
-    }
-
-    // 存储关键信息
-    localStorage.setItem('token', token)
-    if (user) {
-      // 这一步很重要，Header和钱包页面会用到它
-      localStorage.setItem('currentUser', JSON.stringify(user))
-    }
-
-    ElMessage.success('登录成功！')
-    router.push('/')
-  } catch (error: any) {
-    console.error('登录报错:', error)
-    ElMessage.error(
-      error?.response?.data?.message || '登录失败，请检查账号密码'
-    )
-  } finally {
-    isLoading.value = false
-  }
+    const res: any = await login(form.email, form.password)
+    localStorage.setItem('token', res.accessToken || res.access_token)
+    if (res.user) localStorage.setItem('currentUser', JSON.stringify(res.user))
+    ElMessage.success('登录成功')
+    const redirect = (route.query.redirect as string) || '/task'
+    router.push(redirect)
+  } catch (e: any) {
+    ElMessage.error(e?.response?.data?.message || '登录失败')
+  } finally { loading.value = false }
 }
 </script>
 
 <style scoped>
-.login-container {
-  height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background-color: #f0f2f5;
-  /* 加个背景图或者渐变会更好看，这里先用纯色 */
-  background-image: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+.login-page {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
 }
-.login-card {
-  width: 400px;
+.login-box {
+  background: #fff; border-radius: 16px; padding: 40px; width: 400px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.06);
 }
-.card-header {
-  text-align: center;
+.login-header { text-align: center; margin-bottom: 28px; }
+.logo-mark {
+  width: 48px; height: 48px; background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff; border-radius: 12px; display: inline-flex; align-items: center;
+  justify-content: center; font-size: 24px; font-weight: 700; margin-bottom: 12px;
 }
-.w-100 {
-  width: 100%;
-  margin-top: 10px;
+.login-header h1 { font-size: 22px; font-weight: 700; color: #1e293b; margin: 0 0 4px; }
+.login-header p { color: #94a3b8; font-size: 14px; margin: 0; }
+.login-footer {
+  margin-top: 20px; text-align: center; font-size: 13px; color: #94a3b8;
+  display: flex; gap: 8px; justify-content: center;
 }
-.links {
-  margin-top: 20px;
-  text-align: center;
-}
+.login-footer a { color: #6366f1; text-decoration: none; font-weight: 500; }
+.sep { color: #cbd5e1; }
 </style>

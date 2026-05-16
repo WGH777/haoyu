@@ -1,161 +1,86 @@
 <template>
-  <div class="register-container">
-    <el-card class="register-card">
-      <template #header>
-        <div class="card-header">
-          <h2>✨ 浩煜平台 | 注册</h2>
-        </div>
-      </template>
+  <div class="register-page">
+    <div class="register-box">
+      <div class="register-header">
+        <span class="logo-mark">煜</span>
+        <h1>加入浩煜</h1>
+        <p>免费注册，开始发布需求或提供服务</p>
+      </div>
 
-      <el-form
-        :model="form"
-        :rules="rules"
-        ref="formRef"
-        label-position="top"
-      >
-        <el-form-item label="昵称 Nickname" prop="nickname">
-          <el-input v-model="form.nickname" placeholder="请输入昵称" />
+      <el-form :model="form" :rules="rules" ref="formRef" label-position="top">
+        <el-form-item label="昵称" prop="nickname">
+          <el-input v-model="form.nickname" placeholder="你的称呼" size="large" />
         </el-form-item>
-
-        <el-form-item label="邮箱 Email" prop="email">
-          <el-input v-model="form.email" placeholder="请输入邮箱" />
+        <el-form-item label="邮箱" prop="email">
+          <el-input v-model="form.email" placeholder="your@email.com" size="large" />
         </el-form-item>
-
-        <el-form-item label="密码 Password" prop="password">
-          <el-input
-            v-model="form.password"
-            type="password"
-            placeholder="请输入密码"
-            show-password
-          />
+        <el-form-item label="密码" prop="password">
+          <el-input v-model="form.password" type="password" placeholder="至少6位" show-password size="large" />
         </el-form-item>
-
-        <el-form-item label="确认密码 Confirm" prop="confirmPassword">
-          <el-input
-            v-model="form.confirmPassword"
-            type="password"
-            placeholder="请再次输入密码"
-            show-password
-          />
-        </el-form-item>
-
-        <el-button
-          type="primary"
-          class="w-100"
-          size="large"
-          @click="handleRegister"
-          :loading="isLoading"
-        >
-          立即注册
+        <el-button type="primary" size="large" @click="handleRegister" :loading="loading" round block>
+          注册
         </el-button>
-
-        <div class="links">
-          <el-link type="primary" @click="router.push('/login')">
-            已有账号？去登录
-          </el-link>
-        </div>
       </el-form>
-    </el-card>
+
+      <div class="register-footer">
+        <span>已有账号？</span>
+        <router-link to="/login">去登录</router-link>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage, type FormInstance } from 'element-plus'
-import http from '../api/http'
+import { register } from '@/api/auth'
+import { ElMessage } from 'element-plus'
 
 const router = useRouter()
-const formRef = ref<FormInstance>()
-const isLoading = ref(false)
+const loading = ref(false)
+const formRef = ref()
 
-const form = reactive({
-  nickname: '',
-  email: '',
-  password: '',
-  confirmPassword: ''
-})
-
+const form = reactive({ nickname: '', email: '', password: '' })
 const rules = {
   nickname: [{ required: true, message: '请输入昵称', trigger: 'blur' }],
-  email: [
-    { required: true, message: '请输入邮箱', trigger: 'blur' },
-    { type: 'email', message: '邮箱格式不正确', trigger: 'blur' }
-  ],
-  password: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, message: '密码至少 6 位', trigger: 'blur' }
-  ],
-  confirmPassword: [
-    { required: true, message: '请再次输入密码', trigger: 'blur' },
-    {
-      validator: (_: any, value: string, callback: any) => {
-        if (!value) return callback(new Error('请再次输入密码'))
-        if (value !== form.password) {
-          return callback(new Error('两次输入的密码不一致'))
-        }
-        callback()
-      },
-      trigger: 'blur'
-    }
-  ]
+  email: [{ required: true, message: '请输入邮箱', trigger: 'blur' }],
+  password: [{ required: true, min: 6, message: '密码至少6位', trigger: 'blur' }],
 }
 
 const handleRegister = async () => {
-  if (!formRef.value) return
-
+  const valid = await formRef.value?.validate().catch(() => false)
+  if (!valid) return
+  loading.value = true
   try {
-    const valid = await formRef.value.validate()
-    if (!valid) return
-
-    isLoading.value = true
-
-    await http.post('/auth/register', {
-      nickname: form.nickname,
-      email: form.email,
-      password: form.password
-    })
-
-    ElMessage.success('注册成功，请使用新账号登录')
+    await register(form.nickname, form.email, form.password)
+    ElMessage.success('注册成功，请登录')
     router.push('/login')
-  } catch (error: any) {
-    console.error('注册失败:', error)
-    // http.ts 拦截器已经弹出了一层错误，这里只兜底
-    if (error?.response?.status !== 401) {
-      ElMessage.error(
-        error?.response?.data?.message || '注册失败，请稍后重试'
-      )
-    }
-  } finally {
-    isLoading.value = false
-  }
+  } catch (e: any) {
+    ElMessage.error(e?.response?.data?.message || '注册失败')
+  } finally { loading.value = false }
 }
 </script>
 
 <style scoped>
-.register-container {
-  height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background-color: #f0f2f5;
+.register-page {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
 }
-
-.register-card {
-  width: 420px;
+.register-box {
+  background: #fff; border-radius: 16px; padding: 40px; width: 400px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.06);
 }
-
-.card-header {
-  text-align: center;
+.register-header { text-align: center; margin-bottom: 28px; }
+.logo-mark {
+  width: 48px; height: 48px; background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff; border-radius: 12px; display: inline-flex; align-items: center;
+  justify-content: center; font-size: 24px; font-weight: 700; margin-bottom: 12px;
 }
-
-.w-100 {
-  width: 100%;
-  margin-top: 10px;
+.register-header h1 { font-size: 22px; font-weight: 700; color: #1e293b; margin: 0 0 4px; }
+.register-header p { color: #94a3b8; font-size: 14px; margin: 0; }
+.register-footer {
+  margin-top: 20px; text-align: center; font-size: 13px; color: #94a3b8;
+  display: flex; gap: 6px; justify-content: center;
 }
-
-.links {
-  margin-top: 20px;
-  text-align: center;
-}
+.register-footer a { color: #6366f1; text-decoration: none; font-weight: 500; }
 </style>
