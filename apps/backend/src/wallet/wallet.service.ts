@@ -62,7 +62,7 @@ export class WalletService {
   ) {
     if (amount <= 0) throw new BadRequestException('金额必须大于 0');
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.$tx(async (tx) => {
       const updated = await tx.wallet.updateMany({
         where: { id: walletId },
         data: { available: { increment: amount } },
@@ -97,7 +97,7 @@ export class WalletService {
   ) {
     if (amount <= 0) throw new BadRequestException('金额必须大于 0');
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.$tx(async (tx) => {
       const updated = await tx.wallet.updateMany({
         where: { id: walletId, available: { gte: amount } },
         data: {
@@ -136,7 +136,7 @@ export class WalletService {
   ) {
     if (amount <= 0) throw new BadRequestException('金额必须大于 0');
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.$tx(async (tx) => {
       const updated = await tx.wallet.updateMany({
         where: { id: walletId, frozen: { gte: amount } },
         data: {
@@ -175,7 +175,7 @@ export class WalletService {
   ) {
     if (amount <= 0) throw new BadRequestException('金额必须大于 0');
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.$tx(async (tx) => {
       const updated = await tx.wallet.updateMany({
         where: { id: walletId, frozen: { gte: amount } },
         data: { frozen: { decrement: amount } },
@@ -211,7 +211,7 @@ export class WalletService {
   ) {
     if (amount <= 0) throw new BadRequestException('金额必须大于 0');
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.$tx(async (tx) => {
       const feeWallet = await tx.wallet.findUnique({
         where: { code: 'SYSTEM_PLATFORM_FEE' },
       });
