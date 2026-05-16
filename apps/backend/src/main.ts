@@ -7,19 +7,24 @@ import helmet from 'helmet';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // CORS：从环境变量读取允许域名（逗号分隔，默认开发环境）
+  const corsOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean);
+
+  app.enableCors({
+    origin: corsOrigins,
+    credentials: true,
+  });
+
   // 安全响应头
   app.use(helmet({ contentSecurityPolicy: false }));
 
   // 全局路由前缀
   app.setGlobalPrefix('api');
-  
-  // CORS
-  app.enableCors({
-    origin: ['http://localhost:5173', 'http://www.haoyulv.com', 'https://www.haoyulv.com'],
-    credentials: true,
-  });
 
-  // 3. 启用全局参数校验管道
+  // 全局参数校验
   app.useGlobalPipes(new ValidationPipe({
     transform: true, 
     whitelist: true, 
@@ -46,8 +51,9 @@ async function bootstrap() {
   // 文档访问路径：http://localhost:3000/api/docs
   SwaggerModule.setup('api/docs', app, document);
   
-  // 5. 启动应用
-  await app.listen(3000, '127.0.0.1');
+  // 启动
+  const port = parseInt(process.env.PORT || '3000', 10);
+  await app.listen(port, '127.0.0.1');
   console.log(`Application is running on: ${await app.getUrl()}`);
   console.log(`Swagger documentation is available at: ${await app.getUrl()}/api/docs`);
 }

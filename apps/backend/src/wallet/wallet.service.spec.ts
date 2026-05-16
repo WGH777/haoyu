@@ -12,6 +12,7 @@ describe('WalletService', () => {
       create: jest.fn(),
     },
     $transaction: jest.fn(async (cb: any) => cb(prisma)),
+    $tx: jest.fn(async (cb: any) => cb(prisma)),
   };
 
   let service: WalletService;
