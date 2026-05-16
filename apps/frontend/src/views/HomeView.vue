@@ -131,7 +131,9 @@
 
         <!-- 任务卡片 -->
         <div v-loading="loading" class="task-grid">
-          <el-empty v-if="!loading && !tasks.length" description="还没有任务，来做第一个发布者吧" />
+          <el-empty v-if="!loading && !tasks.length" description="还没有任务，来做第一个发布者吧">
+            <el-button type="primary" round @click="openCreateDialog">✨ 发布第一个需求</el-button>
+          </el-empty>
 
           <div
             v-for="task in tasks"
@@ -364,7 +366,8 @@ body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Ro
 
 /* === 侧边栏 === */
 .sidebar {
-  width: 200px; background: #fff; border-right: 1px solid #e2e8f0;
+  width: 200px; background: rgba(255,255,255,0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  border-right: 1px solid rgba(226,232,240,0.6);
   display: flex; flex-direction: column; position: fixed; top: 0; bottom: 0; z-index: 100;
 }
 .logo { display: flex; align-items: center; gap: 8px; padding: 20px 16px; cursor: pointer; }
@@ -382,11 +385,12 @@ body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Ro
   position: absolute; right: 10px; background: #ef4444; color: #fff; font-size: 11px;
   min-width: 18px; height: 18px; border-radius: 9px; display: flex; align-items: center; justify-content: center;
 }
-.sidebar-footer { padding: 8px; border-top: 1px solid #e2e8f0; }
+.sidebar-footer { padding: 8px; border-top: 1px solid rgba(226,232,240,0.6); }
 
 /* === 顶栏 === */
 .topbar {
-  height: 56px; background: #fff; border-bottom: 1px solid #e2e8f0;
+  height: 56px; background: rgba(255,255,255,0.75); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(226,232,240,0.5);
   display: flex; align-items: center; justify-content: space-between; padding: 0 24px;
   position: sticky; top: 0; z-index: 50;
 }
@@ -399,7 +403,11 @@ body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Ro
 .dropdown-trigger { cursor: pointer; font-size: 14px; color: #334155; display: flex; align-items: center; gap: 4px; }
 
 /* === 主区域 === */
-.main-area { flex: 1; margin-left: 200px; }
+.main-area {
+  flex: 1; margin-left: 200px;
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 50%, #f8fafc 100%);
+  min-height: 100vh;
+}
 .content { max-width: 1000px; margin: 0 auto; padding: 0 24px 40px; }
 
 /* === Hero === */
