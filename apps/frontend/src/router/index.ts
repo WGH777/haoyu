@@ -124,10 +124,10 @@ const router = createRouter({
       meta: { public: true },
     },
 
-    // 兜底：未知路由 -> 任务大厅
+    // 404
     {
       path: '/:pathMatch(.*)*',
-      redirect: '/task',
+      component: () => import('@/views/NotFound.vue'),
       meta: { public: true },
     },
   ],
