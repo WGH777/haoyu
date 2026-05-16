@@ -82,12 +82,22 @@
       <div class="content" v-if="$route.path === '/' || $route.path === '/task'">
         <!-- Hero -->
         <div class="hero">
-          <h1>让每一份能力都被看见</h1>
-          <p>发布需求，响应服务，可信交易 —— 浩煜连接真实需求与真实能力</p>
-          <div class="hero-actions">
-            <el-button type="primary" size="large" round @click="openCreateDialog" v-if="isLogin">✨ 发布需求</el-button>
-            <el-button size="large" round @click="$router.push('/register')" v-else>免费注册</el-button>
-            <el-button size="large" round @click="$router.push('/trust')">了解保障</el-button>
+          <div class="hero-glass">
+            <span class="hero-badge">🔒 资金托管保障</span>
+            <h1>让每一份能力都被看见</h1>
+            <p>发布需求，响应服务，可信交易。资金托管、过程留痕、信用沉淀。</p>
+            <div class="hero-actions">
+              <el-button type="primary" size="large" round @click="openCreateDialog" v-if="isLogin" class="btn-glow">✨ 发布需求</el-button>
+              <el-button size="large" round @click="$router.push('/register')" v-else class="btn-glow">免费注册</el-button>
+              <el-button size="large" round class="btn-outline" @click="$router.push('/trust')">了解保障</el-button>
+            </div>
+            <div class="hero-stats">
+              <div class="hs-item"><strong>{{ tasks.length }}</strong><span>开放需求</span></div>
+              <div class="hs-div"></div>
+              <div class="hs-item"><strong>0%</strong><span>前30单免服务费</span></div>
+              <div class="hs-div"></div>
+              <div class="hs-item"><strong>💰</strong><span>托管保障</span></div>
+            </div>
           </div>
         </div>
 
@@ -394,11 +404,31 @@ body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Ro
 
 /* === Hero === */
 .hero {
-  text-align: center; padding: 48px 0 36px;
+  text-align: center; padding: 56px 0 40px;
+  background: radial-gradient(ellipse at 50% 0%, rgba(99,102,241,0.08) 0%, transparent 70%);
 }
-.hero h1 { font-size: 32px; font-weight: 800; color: #1e293b; margin: 0 0 8px; letter-spacing: -0.5px; }
-.hero p { font-size: 16px; color: #64748b; margin: 0 0 24px; }
+.hero-glass {
+  display: inline-block; max-width: 640px;
+  background: rgba(255,255,255,0.7); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.8); border-radius: 20px; padding: 40px 48px;
+  box-shadow: 0 8px 32px rgba(99,102,241,0.06);
+}
+.hero-badge {
+  display: inline-block; background: linear-gradient(135deg, #dbeafe, #ede9fe);
+  color: #6366f1; padding: 4px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-bottom: 16px;
+}
+.hero h1 { font-size: 30px; font-weight: 800; color: #1e293b; margin: 0 0 8px; letter-spacing: -0.5px; }
+.hero p { font-size: 15px; color: #64748b; margin: 0 0 24px; line-height: 1.6; }
 .hero-actions { display: flex; gap: 12px; justify-content: center; }
+.btn-glow { box-shadow: 0 4px 16px rgba(99,102,241,0.25); transition: all 0.3s; }
+.btn-glow:hover { box-shadow: 0 6px 24px rgba(99,102,241,0.35); transform: translateY(-1px); }
+.btn-outline { background: transparent; border: 1.5px solid #e2e8f0; color: #64748b; }
+.btn-outline:hover { border-color: #6366f1; color: #6366f1; }
+.hero-stats { display: flex; gap: 0; justify-content: center; margin-top: 24px; padding-top: 20px; border-top: 1px solid rgba(0,0,0,0.05); }
+.hs-item { padding: 0 20px; }
+.hs-item strong { display: block; font-size: 18px; color: #1e293b; }
+.hs-item span { display: block; font-size: 11px; color: #94a3b8; margin-top: 2px; }
+.hs-div { width: 1px; background: #e2e8f0; }
 
 /* === 筛选 === */
 .filter-row {
@@ -413,20 +443,30 @@ body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Ro
 .link { color: #6366f1; text-decoration: none; }
 
 /* === 卡片 === */
-.task-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+.task-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
 .task-card {
-  background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px;
-  cursor: pointer; transition: all 0.2s;
+  background: rgba(255,255,255,0.8); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.9); border-radius: 16px; padding: 24px;
+  cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative; overflow: hidden;
 }
-.task-card:hover { border-color: #6366f1; box-shadow: 0 4px 20px rgba(99,102,241,0.08); transform: translateY(-1px); }
-.card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-.card-category { font-size: 12px; color: #6366f1; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
-.welfare-badge { background: #fef3c7; color: #d97706; padding: 1px 6px; border-radius: 4px; margin-left: 6px; font-size: 11px; }
+.task-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, #6366f1, #8b5cf6, #a78bfa); opacity: 0; transition: opacity 0.3s;
+}
+.task-card:hover::before { opacity: 1; }
+.task-card:hover { border-color: #c7d2fe; box-shadow: 0 12px 40px rgba(99,102,241,0.1); transform: translateY(-2px); }
+.card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.card-category {
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px;
+  background: linear-gradient(135deg, #eef2ff, #ede9fe); color: #6366f1; padding: 3px 10px; border-radius: 6px;
+}
+.welfare-badge { background: #fef3c7; color: #d97706; padding: 2px 8px; border-radius: 4px; margin-left: 6px; font-size: 10px; font-weight: 600; }
 .card-mode { font-size: 12px; color: #94a3b8; }
-.card-title { font-size: 16px; font-weight: 600; color: #1e293b; margin: 0 0 8px; line-height: 1.4; }
-.card-desc { font-size: 13px; color: #94a3b8; margin: 0 0 14px; line-height: 1.5; }
+.card-title { font-size: 16px; font-weight: 700; color: #1e293b; margin: 0 0 8px; line-height: 1.4; }
+.card-desc { font-size: 13px; color: #94a3b8; margin: 0 0 16px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .card-bottom { display: flex; justify-content: space-between; align-items: center; }
-.card-price { font-size: 20px; font-weight: 700; color: #6366f1; }
+.card-price { font-size: 22px; font-weight: 800; background: linear-gradient(135deg, #6366f1, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 .card-meta { display: flex; gap: 10px; align-items: center; font-size: 12px; color: #94a3b8; }
 .card-status.PENDING { color: #f59e0b; }
 .card-status.ASSIGNED, .card-status.SUBMITTED { color: #6366f1; }
