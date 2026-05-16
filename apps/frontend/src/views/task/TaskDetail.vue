@@ -460,6 +460,12 @@
                       ❌ 驳回
                     </el-button>
                   </div>
+
+                  <div class="mt-8" style="text-align:center">
+                    <el-button type="warning" plain size="small" @click="showDisputeDialog = true">
+                      ⚡ 发起争议
+                    </el-button>
+                  </div>
                 </template>
 
                 <!-- 已完成 -->
@@ -518,6 +524,19 @@
         </el-button>
       </template>
     </el-dialog>
+
+    <!-- 争议弹窗 -->
+    <el-dialog v-model="showDisputeDialog" title="发起争议" width="460px">
+      <el-form>
+        <el-form-item label="争议原因" required>
+          <el-input v-model="disputeReason" type="textarea" :rows="3" placeholder="请说明争议原因" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showDisputeDialog = false">取消</el-button>
+        <el-button type="warning" :loading="disputeLoading" @click="handleDispute">发起争议</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -544,6 +563,8 @@ import {
   completeOrder,
   type OrderItem,
 } from '@/api/order'
+
+import { disputeApi } from '@/api/dispute'
 
 import { getProfile, type UserProfile } from '@/api/user'
 
@@ -614,6 +635,11 @@ const submitForm = reactive({
   content: '',
   image: '',
 })
+
+// 争议
+const showDisputeDialog = ref(false)
+const disputeReason = ref('')
+const disputeLoading = ref(false)
 
 // ========== 计算属性 ==========
 const isLogin = computed(() => !!currentUser.value)
@@ -1004,6 +1030,21 @@ const handleReject = async () => {
   } finally {
     opLoading.value = false
   }
+}
+
+// 发起争议
+const handleDispute = async () => {
+  if (!disputeReason.value.trim()) { ElMessage.warning('请填写争议原因'); return }
+  if (!publisherOrder.value) { ElMessage.error('未找到订单'); return }
+  disputeLoading.value = true
+  try {
+    await disputeApi.create({ orderId: publisherOrder.value.id, reason: disputeReason.value })
+    ElMessage.success('争议已发起，等待处理')
+    showDisputeDialog.value = false
+    disputeReason.value = ''
+    loadPage()
+  } catch (e: any) { ElMessage.error(e?.response?.data?.message || '发起失败') }
+  finally { disputeLoading.value = false }
 }
 
 // ========== 路由相关 ==========

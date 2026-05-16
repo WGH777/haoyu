@@ -1,52 +1,26 @@
 // apps/frontend/src/api/wallet.ts
 import http from '@/api/http'
 
-export type TransactionType =
-  | 'DEPOSIT'
-  | 'WITHDRAW'
-  | 'PUBLISH'
-  | 'INCOME'
-  | 'ADMIN_REFUND'
-  | 'ADMIN_PAYOUT'
-  | string
+export interface WalletInfo {
+  id: string
+  ownerType: string
+  currency: string
+  available: number   // 可用余额（分）
+  frozen: number      // 冻结余额（分）
+}
 
-export type TransactionStatus = 'SUCCESS' | 'PENDING' | 'FAILED' | string
-
-/**
- * 钱包流水记录
- * amount 单位：分（后端统一使用分，前端展示时除以 100）
- */
-export interface Transaction {
-  id: number
+export interface LedgerEntry {
+  id: string
   amount: number
-  type: TransactionType
-  status: TransactionStatus
+  direction: string   // IN | OUT
+  type: string
+  balanceAfter: number | null
+  remark: string | null
   createdAt: string
 }
 
-/**
- * 获取当前登录用户最近的流水记录
- */
-export const getWalletTransactions = () => {
-  return http.get<Transaction[]>('/wallet/transactions')
-}
+/** 获取钱包信息 */
+export const getWallet = () => http.get<WalletInfo>('/wallet')
 
-/**
- * 充值
- * 入参：金额（元）
- * 内部：转换为「分」发送给后端
- */
-export const deposit = (amountYuan: number) => {
-  const cents = Math.round(amountYuan * 100)
-  return http.post('/wallet/deposit', { amount: cents })
-}
-
-/**
- * 提现
- * 入参：金额（元）
- * 内部：转换为「分」发送给后端
- */
-export const withdraw = (amountYuan: number) => {
-  const cents = Math.round(amountYuan * 100)
-  return http.post('/wallet/withdraw', { amount: cents })
-}
+/** 获取账本流水 */
+export const getLedger = () => http.get<LedgerEntry[]>('/wallet/ledger')
