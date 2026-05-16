@@ -17,9 +17,10 @@ import { ElMessage } from 'element-plus'
 
 const isDev = import.meta.env.DEV
 
-export const API_BASE: string = isDev
-  ? 'http://localhost:3000/api'
-  : '/api'
+/** API 基地址：开发环境 localhost:3000，生产环境默认 /api（同域）
+ *  可通过 VITE_API_BASE 环境变量覆盖 */
+export const API_BASE: string =
+  import.meta.env.VITE_API_BASE || (isDev ? 'http://localhost:3000/api' : '/api')
 
 // 1) axios 实例
 const instance: AxiosInstance = axios.create({
