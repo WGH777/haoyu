@@ -1,0 +1,22 @@
+[Unit]
+Description=Haoyu NestJS Backend
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/haoyu/repo/apps/backend
+EnvironmentFile=/opt/haoyu/repo/apps/backend/.env
+ExecStart=/usr/bin/node dist/main
+Restart=always
+RestartSec=5
+
+# 安全：初期 root，后续建议创建 haoyu 用户
+User=root
+# User=haoyu
+
+# 日志
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

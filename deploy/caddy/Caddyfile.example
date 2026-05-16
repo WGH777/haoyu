@@ -1,0 +1,31 @@
+# 浩煜 Haoyu — Caddy 反代配置
+# 替代 Nginx，自动 HTTPS，配置更简洁
+#
+# 部署：复制到 /etc/caddy/Caddyfile
+#       systemctl reload caddy
+
+www.haoyulv.com {
+    root * /var/www/haoyu/frontend
+    encode gzip zstd
+
+    # API 反代 → 后端
+    handle_path /api/* {
+        reverse_proxy 127.0.0.1:3000
+    }
+
+    # 上传文件
+    handle_path /uploads/* {
+        root * /opt/haoyu/repo/apps/backend
+    }
+
+    # SPA 路由回退
+    handle {
+        try_files {path} /index.html
+        file_server
+    }
+}
+
+# 根域名重定向到 www
+haoyulv.com {
+    redir https://www.haoyulv.com{uri} permanent
+}
