@@ -18,6 +18,19 @@
           <el-icon><Checked /></el-icon>
           <span>我的任务</span>
         </el-menu-item>
+        <el-menu-item v-if="isLogin" index="/my-orders">
+          <el-icon><Document /></el-icon>
+          <span>我接的订单</span>
+        </el-menu-item>
+        <el-menu-item v-if="isLogin" index="/notifications">
+          <el-icon><Bell /></el-icon>
+          <span>通知中心</span>
+          <el-badge
+            v-if="unreadCount"
+            :value="unreadCount"
+            class="menu-badge"
+          />
+        </el-menu-item>
         <el-menu-item v-if="isLogin" index="/wallet">
           <el-icon><Wallet /></el-icon>
           <span>钱包中心</span>
@@ -349,8 +362,9 @@ import { useRoute, useRouter } from 'vue-router'
 import { getTaskList, createTask, uploadTaskImage, type Task } from '@/api/task'
 import { createOrder } from '@/api/order'
 import { getProfile, type UserProfile } from '@/api/user'
+import { notificationApi } from '@/api/notification'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Refresh, Search, CaretBottom, List, Checked, Wallet, User } from '@element-plus/icons-vue'
+import { Plus, Refresh, Search, CaretBottom, List, Checked, Wallet, User, Document, Bell } from '@element-plus/icons-vue'
 
 // ========== 工具函数 ==========
 const getFullUrl = (path: string) =>
@@ -373,6 +387,7 @@ const getNameColor = (str?: string) => {
 const route = useRoute()
 const router = useRouter()
 const currentUser = ref<UserProfile | null>(null)
+const unreadCount = ref(0)
 
 const isLogin = computed(() => !!currentUser.value)
 
@@ -412,6 +427,16 @@ const fetchProfile = async () => {
   } catch {
     // 忽略错误
   }
+}
+
+// 获取未读通知数
+const fetchUnreadCount = async () => {
+  const token = localStorage.getItem('token')
+  if (!token) return
+  try {
+    const res: any = await notificationApi.unreadCount()
+    unreadCount.value = res?.count ?? res ?? 0
+  } catch { /* 静默失败 */ }
 }
 
 const handleCommand = (cmd: string) => {
@@ -627,6 +652,7 @@ onMounted(() => {
   if (cached) currentUser.value = JSON.parse(cached)
 
   fetchProfile()
+  fetchUnreadCount()
 
   if (route.path === '/' || route.path === '/task') {
     fetchData()

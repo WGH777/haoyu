@@ -60,6 +60,18 @@ const router = createRouter({
           name: 'my-task',
           component: () => import('@/views/task/MyTasks.vue'),
         },
+        // 我接的订单（必须登录）
+        {
+          path: '/my-orders',
+          name: 'my-orders',
+          component: () => import('@/views/order/ServiceOrders.vue'),
+        },
+        // 通知中心（必须登录）
+        {
+          path: '/notifications',
+          name: 'notifications',
+          component: () => import('@/views/NotificationView.vue'),
+        },
         // 钱包中心（必须登录）
         {
           path: '/wallet',
