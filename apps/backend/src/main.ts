@@ -43,7 +43,7 @@ async function bootstrap() {
   SwaggerModule.setup('api/docs', app, document);
   
   // 5. 启动应用
-  await app.listen(3000);
+  await app.listen(3000, '127.0.0.1');
   console.log(`Application is running on: ${await app.getUrl()}`);
   console.log(`Swagger documentation is available at: ${await app.getUrl()}/api/docs`);
 }
