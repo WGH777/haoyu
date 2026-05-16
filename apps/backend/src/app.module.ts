@@ -13,6 +13,8 @@ import { TaskModule } from './task/task.module';
 import { OrderModule } from './order/order.module';
 import { WalletModule } from './wallet/wallet.module';
 import { AdminModule } from './admin/admin.module';
+import { NotificationModule } from './notification/notification.module';
+import { DisputeModule } from './dispute/dispute.module';
 
 @Module({
   imports: [
@@ -33,6 +35,8 @@ import { AdminModule } from './admin/admin.module';
     TaskModule,
     OrderModule,
     WalletModule,
+    NotificationModule,
+    DisputeModule,
 
     // =========================
     // 平台治理模块（RBAC / 仲裁 / 审计）
