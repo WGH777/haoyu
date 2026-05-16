@@ -6,9 +6,10 @@ describe('TaskController', () => {
   let controller: TaskController;
 
   beforeEach(async () => {
+    const mockTask = { findAll: jest.fn(), findOne: jest.fn(), create: jest.fn() };
     const module: TestingModule = await Test.createTestingModule({
       controllers: [TaskController],
-      providers: [TaskService],
+      providers: [{ provide: TaskService, useValue: mockTask }],
     }).compile();
 
     controller = module.get<TaskController>(TaskController);
