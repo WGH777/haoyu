@@ -573,6 +573,130 @@ export class OrderService {
   }
 
   /**
+   * 系统自动确认（72h超时）
+   * 复用结算逻辑，system 身份
+   */
+  async autoConfirm(orderId: number) {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      include: { task: true },
+    });
+    if (!order) throw new NotFoundException('订单不存在');
+    if (order.status !== 'SUBMITTED') {
+      throw new BadRequestException(`订单状态 ${order.status} 不允许自动确认`);
+    }
+
+    return this.withTxRetry(async (tx: Prisma.TransactionClient) => {
+      const updated = await tx.order.updateMany({
+        where: { id: orderId, status: 'SUBMITTED' },
+        data: { status: 'COMPLETED' },
+      });
+      if (updated.count !== 1) throw new ConflictException('订单已被处理');
+
+      await tx.task.updateMany({
+        where: { id: order.taskId, status: 'SUBMITTED' },
+        data: { status: 'COMPLETED' },
+      });
+
+      // 结算（复用标准逻辑）
+      const feeRate = await this.getServiceFeeRate(tx, order.workerId);
+      const taskPrice = order.task.price;
+      const serviceFee = Math.max(0, Math.round(taskPrice * feeRate));
+      const totalCost = taskPrice + serviceFee;
+      const netReward = taskPrice - serviceFee;
+
+      const publisherWallet = await tx.wallet.findUnique({
+        where: { userId_currency: { userId: order.task.publisherId, currency: 'CNY' } },
+      });
+      if (!publisherWallet || publisherWallet.frozen < totalCost) {
+        throw new BadRequestException('余额不足，自动确认失败');
+      }
+
+      await tx.wallet.update({
+        where: { id: publisherWallet.id },
+        data: { frozen: { decrement: totalCost } },
+      });
+
+      const workerWallet = await tx.wallet.findUnique({
+        where: { userId_currency: { userId: order.workerId, currency: 'CNY' } },
+      });
+      if (workerWallet) {
+        await tx.wallet.update({
+          where: { id: workerWallet.id },
+          data: { available: { increment: netReward } },
+        });
+      }
+
+      const platformWallet = await tx.wallet.findUnique({
+        where: { code: 'SYSTEM_PLATFORM_FEE' },
+      });
+      if (platformWallet && serviceFee > 0) {
+        await tx.wallet.update({
+          where: { id: platformWallet.id },
+          data: { available: { increment: serviceFee } },
+        });
+      }
+
+      return tx.order.findUnique({ where: { id: orderId } });
+    });
+  }
+
+  /**
+   * 系统自动取消（服务者48h超时）
+   */
+  async autoCancel(orderId: number, reason: string) {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      include: { task: true },
+    });
+    if (!order) throw new NotFoundException('订单不存在');
+    if (order.status !== 'ASSIGNED') {
+      throw new BadRequestException(`订单状态 ${order.status} 不允许自动取消`);
+    }
+
+    return this.withTxRetry(async (tx: Prisma.TransactionClient) => {
+      const updated = await tx.order.updateMany({
+        where: { id: orderId, status: 'ASSIGNED' },
+        data: { status: 'CANCELLED' },
+      });
+      if (updated.count !== 1) throw new ConflictException('订单已被处理');
+
+      await tx.task.updateMany({
+        where: { id: order.taskId, status: 'ASSIGNED' },
+        data: { status: 'PENDING' },
+      });
+
+      // 退款
+      const totalCost = order.task.price + (order.task.serviceFee ?? 0);
+      const publisherWallet = await tx.wallet.findUnique({
+        where: { userId_currency: { userId: order.task.publisherId, currency: 'CNY' } },
+      });
+      if (publisherWallet && publisherWallet.frozen >= totalCost) {
+        await tx.wallet.update({
+          where: { id: publisherWallet.id },
+          data: {
+            frozen: { decrement: totalCost },
+            available: { increment: totalCost },
+          },
+        });
+        await tx.ledgerEntry.create({
+          data: {
+            walletId: publisherWallet.id,
+            userId: publisherWallet.userId,
+            orderId,
+            amount: totalCost,
+            direction: 'IN',
+            type: 'REFUND',
+            remark: reason,
+          },
+        });
+      }
+
+      return tx.order.findUnique({ where: { id: orderId } });
+    });
+  }
+
+  /**
    * 发布者 / 执行者 查询任务订单
    */
   async findOrderByTaskId(taskId: number, userId: number) {
