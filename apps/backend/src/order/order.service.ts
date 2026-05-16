@@ -11,6 +11,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import { SubmitResultDto } from './dto/submit-result.dto';
 import { CompleteOrderDto } from './dto/complete-order.dto';
+import { NotificationService } from '../notification/notification.service';
 
 type TxOptions = {
   isolationLevel?: Prisma.TransactionIsolationLevel;
@@ -22,7 +23,10 @@ type RoleStr = 'USER' | 'ADMIN' | 'SUPER_ADMIN' | string;
 
 @Injectable()
 export class OrderService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notification: NotificationService,
+  ) {}
 
   /**
    * 事务参数
@@ -141,7 +145,12 @@ export class OrderService {
    * - 事务 + updateMany 条件更新，避免并发抢单导致重复抢占
    */
   async create(userId: number, taskId: number) {
-    return this.withTxRetry(async (tx: Prisma.TransactionClient) => {
+    const task = await this.prisma.task.findUnique({
+      where: { id: taskId },
+      select: { id: true, title: true, publisherId: true },
+    });
+
+    const order = await this.withTxRetry(async (tx: Prisma.TransactionClient) => {
       const task = await tx.task.findUnique({ where: { id: taskId } });
       if (!task) throw new NotFoundException('任务不存在');
 
@@ -152,7 +161,6 @@ export class OrderService {
         throw new BadRequestException('不能领取自己发布的任务');
       }
 
-      // 防御：同一用户对同一任务的重复领取（不改变原逻辑，只是更明确）
       const existingOrder = await tx.order.findFirst({
         where: {
           taskId,
@@ -174,20 +182,31 @@ export class OrderService {
       }
 
       return tx.order.create({
-        data: {
-          taskId,
-          workerId: userId,
-          status: 'ASSIGNED',
-        },
+        data: { taskId, workerId: userId, status: 'ASSIGNED' },
       });
     });
+
+    // 通知发布者
+    if (task) {
+      this.notification.create({
+        userId: task.publisherId,
+        title: '需求被响应',
+        content: `你的需求「${task.title}」已被接单，订单 #${order.id}`,
+        type: 'REQUEST_RESPONDED',
+      }).catch(() => {});
+    }
+
+    return order;
   }
 
   /**
    * 提交任务成果（仅执行者）
    */
   async submitResult(orderId: number, workerId: number, dto: SubmitResultDto) {
-    const order = await this.prisma.order.findUnique({ where: { id: orderId } });
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      include: { task: { select: { publisherId: true, title: true } } },
+    });
     if (!order) throw new NotFoundException('订单不存在');
 
     if (order.workerId !== workerId) {
@@ -234,6 +253,17 @@ export class OrderService {
 
       return tx.order.findUnique({ where: { id: orderId } });
     });
+
+    // 通知发布者（order 已验证非空）
+    const task = order!.task;
+    if (task?.publisherId) {
+      this.notification.create({
+        userId: task.publisherId,
+        title: '服务者已提交成果',
+        content: `订单 #${orderId} 的服务者已提交成果，请验收`,
+        type: 'SERVICE_SUBMITTED',
+      }).catch(() => {});
+    }
   }
 
   /**
@@ -270,7 +300,7 @@ export class OrderService {
     }
 
     if (dto.isAccepted) {
-      return this.withTxRetry(async (tx: Prisma.TransactionClient) => {
+      const result = await this.withTxRetry(async (tx: Prisma.TransactionClient) => {
         // 1) 抢占处理权：SUBMITTED -> COMPLETED
         const updated = await tx.order.updateMany({
           where: { id: orderId, status: 'SUBMITTED' },
@@ -401,10 +431,20 @@ export class OrderService {
 
         return tx.order.findUnique({ where: { id: orderId } });
       });
+
+      // 通知服务者：验收通过
+      this.notification.create({
+        userId: order.workerId,
+        title: '验收通过',
+        content: `订单 #${orderId} 已验收通过，收入已到账`,
+        type: 'SERVICE_COMPLETED',
+      }).catch(() => {});
+
+      return result;
     }
 
     // 驳回：SUBMITTED -> ASSIGNED（允许再次 submit）
-    return this.withTxRetry(async (tx: Prisma.TransactionClient) => {
+    const rejectedResult = await this.withTxRetry(async (tx: Prisma.TransactionClient) => {
       const updated = await tx.order.updateMany({
         where: { id: orderId, status: 'SUBMITTED' },
         data: { status: 'ASSIGNED' },
@@ -425,6 +465,16 @@ export class OrderService {
 
       return tx.order.findUnique({ where: { id: orderId } });
     });
+
+    // 通知服务者：验收驳回
+    this.notification.create({
+      userId: order.workerId,
+      title: '验收驳回',
+      content: `订单 #${orderId} 被驳回，请修改后重新提交`,
+      type: 'SERVICE_SUBMITTED',
+    }).catch(() => {});
+
+    return rejectedResult;
   }
 
   async cancelOrder(orderId: number, userId: number, role?: RoleStr) {
@@ -445,7 +495,7 @@ export class OrderService {
       throw new ForbiddenException('仅发布者或管理员可取消订单');
     }
 
-    return this.withTxRetry(async (tx: Prisma.TransactionClient) => {
+    const result = await this.withTxRetry(async (tx: Prisma.TransactionClient) => {
       const updated = await tx.order.updateMany({
         where: { id: orderId, status: { in: ['ASSIGNED', 'SUBMITTED'] as any } },
         data: { status: 'CANCELLED' },
@@ -507,6 +557,19 @@ export class OrderService {
 
       return tx.order.findUnique({ where: { id: orderId } });
     });
+
+    // 通知双方
+    const notifyTitle = '订单已取消';
+    const notifyContent = `订单 #${orderId} 已被取消，资金已退回发布者`;
+    this.notification.createBatch(
+      [
+        { userId: order.task.publisherId, title: notifyTitle, content: notifyContent },
+        { userId: order.workerId, title: notifyTitle, content: notifyContent },
+      ],
+      'ORDER_CANCELLED',
+    ).catch(() => {});
+
+    return result;
   }
 
   /**
