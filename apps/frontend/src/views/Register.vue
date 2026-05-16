@@ -52,9 +52,15 @@ const handleRegister = async () => {
   if (!valid) return
   loading.value = true
   try {
-    await register(form.nickname, form.email, form.password)
-    ElMessage.success('注册成功，请登录')
-    router.push('/login')
+    const res: any = await register(form.nickname, form.email, form.password)
+    // 自动登录
+    if (res.accessToken || res.access_token) {
+      localStorage.setItem('token', res.accessToken || res.access_token)
+      if (res.refreshToken) localStorage.setItem('refreshToken', res.refreshToken)
+      if (res.user) localStorage.setItem('currentUser', JSON.stringify(res.user))
+    }
+    ElMessage.success('注册成功')
+    router.push('/task')
   } catch (e: any) {
     ElMessage.error(e?.response?.data?.message || '注册失败')
   } finally { loading.value = false }
