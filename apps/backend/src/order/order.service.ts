@@ -199,6 +199,33 @@ export class OrderService {
     return order;
   }
 
+  /** 服务者开始服务（ASSIGNED → IN_PROGRESS） */
+  async startService(orderId: number, workerId: number) {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      include: { task: { select: { publisherId: true, title: true } } },
+    });
+    if (!order) throw new NotFoundException('订单不存在');
+    if (order.workerId !== workerId) throw new ForbiddenException('仅执行者可操作');
+    if (order.status !== 'ASSIGNED') throw new BadRequestException(`当前状态 ${order.status} 不允许开始服务`);
+
+    const result = await this.withTxRetry(async (tx: Prisma.TransactionClient) => {
+      await tx.order.update({ where: { id: orderId }, data: { status: 'IN_PROGRESS' } });
+      await tx.task.update({ where: { id: order.taskId }, data: { status: 'IN_PROGRESS' } });
+      return tx.order.findUnique({ where: { id: orderId } });
+    });
+
+    if (order?.task?.publisherId) {
+      this.notification.create({
+        userId: order.task.publisherId,
+        title: '服务已开始',
+        content: `订单 #${orderId} 的服务者已开始工作`,
+        type: 'SERVICE_STARTED',
+      }).catch(() => {});
+    }
+    return result;
+  }
+
   /**
    * 提交任务成果（仅执行者）
    */

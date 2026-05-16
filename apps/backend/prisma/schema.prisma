@@ -149,6 +149,7 @@ model Order {
 
   ledgerEntries     LedgerEntry[]
   disputes          Dispute[]
+  comments          OrderComment[]
 }
 
 model Transaction {
@@ -216,4 +217,16 @@ model AdminActionLog {
   @@index([adminId])
   @@index([targetType, targetId])
   @@index([createdAt])
+}
+
+// 订单留言（发布者↔服务者沟通）
+model OrderComment {
+  id        Int      @id @default(autoincrement())
+  orderId   Int
+  order     Order    @relation(fields: [orderId], references: [id])
+  userId    Int
+  content   String
+  createdAt DateTime @default(now())
+
+  @@index([orderId, createdAt])
 }

@@ -537,6 +537,22 @@
         <el-button type="warning" :loading="disputeLoading" @click="handleDispute">发起争议</el-button>
       </template>
     </el-dialog>
+
+    <!-- 留言区（订单参与方可见） -->
+    <div v-if="myOrder || publisherOrder" class="comment-section">
+      <h4>💬 沟通记录</h4>
+      <div v-if="comments.length" class="comment-list">
+        <div v-for="c in comments" :key="c.id" class="comment-item" :class="{ mine: c.userId === currentUser?.id }">
+          <span class="comment-author">{{ c.userId === currentUser?.id ? '我' : '对方' }}</span>
+          <span class="comment-text">{{ c.content }}</span>
+          <span class="comment-time">{{ new Date(c.createdAt).toLocaleTimeString('zh-CN') }}</span>
+        </div>
+      </div>
+      <div class="comment-input">
+        <el-input v-model="newComment" placeholder="输入留言..." size="small" @keyup.enter="sendComment" />
+        <el-button size="small" type="primary" @click="sendComment" :loading="sendingComment">发送</el-button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -565,6 +581,7 @@ import {
 } from '@/api/order'
 
 import { disputeApi } from '@/api/dispute'
+import { commentApi } from '@/api/comment'
 
 import { getProfile, type UserProfile } from '@/api/user'
 
@@ -640,6 +657,11 @@ const submitForm = reactive({
 const showDisputeDialog = ref(false)
 const disputeReason = ref('')
 const disputeLoading = ref(false)
+
+// 留言
+const comments = ref<any[]>([])
+const newComment = ref('')
+const sendingComment = ref(false)
 
 // ========== 计算属性 ==========
 const isLogin = computed(() => !!currentUser.value)
@@ -1045,6 +1067,24 @@ const handleDispute = async () => {
     loadPage()
   } catch (e: any) { ElMessage.error(e?.response?.data?.message || '发起失败') }
   finally { disputeLoading.value = false }
+}
+
+// 留言
+const loadComments = async () => {
+  const oid = myOrder.value?.id || publisherOrder.value?.id
+  if (!oid) return
+  try { const res: any = await commentApi.list(oid); comments.value = Array.isArray(res) ? res : res?.data || [] } catch {}
+}
+const sendComment = async () => {
+  const oid = myOrder.value?.id || publisherOrder.value?.id
+  if (!oid || !newComment.value.trim()) return
+  sendingComment.value = true
+  try {
+    await commentApi.send(oid, newComment.value)
+    newComment.value = ''
+    loadComments()
+  } catch (e: any) { ElMessage.error(e?.response?.data?.message || '发送失败') }
+  finally { sendingComment.value = false }
 }
 
 // ========== 路由相关 ==========

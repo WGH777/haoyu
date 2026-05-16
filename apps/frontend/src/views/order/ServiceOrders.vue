@@ -24,7 +24,16 @@
             </div>
           </div>
           <div class="order-actions" v-if="order.status === 'ASSIGNED'">
-            <el-button type="primary" size="small" @click="showSubmit(order)">
+            <el-button type="primary" size="small" @click="doStart(order)">
+              开始服务
+            </el-button>
+            <el-button type="success" size="small" @click="showSubmit(order)">
+              提交成果
+            </el-button>
+          </div>
+          <div class="order-actions" v-else-if="order.status === 'IN_PROGRESS'">
+            <el-tag type="warning" size="small">服务中</el-tag>
+            <el-button type="success" size="small" @click="showSubmit(order)">
               提交成果
             </el-button>
           </div>
@@ -60,7 +69,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { getMyOrders, submitTaskResult } from '@/api/order'
+import { getMyOrders, submitTaskResult, startService } from '@/api/order'
 import { ElMessage } from 'element-plus'
 
 const orders = ref<any[]>([])
@@ -94,6 +103,14 @@ const showSubmit = (order: any) => {
   selectedOrder.value = order
   submitForm.value = { content: '', image: '' }
   submitVisible.value = true
+}
+
+const doStart = async (order: any) => {
+  try {
+    await startService(order.id)
+    ElMessage.success('已开始服务')
+    loadOrders()
+  } catch (e: any) { ElMessage.error(e?.response?.data?.message || '操作失败') }
 }
 
 const doSubmit = async () => {
