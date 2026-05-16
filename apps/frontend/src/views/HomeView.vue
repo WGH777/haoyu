@@ -39,6 +39,14 @@
           <el-icon><User /></el-icon>
           <span>用户管理</span>
         </el-menu-item>
+        <el-menu-item v-if="isLogin && canSeeUserManage" index="/admin">
+          <el-icon><Setting /></el-icon>
+          <span>管理后台</span>
+        </el-menu-item>
+        <el-menu-item index="/trust">
+          <el-icon><Lock /></el-icon>
+          <span>信任中心</span>
+        </el-menu-item>
       </el-menu>
     </el-aside>
 
@@ -364,7 +372,7 @@ import { createOrder } from '@/api/order'
 import { getProfile, type UserProfile } from '@/api/user'
 import { notificationApi } from '@/api/notification'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Refresh, Search, CaretBottom, List, Checked, Wallet, User, Document, Bell } from '@element-plus/icons-vue'
+import { Plus, Refresh, Search, CaretBottom, List, Checked, Wallet, User, Document, Bell, Setting, Lock } from '@element-plus/icons-vue'
 
 // ========== 工具函数 ==========
 const getFullUrl = (path: string) =>

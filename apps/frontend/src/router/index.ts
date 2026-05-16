@@ -72,6 +72,20 @@ const router = createRouter({
           name: 'notifications',
           component: () => import('@/views/NotificationView.vue'),
         },
+        // 信任中心（公开）
+        {
+          path: '/trust',
+          name: 'trust',
+          component: () => import('@/views/TrustCenter.vue'),
+          meta: { public: true },
+        },
+        // 管理后台（仅 ADMIN / SUPER_ADMIN）
+        {
+          path: '/admin',
+          name: 'admin',
+          component: () => import('@/views/admin/AdminDashboard.vue'),
+          meta: { roles: ['ADMIN', 'SUPER_ADMIN'] },
+        },
         // 钱包中心（必须登录）
         {
           path: '/wallet',
