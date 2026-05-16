@@ -40,4 +40,12 @@ export class WalletController {
     const wallet = await this.walletService.getWallet(req.user.id);
     return this.walletService.deposit(wallet.id, body.amount);
   }
+
+  /** 提现（模拟） */
+  @Post('withdraw')
+  @ApiOperation({ summary: '提现（模拟）- amount 单位：分' })
+  async withdraw(@Req() req: any, @Body() body: { amount: number }) {
+    const wallet = await this.walletService.getWallet(req.user.id);
+    return this.walletService.withdraw(wallet.id, body.amount);
+  }
 }

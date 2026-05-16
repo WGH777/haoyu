@@ -260,6 +260,42 @@ export class WalletService {
     return this.unfreeze(walletId, amount, orderId, remark || '退款');
   }
 
+  /** 提现：从 available 扣减 */
+  async withdraw(
+    walletId: string,
+    amount: number,
+    remark?: string,
+  ) {
+    if (amount <= 0) throw new BadRequestException('金额必须大于 0');
+    // 提现最低 10 元（1000 分）
+    if (amount < 1000) throw new BadRequestException('最低提现金额为 ¥10');
+
+    return this.prisma.$tx(async (tx: any) => {
+      const updated = await tx.wallet.updateMany({
+        where: { id: walletId, available: { gte: amount } },
+        data: { available: { decrement: amount } },
+      });
+      if (updated.count !== 1) throw new BadRequestException('可用余额不足');
+
+      const wallet = await tx.wallet.findUnique({ where: { id: walletId } });
+
+      await tx.ledgerEntry.create({
+        data: {
+          walletId,
+          userId: wallet!.userId,
+          amount,
+          direction: 'OUT',
+          type: 'WITHDRAW',
+          balanceAfter: wallet!.available,
+          frozenAfter: wallet!.frozen,
+          remark: remark || '提现',
+        },
+      });
+
+      return wallet;
+    });
+  }
+
   // ══════════════════════════════════════════════
   // 查询
   // ══════════════════════════════════════════════
