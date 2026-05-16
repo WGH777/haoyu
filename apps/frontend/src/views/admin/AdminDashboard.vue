@@ -2,6 +2,30 @@
   <div class="admin-page">
     <h2>管理后台</h2>
 
+    <!-- 统计面板 -->
+    <div class="stats-row" v-if="orders.length">
+      <div class="stat-card">
+        <span class="stat-num">{{ orders.length }}</span>
+        <span class="stat-label">总订单</span>
+      </div>
+      <div class="stat-card green">
+        <span class="stat-num">{{ orders.filter(o=>o.status==='COMPLETED').length }}</span>
+        <span class="stat-label">已完成</span>
+      </div>
+      <div class="stat-card orange">
+        <span class="stat-num">{{ orders.filter(o=>['ASSIGNED','SUBMITTED'].includes(o.status)).length }}</span>
+        <span class="stat-label">进行中</span>
+      </div>
+      <div class="stat-card red">
+        <span class="stat-num">{{ disputes.filter(d=>['OPEN','UNDER_REVIEW'].includes(d.status)).length }}</span>
+        <span class="stat-label">待处理争议</span>
+      </div>
+      <div class="stat-card purple">
+        <span class="stat-num">¥{{ totalVolume }}</span>
+        <span class="stat-label">交易总额</span>
+      </div>
+    </div>
+
     <el-tabs v-model="activeTab">
       <el-tab-pane label="订单管理" name="orders">
         <el-table :data="orders" stripe>
@@ -76,7 +100,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { getAdminOrders, forceCompleteOrder } from '@/api/admin'
 import { disputeApi } from '@/api/dispute'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -84,6 +108,13 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 const activeTab = ref('orders')
 const orders = ref<any[]>([])
 const disputes = ref<any[]>([])
+
+const totalVolume = computed(() => {
+  const total = orders.value
+    .filter(o => o.status === 'COMPLETED')
+    .reduce((sum, o) => sum + (o.task?.price || 0), 0)
+  return (total / 100).toFixed(2)
+})
 const fcVisible = ref(false)
 const fcReason = ref('')
 const selectedOrder = ref<any>(null)
@@ -155,4 +186,16 @@ onMounted(() => { loadOrders(); loadDisputes() })
 <style scoped>
 .admin-page { max-width: 1100px; margin: 0 auto; padding: 20px; }
 .admin-page h2 { margin-bottom: 16px; }
+
+.stats-row { display: flex; gap: 16px; margin-bottom: 24px; }
+.stat-card {
+  flex: 1; padding: 16px; border-radius: 10px; background: #fff; border: 1px solid #e2e8f0;
+  text-align: center;
+}
+.stat-card.green { border-color: #bbf7d0; background: #f0fdf4; }
+.stat-card.orange { border-color: #fde68a; background: #fffbeb; }
+.stat-card.red { border-color: #fecaca; background: #fef2f2; }
+.stat-card.purple { border-color: #ddd6fe; background: #f5f3ff; }
+.stat-num { display: block; font-size: 24px; font-weight: 700; color: #1e293b; }
+.stat-label { display: block; font-size: 12px; color: #94a3b8; margin-top: 4px; }
 </style>
