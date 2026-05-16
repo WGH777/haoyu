@@ -36,6 +36,13 @@ export interface OrderItem {
 // =================== 接口函数 ===================
 
 /**
+ * 服务者开始服务
+ */
+export const startService = (orderId: number) => {
+  return http.patch(`/order/${orderId}/start`)
+}
+
+/**
  * 抢单 / 创建订单
  */
 export const createOrder = (taskId: number) => {

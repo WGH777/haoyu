@@ -41,6 +41,17 @@ export class OrderController {
   }
 
   /**
+   * 服务者开始服务
+   */
+  @Patch(':id/start')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '服务者开始服务' })
+  startService(@Param('id', ParseIntPipe) orderId: number, @Req() req: any) {
+    return this.orderService.startService(orderId, req.user.id);
+  }
+
+  /**
    * 提交任务成果（登录即可；服务端会校验是否为执行者）
    */
   @Patch(':id/submit')
