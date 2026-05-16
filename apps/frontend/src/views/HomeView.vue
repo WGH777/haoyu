@@ -201,6 +201,18 @@
             <el-option label="其他" value="OTHER" />
           </el-select>
         </el-form-item>
+        <el-form-item label="配图（可选）">
+          <el-upload
+            :http-request="handleUpload"
+            :show-file-list="false"
+            accept="image/*"
+          >
+            <el-button type="primary" plain :loading="uploadingImg">
+              {{ createForm.image ? '已选图片' : '上传图片' }}
+            </el-button>
+          </el-upload>
+          <el-image v-if="createForm.image" :src="getFullUrl(createForm.image)" style="width:100px;height:100px;border-radius:8px;margin-top:8px" fit="cover" />
+        </el-form-item>
         <el-form-item label="服务方式">
           <el-radio-group v-model="createForm.serviceMode">
             <el-radio label="ONLINE">线上</el-radio>
@@ -222,7 +234,7 @@ import { ref, reactive, onMounted, computed, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Plus, Refresh, Search, CaretBottom, List, Checked, Wallet, User, Document, Bell, Setting, Lock } from '@element-plus/icons-vue'
-import { getTaskList, createTask, type Task } from '@/api/task'
+import { getTaskList, createTask, uploadTaskImage, type Task } from '@/api/task'
 import { createOrder } from '@/api/order'
 import { getProfile, type UserProfile } from '@/api/user'
 import { notificationApi } from '@/api/notification'
@@ -242,6 +254,7 @@ const searchKeyword = ref('')
 const priceFilter = ref('all')
 const showCreateDialog = ref(false)
 const submitting = ref(false)
+const uploadingImg = ref(false)
 
 const createForm = reactive({
   title: '',
@@ -249,6 +262,7 @@ const createForm = reactive({
   price: 100,
   category: 'SKILL_SERVICE',
   serviceMode: 'ONLINE',
+  image: '',
 })
 
 const canSeeUserManage = computed(() => {
@@ -307,6 +321,7 @@ const openCreateDialog = () => {
 
 const submitTask = async () => {
   if (!createForm.title.trim()) { ElMessage.warning('请输入标题'); return }
+  if (createForm.price <= 0) { ElMessage.warning('赏金必须大于0'); return }
   submitting.value = true
   try {
     await createTask({
@@ -315,13 +330,27 @@ const submitTask = async () => {
       price: Math.round(createForm.price * 100),
       category: createForm.category,
       serviceMode: createForm.serviceMode,
+      image: createForm.image || undefined,
     } as any)
     ElMessage.success('发布成功')
     showCreateDialog.value = false
-    createForm.title = ''; createForm.desc = ''; createForm.price = 100
+    createForm.title = ''; createForm.desc = ''; createForm.price = 100; createForm.image = ''
     fetchData()
   } catch (e: any) { ElMessage.error(e?.response?.data?.message || '发布失败') }
   finally { submitting.value = false }
+}
+
+// 上传图片
+const handleUpload = async (options: any) => {
+  uploadingImg.value = true
+  try {
+    const formData = new FormData()
+    formData.append('file', options.file)
+    const res: any = await uploadTaskImage(formData)
+    createForm.image = res?.url || res?.data?.url || ''
+    ElMessage.success('图片上传成功')
+  } catch { ElMessage.error('上传失败') }
+  finally { uploadingImg.value = false }
 }
 
 const fetchProfile = async () => {
