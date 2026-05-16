@@ -2,16 +2,20 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import helmet from 'helmet';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // 1. 设置全局路由前缀
+  // 安全响应头
+  app.use(helmet({ contentSecurityPolicy: false }));
+
+  // 全局路由前缀
   app.setGlobalPrefix('api');
   
-  // 2. 开启跨域 CORS
+  // CORS
   app.enableCors({
-    origin: 'http://localhost:5173', 
+    origin: ['http://localhost:5173', 'http://www.haoyulv.com', 'https://www.haoyulv.com'],
     credentials: true,
   });
 

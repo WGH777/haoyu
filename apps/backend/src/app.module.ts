@@ -1,6 +1,8 @@
 // apps/backend/src/app.module.ts
 import { Module } from '@nestjs/common';
 import { ServeStaticModule } from '@nestjs/serve-static';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 import { join } from 'path';
 
 import { AppController } from './app.controller';
@@ -19,6 +21,8 @@ import { SchedulerModule } from './scheduler/scheduler.module';
 
 @Module({
   imports: [
+    // 限流：全局 60秒内最多100次请求
+    ThrottlerModule.forRoot([{ ttl: 60000, limit: 100 }]),
     // =========================
     // 基础设施层
     // =========================
@@ -46,6 +50,8 @@ import { SchedulerModule } from './scheduler/scheduler.module';
     AdminModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService,
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+  ],
 })
 export class AppModule {}
