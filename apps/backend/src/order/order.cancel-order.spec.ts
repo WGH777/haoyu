@@ -8,12 +8,14 @@ import { OrderService } from './order.service';
 describe('OrderService cancelOrder', () => {
   let service: OrderService;
   let prisma: any;
+  let notification: any;
 
   beforeEach(() => {
     prisma = {
       order: {
         findUnique: jest.fn(),
         updateMany: jest.fn(),
+        findFirst: jest.fn(),
       },
       task: {
         updateMany: jest.fn(),
@@ -28,7 +30,12 @@ describe('OrderService cancelOrder', () => {
       $transaction: jest.fn(async (cb: any) => cb(prisma)),
     };
 
-    service = new OrderService(prisma);
+    notification = {
+      create: jest.fn().mockResolvedValue(undefined),
+      createBatch: jest.fn().mockResolvedValue(undefined),
+    };
+
+    service = new OrderService(prisma, notification);
   });
 
   it('normal cancel: frozen -> available and order -> CANCELLED', async () => {

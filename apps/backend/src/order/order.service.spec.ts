@@ -15,7 +15,7 @@ describe('OrderService fee rate', () => {
         count: jest.fn().mockResolvedValue(completed),
       },
     };
-    const service = new OrderService(prisma);
+    const service = new OrderService(prisma, null as any);
 
     const rate = await (service as any).getServiceFeeRate(prisma, 99);
     expect(rate).toBe(expected);

@@ -1,12 +1,24 @@
-import { Controller, Get } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { HealthController } from './health.controller';
 
-@Controller('health')
-export class HealthController {
-  @Get()
-  check() {
-    return {
-      status: 'ok',
-      timestamp: Date.now(),
-    };
-  }
-}
+describe('HealthController', () => {
+  let controller: HealthController;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      controllers: [HealthController],
+    }).compile();
+
+    controller = module.get<HealthController>(HealthController);
+  });
+
+  it('should be defined', () => {
+    expect(controller).toBeDefined();
+  });
+
+  it('should return ok', () => {
+    const result = controller.check();
+    expect(result.status).toBe('ok');
+    expect(result.timestamp).toBeDefined();
+  });
+});
