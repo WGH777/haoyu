@@ -114,36 +114,22 @@ export class UserController {
   }
 
   /**
-   * ★ （管理员）修改用户余额 (God Mode)
-   * 这里的 amount 单位是分，例如 100 代表 1元
+   * Phase 2: 余额操作已迁移至 WalletService
+   * 此接口暂时禁用，Phase 3 通过 WalletService 重新实现
    */
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'SUPER_ADMIN')
   @Patch(':id/balance')
   @ApiBearerAuth()
   @ApiParam({ name: 'id', type: Number, description: '用户 ID' })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        amount: {
-          type: 'number',
-          example: 9999999,
-          description: '新的余额（单位：分）。例：9999999 代表 99999.99元',
-        },
-      },
-      required: ['amount'],
-    },
-  })
-  @ApiOperation({ summary: '（管理员）直接修改用户余额' })
+  @ApiOperation({ summary: '（已废弃）直接修改用户余额 — 请使用 Wallet API' })
   updateBalance(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() body: { amount: number },
+    @Param('id', ParseIntPipe) _id: number,
+    @Body() _body: { amount: number },
   ) {
-    if (typeof body.amount !== 'number') {
-      throw new BadRequestException('amount 必须是数字');
-    }
-    return this.userService.updateBalance(id, body.amount);
+    throw new BadRequestException(
+      '余额操作已迁移至 WalletService。请使用 POST /wallet/deposit 充值。',
+    );
   }
 
   /**

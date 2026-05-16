@@ -66,34 +66,34 @@ export class TaskService {
   async create(userId: number, createTaskDto: CreateTaskDto) {
     const { title, description, price, image } = createTaskDto;
 
-    const SERVICE_FEE_RATE = 0.1;
+    // TODO Phase 3: 阶梯费率 (0%/2%/5%/10%)
+    const SERVICE_FEE_RATE = 0; // P0 阶段暂免服务费
     const serviceFee = Math.max(0, Math.round(price * SERVICE_FEE_RATE));
     const totalCost = price + serviceFee;
 
     return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      const user = await tx.user.findUnique({ where: { id: userId } });
-
-      if (!user || user.balance < totalCost) {
+      // Phase 2: 通过 Wallet 冻结资金
+      const wallet = await tx.wallet.findUnique({
+        where: { userId_currency: { userId, currency: 'CNY' } },
+      });
+      if (!wallet) throw new BadRequestException('钱包不存在，请先创建钱包');
+      if (wallet.available < totalCost) {
         throw new BadRequestException(
-          `余额不足，当前: ${user?.balance || 0}，需要: ${totalCost}`,
+          `余额不足，当前: ${wallet.available} 分，需要: ${totalCost} 分`,
         );
       }
 
-      await tx.user.update({
-        where: { id: userId },
-        data: { balance: { decrement: totalCost } },
-      });
-
-      await tx.transaction.create({
+      // 冻结发布者资金
+      await tx.wallet.update({
+        where: { id: wallet.id },
         data: {
-          amount: -totalCost,
-          type: 'PUBLISH',
-          status: 'SUCCESS',
-          userId,
+          available: { decrement: totalCost },
+          frozen: { increment: totalCost },
         },
       });
 
-      return tx.task.create({
+      // 创建任务
+      const task = await tx.task.create({
         data: {
           title,
           description: description ?? '',
@@ -104,6 +104,22 @@ export class TaskService {
           status: 'PENDING',
         },
       });
+
+      // 写 LedgerEntry
+      await tx.ledgerEntry.create({
+        data: {
+          walletId: wallet.id,
+          userId,
+          amount: totalCost,
+          direction: 'OUT',
+          type: 'FREEZE',
+          balanceAfter: wallet.available - totalCost,
+          frozenAfter: wallet.frozen + totalCost,
+          remark: `发布任务 #${task.id}: ${title}`,
+        },
+      });
+
+      return task;
     });
   }
 
@@ -112,11 +128,32 @@ export class TaskService {
       where: {
         status: { in: ['PENDING', 'ASSIGNED', 'SUBMITTED', 'ONGOING'] },
       },
-      include: {
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        price: true,
+        serviceFee: true,
+        category: true,
+        serviceMode: true,
+        serviceLocation: true,
+        isPublicWelfare: true,
+        isFamilyCare: true,
+        isProxyRequest: true,
+        needVerification: true,
+        riskLevel: true,
+        location: true,
+        views: true,
+        status: true,
+        image: true,
+        createdAt: true,
+        updatedAt: true,
+        publisherId: true,
         publisher: {
-          select: { nickname: true, email: true, id: true, avatar: true },
+          select: { id: true, nickname: true, avatar: true },
         },
         subTasks: true,
+        _count: { select: { orders: true } },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -125,15 +162,29 @@ export class TaskService {
   async findOne(id: number) {
     const task = await this.prisma.task.findUnique({
       where: { id },
-      include: {
+      select: {
+        id: true, title: true, description: true, price: true,
+        serviceFee: true, category: true, serviceMode: true,
+        serviceLocation: true, isPublicWelfare: true, isFamilyCare: true,
+        isProxyRequest: true, needVerification: true, riskLevel: true,
+        location: true, views: true, status: true, image: true,
+        createdAt: true, updatedAt: true, publisherId: true,
         publisher: {
-          select: { nickname: true, email: true, id: true, avatar: true },
+          select: { id: true, nickname: true, avatar: true },
         },
         subTasks: { orderBy: { id: 'asc' } },
+        _count: { select: { orders: true } },
       },
     });
 
     if (!task) throw new NotFoundException('任务不存在');
+
+    // 增加浏览量
+    await this.prisma.task.update({
+      where: { id },
+      data: { views: { increment: 1 } },
+    });
+
     return task;
   }
 

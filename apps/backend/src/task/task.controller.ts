@@ -29,6 +29,7 @@ import { UpdateSubTaskDto } from './dto/update-subtask.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
+import { validateFileMagic } from '../common/upload-validator';
 
 @ApiTags('任务管理')
 @Controller('task')
@@ -141,6 +142,7 @@ export class TaskController {
 
   // =============== 图片上传 ===============
 
+  // Phase 0-3: 上传安全 — 限制文件大小 5MB，仅允许 jpeg/png/gif/webp
   @Post('upload-image')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -155,6 +157,15 @@ export class TaskController {
           cb(null, uniqueSuffix + extname(file.originalname));
         },
       }),
+      limits: { fileSize: 5 * 1024 * 1024 },
+      fileFilter: (_req, file, cb) => {
+        const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        if (allowed.includes(file.mimetype)) {
+          cb(null, true);
+        } else {
+          cb(new Error(`不支持的文件类型: ${file.mimetype}`), false);
+        }
+      },
     }),
   )
   @ApiBody({
@@ -167,6 +178,8 @@ export class TaskController {
     },
   })
   uploadImage(@UploadedFile() file: Express.Multer.File) {
+    // 🔒 魔数验证：防止 mimetype 伪造
+    validateFileMagic(file.path, file.originalname, file.size);
     return { url: `/uploads/${file.filename}` };
   }
 }

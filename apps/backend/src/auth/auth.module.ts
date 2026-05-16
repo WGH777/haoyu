@@ -12,13 +12,19 @@ import { RolesGuard } from './guards/roles.guard';
 import { UserModule } from '../user/user.module';
 import { PrismaModule } from '../prisma/prisma.module';
 
+// Phase 0-1: 移除 JWT_SECRET 弱默认回退，未配置时启动即报错
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET is required. Please set JWT_SECRET in environment variables.');
+}
+
 @Module({
   imports: [
     UserModule,
     PrismaModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({
-      secret: process.env.JWT_SECRET || 'SECRET_KEY',
+      secret: JWT_SECRET,
       signOptions: { expiresIn: '15m' },
     }),
   ],

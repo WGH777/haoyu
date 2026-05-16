@@ -185,18 +185,38 @@ export class AdminController {
       });
 
       if (refundAmount > 0) {
-        await tx.user.update({
-          where: { id: task.publisherId },
-          data: { balance: { increment: refundAmount } },
+        // Phase 2: 迁移至 Wallet — 必须 frozen-- + available++ 保持资金守恒
+        const publisherWallet = await tx.wallet.findUnique({
+          where: { userId_currency: { userId: task.publisherId, currency: 'CNY' } },
         });
-
-        await tx.transaction.create({
+        if (!publisherWallet) {
+          throw new BadRequestException('发布者钱包不存在');
+        }
+        if (publisherWallet.frozen < refundAmount) {
+          throw new BadRequestException('冻结余额不足，无法退款');
+        }
+        // 原子操作：解冻
+        await tx.wallet.update({
+          where: { id: publisherWallet.id },
           data: {
-            amount: refundAmount,
-            type: 'ADMIN_REFUND',
-            status: 'SUCCESS',
-            userId: task.publisherId,
+            frozen: { decrement: refundAmount },
+            available: { increment: refundAmount },
           },
+        });
+        const after = await tx.wallet.findUnique({
+          where: { id: publisherWallet.id },
+        });
+        await tx.ledgerEntry.create({
+          data: {
+            walletId: publisherWallet.id,
+            userId: task.publisherId,
+            amount: refundAmount,
+            direction: 'IN',
+            type: 'REFUND',
+            balanceAfter: after?.available,
+            frozenAfter: after?.frozen,
+            remark: `管理员退款 #${taskId}`,
+          } as any,
         });
       }
 
@@ -243,7 +263,7 @@ export class AdminController {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
       include: {
-        task: { select: { id: true, status: true, price: true, serviceFee: true } },
+        task: { select: { id: true, status: true, price: true, serviceFee: true, publisherId: true } },
       },
     });
 
@@ -283,19 +303,69 @@ export class AdminController {
     }
 
     const result = await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      await tx.user.update({
-        where: { id: order.workerId },
-        data: { balance: { increment: netReward } },
+      // Phase 2: 完整资金流 — 发布者 frozen 扣减 + 执行者入账 + 平台费
+      const totalCost = taskPrice + serviceFee;
+
+      const publisherWallet = await tx.wallet.findUnique({
+        where: { userId_currency: { userId: order.task.publisherId, currency: 'CNY' } },
+      });
+      if (!publisherWallet) throw new BadRequestException('发布者钱包不存在');
+      if (publisherWallet.frozen < totalCost) throw new BadRequestException('冻结余额不足');
+
+      const workerWallet = await tx.wallet.findUnique({
+        where: { userId_currency: { userId: order.workerId, currency: 'CNY' } },
+      });
+      if (!workerWallet) throw new BadRequestException('执行者钱包不存在');
+
+      // 1) 发布者 frozen 扣除 totalCost
+      await tx.wallet.update({
+        where: { id: publisherWallet.id },
+        data: { frozen: { decrement: totalCost } },
+      });
+      const pubAfter = await tx.wallet.findUnique({ where: { id: publisherWallet.id } });
+      await tx.ledgerEntry.create({
+        data: {
+          walletId: publisherWallet.id, userId: publisherWallet.userId,
+          amount: totalCost, direction: 'OUT', type: 'SETTLEMENT',
+          balanceAfter: pubAfter?.available, frozenAfter: pubAfter?.frozen,
+          remark: `管理员强制结算 #${orderId}（支出）`,
+        } as any,
       });
 
-      await tx.transaction.create({
-        data: {
-          amount: netReward,
-          type: 'ADMIN_PAYOUT',
-          status: 'SUCCESS',
-          userId: order.workerId,
-        },
+      // 2) 执行者 available 增加 netReward
+      await tx.wallet.update({
+        where: { id: workerWallet.id },
+        data: { available: { increment: netReward } },
       });
+      const workAfter = await tx.wallet.findUnique({ where: { id: workerWallet.id } });
+      await tx.ledgerEntry.create({
+        data: {
+          walletId: workerWallet.id, userId: workerWallet.userId,
+          amount: netReward, direction: 'IN', type: 'SETTLEMENT',
+          balanceAfter: workAfter?.available, frozenAfter: workAfter?.frozen,
+          remark: `管理员强制结算 #${orderId}（收入）`,
+        } as any,
+      });
+
+      // 3) 平台费入账（如果有）
+      if (serviceFee > 0) {
+        const platformWallet = await tx.wallet.findUnique({ where: { code: 'SYSTEM_PLATFORM_FEE' } });
+        if (platformWallet) {
+          await tx.wallet.update({
+            where: { id: platformWallet.id },
+            data: { available: { increment: serviceFee } },
+          });
+          const platAfter = await tx.wallet.findUnique({ where: { id: platformWallet.id } });
+          await tx.ledgerEntry.create({
+            data: {
+              walletId: platformWallet.id, userId: platformWallet.userId,
+              amount: serviceFee, direction: 'IN', type: 'PLATFORM_FEE',
+              balanceAfter: platAfter?.available, frozenAfter: platAfter?.frozen,
+              remark: `管理员强制结算 #${orderId}（平台费）`,
+            } as any,
+          });
+        }
+      }
 
       await tx.task.update({
         where: { id: order.taskId },

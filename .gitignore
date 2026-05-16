@@ -15,4 +15,4 @@ build/
 # 5. 系统和编辑器文件
 .DS_Store
 .vscode/
-*.log
+*.log*.db
