@@ -18,6 +18,8 @@ type TxOptions = {
   timeout?: number;
 };
 
+type RoleStr = 'USER' | 'ADMIN' | 'SUPER_ADMIN' | string;
+
 @Injectable()
 export class OrderService {
   constructor(private prisma: PrismaService) {}
@@ -117,6 +119,23 @@ export class OrderService {
     throw e;
   }
 
+  private isAdmin(role?: RoleStr) {
+    return role === 'ADMIN' || role === 'SUPER_ADMIN';
+  }
+
+  private async getServiceFeeRate(
+    tx: Prisma.TransactionClient,
+    workerId: number,
+  ): Promise<number> {
+    const completedCount = await tx.order.count({
+      where: { workerId, status: 'COMPLETED' },
+    });
+    if (completedCount <= 30) return 0;
+    if (completedCount <= 50) return 0.02;
+    if (completedCount <= 100) return 0.05;
+    return 0.1;
+  }
+
   /**
    * 创建订单（抢单）
    * - 事务 + updateMany 条件更新，避免并发抢单导致重复抢占
@@ -175,6 +194,15 @@ export class OrderService {
       throw new ForbiddenException('您无权操作此订单（仅执行者可提交）');
     }
     if (order.status !== 'ASSIGNED') {
+      if (order.status === 'DISPUTED') {
+        throw new BadRequestException('订单争议中，无法提交成果');
+      }
+      if (order.status === 'CANCELLED') {
+        throw new BadRequestException('订单已取消，无法提交成果');
+      }
+      if (order.status === 'COMPLETED') {
+        throw new BadRequestException('订单已完成，无法提交成果');
+      }
       throw new BadRequestException(`当前订单状态 (${order.status}) 不允许提交成果`);
     }
 
@@ -227,17 +255,18 @@ export class OrderService {
     }
 
     if (order.status !== 'SUBMITTED') {
+      if (order.status === 'COMPLETED') {
+        throw new ConflictException('订单已完成，无法验收');
+      }
+      if (order.status === 'DISPUTED') {
+        throw new ConflictException('订单争议中，无法验收');
+      }
+      if (order.status === 'CANCELLED') {
+        throw new ConflictException('订单已取消，无法验收');
+      }
       throw new ConflictException(
-        `订单已被处理或状态不允许验收，当前状态: ${order.status}`,
+        `订单状态不允许验收，当前状态: ${order.status}`,
       );
-    }
-
-    const taskPrice = order.task.price;
-    const serviceFee = order.task.serviceFee ?? 0;
-    const netReward = taskPrice - serviceFee;
-
-    if (netReward < 0) {
-      throw new BadRequestException('任务金额不足以覆盖服务费，无法结算');
     }
 
     if (dto.isAccepted) {
@@ -262,20 +291,113 @@ export class OrderService {
           throw new ConflictException('任务状态已变化，验收失败（并发命中）');
         }
 
-        // 3) 入账 + 写流水（只会发生一次）
-        await tx.user.update({
-          where: { id: order.workerId },
-          data: { balance: { increment: netReward } },
-        });
+        // 3) 阶梯费率 + 金额计算（单位：分）
+        const feeRate = await this.getServiceFeeRate(tx, order.workerId);
+        const taskPrice = order.task.price;
+        const serviceFee = Math.max(0, Math.round(taskPrice * feeRate));
+        const totalCost = taskPrice + serviceFee;
+        const netReward = taskPrice - serviceFee;
 
-        await tx.transaction.create({
-          data: {
-            amount: netReward,
-            type: 'INCOME',
-            status: 'SUCCESS',
-            userId: order.workerId,
+        if (netReward < 0) {
+          throw new BadRequestException('任务金额不足以覆盖服务费，无法结算');
+        }
+
+        const publisherWallet = await tx.wallet.findUnique({
+          where: {
+            userId_currency: { userId: order.task.publisherId, currency: 'CNY' },
           },
         });
+        if (!publisherWallet) {
+          throw new BadRequestException('发布者钱包不存在，请先创建钱包');
+        }
+        if (publisherWallet.frozen < totalCost) {
+          throw new BadRequestException('发布者冻结余额不足，无法结算');
+        }
+
+        const workerWallet = await tx.wallet.findUnique({
+          where: { userId_currency: { userId: order.workerId, currency: 'CNY' } },
+        });
+        if (!workerWallet) {
+          throw new BadRequestException('执行者钱包不存在，请先创建钱包');
+        }
+
+        const platformWallet = await tx.wallet.findUnique({
+          where: { code: 'SYSTEM_PLATFORM_FEE' },
+        });
+        if (!platformWallet) {
+          throw new NotFoundException('系统平台费钱包不存在');
+        }
+
+        // 4) publisher frozen 中结算 totalCost（SETTLEMENT）
+        await tx.wallet.update({
+          where: { id: publisherWallet.id },
+          data: { frozen: { decrement: totalCost } },
+        });
+        const publisherAfterSettle = await tx.wallet.findUnique({
+          where: { id: publisherWallet.id },
+        });
+
+        await tx.ledgerEntry.create({
+          data: {
+            walletId: publisherWallet.id,
+            userId: publisherWallet.userId,
+            orderId: order.id,
+            amount: totalCost,
+            direction: 'OUT',
+            type: 'SETTLEMENT',
+            balanceAfter: publisherAfterSettle?.available,
+            frozenAfter: publisherAfterSettle?.frozen,
+            remark: `订单 #${order.id} 验收结算`,
+          },
+        });
+
+        // 5) worker 入账 netReward（SETTLEMENT）
+        await tx.wallet.update({
+          where: { id: workerWallet.id },
+          data: { available: { increment: netReward } },
+        });
+        const workerAfterDeposit = await tx.wallet.findUnique({
+          where: { id: workerWallet.id },
+        });
+
+        await tx.ledgerEntry.create({
+          data: {
+            walletId: workerWallet.id,
+            userId: workerWallet.userId,
+            orderId: order.id,
+            amount: netReward,
+            direction: 'IN',
+            type: 'SETTLEMENT',
+            balanceAfter: workerAfterDeposit?.available,
+            frozenAfter: workerAfterDeposit?.frozen,
+            remark: `订单 #${order.id} 服务收入`,
+          },
+        });
+
+        // 6) SYSTEM_PLATFORM_FEE 入账 serviceFee（PLATFORM_FEE）
+        if (serviceFee > 0) {
+          await tx.wallet.update({
+            where: { id: platformWallet.id },
+            data: { available: { increment: serviceFee } },
+          });
+          const platformAfterDeposit = await tx.wallet.findUnique({
+            where: { id: platformWallet.id },
+          });
+
+          await tx.ledgerEntry.create({
+            data: {
+              walletId: platformWallet.id,
+              userId: platformWallet.userId,
+              orderId: order.id,
+              amount: serviceFee,
+              direction: 'IN',
+              type: 'PLATFORM_FEE',
+              balanceAfter: platformAfterDeposit?.available,
+              frozenAfter: platformAfterDeposit?.frozen,
+              remark: `订单 #${order.id} 平台服务费`,
+            },
+          });
+        }
 
         return tx.order.findUnique({ where: { id: orderId } });
       });
@@ -300,6 +422,88 @@ export class OrderService {
       if (taskUpdated.count !== 1) {
         throw new ConflictException('任务状态已变化，驳回失败（并发命中）');
       }
+
+      return tx.order.findUnique({ where: { id: orderId } });
+    });
+  }
+
+  async cancelOrder(orderId: number, userId: number, role?: RoleStr) {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      include: { task: true },
+    });
+    if (!order) throw new NotFoundException('订单不存在');
+
+    const canCancel = ['ASSIGNED', 'SUBMITTED'].includes(order.status);
+    if (!canCancel) {
+      throw new BadRequestException(
+        `当前订单状态 (${order.status}) 不允许取消`,
+      );
+    }
+
+    if (order.task.publisherId !== userId && !this.isAdmin(role)) {
+      throw new ForbiddenException('仅发布者或管理员可取消订单');
+    }
+
+    return this.withTxRetry(async (tx: Prisma.TransactionClient) => {
+      const updated = await tx.order.updateMany({
+        where: { id: orderId, status: { in: ['ASSIGNED', 'SUBMITTED'] as any } },
+        data: { status: 'CANCELLED' },
+      });
+
+      if (updated.count !== 1) {
+        throw new ConflictException('订单已被处理（并发命中）');
+      }
+
+      const expectedTaskStatus = order.status;
+      const taskUpdated = await tx.task.updateMany({
+        where: { id: order.taskId, status: expectedTaskStatus as any },
+        data: { status: 'PENDING' },
+      });
+      if (taskUpdated.count !== 1) {
+        throw new ConflictException('任务状态已变化，取消失败（并发命中）');
+      }
+
+      const taskPrice = order.task.price;
+      const serviceFee = order.task.serviceFee ?? 0;
+      const totalCost = taskPrice + serviceFee;
+
+      const publisherWallet = await tx.wallet.findUnique({
+        where: {
+          userId_currency: { userId: order.task.publisherId, currency: 'CNY' },
+        },
+      });
+      if (!publisherWallet) {
+        throw new BadRequestException('发布者钱包不存在，请先创建钱包');
+      }
+      if (publisherWallet.frozen < totalCost) {
+        throw new BadRequestException('冻结余额不足，无法退款');
+      }
+
+      await tx.wallet.update({
+        where: { id: publisherWallet.id },
+        data: {
+          frozen: { decrement: totalCost },
+          available: { increment: totalCost },
+        },
+      });
+      const publisherAfterRefund = await tx.wallet.findUnique({
+        where: { id: publisherWallet.id },
+      });
+
+      await tx.ledgerEntry.create({
+        data: {
+          walletId: publisherWallet.id,
+          userId: publisherWallet.userId,
+          orderId: order.id,
+          amount: totalCost,
+          direction: 'IN',
+          type: 'REFUND',
+          balanceAfter: publisherAfterRefund?.available,
+          frozenAfter: publisherAfterRefund?.frozen,
+          remark: `订单 #${order.id} 取消退款`,
+        },
+      });
 
       return tx.order.findUnique({ where: { id: orderId } });
     });

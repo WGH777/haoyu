@@ -6,13 +6,13 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 
+// Phase 2: balance 已从 User 移除，改为通过 WalletService 查询
 const safeUserSelect = {
   id: true,
   email: true,
   nickname: true,
   bio: true,
   role: true,
-  balance: true,
   avatar: true,
   createdAt: true,
   updatedAt: true,
@@ -94,16 +94,8 @@ export class UserService {
     });
   }
 
-  /**
-   * ★ 专门用于更新余额 (God Mode)
-   */
-  async updateBalance(id: number, amount: number) {
-    return this.prisma.user.update({
-      where: { id },
-      data: { balance: amount },
-      select: safeUserSelect,
-    });
-  }
+  // Phase 2: updateBalance 已废弃 — 余额现通过 WalletService 操作
+  // 保留为空方法避免编译报错，Phase 3 全部切换后可删除
 
   /**
    * 🔥 核心修复：级联删除用户

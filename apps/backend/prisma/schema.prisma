@@ -20,10 +20,10 @@ model User {
   nickname       String
   bio            String?
   role           String        @default("USER")
-  balance        Float         @default(0)
   refreshToken   String?
 
   avatar         String?                       // 用户头像 URL
+  walletCount    Int?
 
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
@@ -31,33 +31,87 @@ model User {
   publishedTasks Task[]        @relation("UserPublishedTasks")
   orders         Order[]
   transactions   Transaction[]
+  wallets        Wallet[]
+  notifications  Notification[]
 
   // ✅ 新增：管理员审计日志（一个管理员可产生多条日志）
   adminActionLogs AdminActionLog[] @relation("AdminActionLogs")
 }
 
-model Task {
-  id            Int           @id @default(autoincrement())
-  title         String
-  description   String
-  price         Float
-  serviceFee    Float         @default(0)
-
-  // 热度：浏览量（打开详情页自动 +1）
-  views         Int           @default(0)
-
-  // 任务状态：使用字符串，默认 PENDING
-  status        String        @default("PENDING")
-
-  image         String?                       // 任务配图 URL
+model Wallet {
+  id            String        @id @default(cuid())
+  ownerType     String        @default("USER") // USER | SYSTEM
+  userId        Int?                                 // null for system wallets
+  user          User?         @relation(fields: [userId], references: [id])
+  code          String?       @unique               // system wallet codes
+  currency      String        @default("CNY")      // CNY | USD | EUR
+  available     Int           @default(0)           // 可用余额，单位：分
+  frozen        Int           @default(0)           // 冻结余额，单位：分
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
-  publisherId   Int
-  publisher     User          @relation("UserPublishedTasks", fields: [publisherId], references: [id])
+  ledgerEntries LedgerEntry[]
 
-  orders        Order[]
-  subTasks      SubTask[]
+  @@index([userId])
+  @@unique([userId, currency])
+}
+
+model LedgerEntry {
+  id              String   @id @default(cuid())
+  walletId        String
+  wallet          Wallet   @relation(fields: [walletId], references: [id])
+  userId          Int?
+  orderId         Int?
+  order           Order?   @relation(fields: [orderId], references: [id])
+  idempotencyKey  String?  @unique               // 幂等键：orderId+操作类型，防重复入账
+  amount          Int                              // 变动金额，单位：分
+  direction       String                           // IN | OUT
+  type            String                           // DEPOSIT|FREEZE|UNFREEZE|SETTLEMENT|PLATFORM_FEE|REFUND|WITHDRAW|ADMIN_ADJUST|RISK_RESERVE
+  balanceAfter    Int?                             // 操作后可用余额，单位：分
+  frozenAfter     Int?                             // 操作后冻结余额，单位：分
+  remark          String?
+  operatorId      Int?
+  createdAt       DateTime @default(now())
+
+  @@index([walletId])
+  @@index([userId])
+  @@index([orderId])
+  @@index([createdAt])
+  @@index([idempotencyKey])
+}
+
+model Task {
+  id                 Int           @id @default(autoincrement())
+  title              String
+  description        String
+  price              Int                               // 单位：分
+  serviceFee         Int           @default(0)         // 单位：分
+  category           String        @default("SKILL_SERVICE")
+  serviceMode        String        @default("ONLINE")
+  serviceLocation    String?
+  isPublicWelfare    Boolean       @default(false)
+  isFamilyCare       Boolean       @default(false)
+  isProxyRequest     Boolean       @default(false)
+  needVerification   Boolean       @default(false)
+  riskLevel          String        @default("LOW")
+  location           String?
+
+  // 热度：浏览量（打开详情页自动 +1）
+  views              Int           @default(0)
+
+  // 任务状态：使用字符串，默认 PENDING
+  status             String        @default("PENDING")
+
+  image              String?                       // 任务配图 URL
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  publisherId        Int
+  publisher          User          @relation("UserPublishedTasks", fields: [publisherId], references: [id])
+
+  orders             Order[]
+  subTasks           SubTask[]
+  disputes           Dispute[]
 }
 
 // 新增：子任务模型，用于任务拆分
@@ -76,12 +130,14 @@ model SubTask {
 model Order {
   id                Int           @id @default(autoincrement())
 
-  // 订单状态：ASSIGNED / SUBMITTED / COMPLETED / CANCELLED
+  // 订单状态：ASSIGNED / SUBMITTED / COMPLETED / CANCELLED / DISPUTED
   status            String        @default("ASSIGNED")
 
   submissionContent String?                       // 成果提交：文本/链接
   submissionImage   String?                       // 成果提交：图片 URL
   submittedAt       DateTime?                     // 成果提交时间
+
+  amount            Int?                          // 订单金额，单位：分
 
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
@@ -90,16 +146,51 @@ model Order {
   task              Task          @relation(fields: [taskId], references: [id])
   workerId          Int
   worker            User          @relation(fields: [workerId], references: [id])
+
+  ledgerEntries     LedgerEntry[]
+  disputes          Dispute[]
 }
 
 model Transaction {
   id        Int      @id @default(autoincrement())
-  amount    Float
+  amount    Int                              // 单位：分（Legacy 表，后续迁移到 LedgerEntry）
   type      String
   status    String   @default("SUCCESS")
   createdAt DateTime @default(now())
   userId    Int
   user      User     @relation(fields: [userId], references: [id])
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  title     String
+  content   String
+  type      String                           // REQUEST_RESPONDED|SERVICE_STARTED|SERVICE_SUBMITTED|SERVICE_COMPLETED|ORDER_DISPUTED|REFUND_CREATED|SETTLEMENT_CREATED|RISK_ALERT|SYSTEM|PAYMENT_RECEIVED|AUTO_CONFIRMED|ORDER_CANCELLED|DISPUTE_RESOLVED|DEADLINE_WARNING|PROVIDER_UNRESPONSIVE
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Dispute {
+  id          Int      @id @default(autoincrement())
+  orderId     Int
+  order       Order    @relation(fields: [orderId], references: [id])
+  taskId      Int
+  task        Task     @relation(fields: [taskId], references: [id])
+  openerId    Int
+  reason      String
+  evidence    String?
+  status      String   @default("OPEN")       // OPEN|UNDER_REVIEW|RESOLVED|REJECTED|CANCELLED
+  result      String?                          // REFUND_BUYER|PAY_SELLER|PARTIAL_REFUND|CANCEL_ORDER
+  handledById Int?
+  createdAt   DateTime @default(now())
+  resolvedAt  DateTime?
+
+  @@index([orderId])
+  @@index([openerId])
 }
 
 // ✅ 新增：管理员审计日志（RBAC 第 6 步）

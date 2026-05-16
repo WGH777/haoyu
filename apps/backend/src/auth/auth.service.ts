@@ -29,13 +29,24 @@ export class AuthService {
     if (exist) throw new UnauthorizedException('邮箱已被注册');
 
     const hashed = await bcrypt.hash(pass, 10);
+    // Phase 2: 注册不再写 User.balance，改为创建 Wallet
     const user = await this.prisma.user.create({
       data: {
         email,
         password: hashed,
         nickname: nickname || '新用户',
-        balance: 100000,
         role: 'USER',
+      },
+    });
+
+    // 创建 CNY 钱包
+    await this.prisma.wallet.create({
+      data: {
+        ownerType: 'USER',
+        userId: user.id,
+        currency: 'CNY',
+        available: 0,
+        frozen: 0,
       },
     });
 
