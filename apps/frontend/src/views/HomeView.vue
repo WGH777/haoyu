@@ -48,7 +48,7 @@
         </div>
         <div class="topbar-right">
           <span v-if="isLogin && currentUser" class="balance-badge">
-            💰 ¥{{ ((currentUser.balance || 0) / 100).toFixed(2) }}
+            💰 ¥{{ (walletBalance / 100).toFixed(2) }}
           </span>
           <template v-if="isLogin">
             <el-avatar
@@ -214,12 +214,14 @@ import { getTaskList, createTask, type Task } from '@/api/task'
 import { createOrder } from '@/api/order'
 import { getProfile, type UserProfile } from '@/api/user'
 import { notificationApi } from '@/api/notification'
+import { getWallet } from '@/api/wallet'
 
 const router = useRouter()
 const route = useRoute()
 
 const isLogin = computed(() => !!localStorage.getItem('token'))
 const currentUser = ref<UserProfile | null>(null)
+const walletBalance = ref(0)
 const unreadCount = ref(0)
 
 const loading = ref(false)
@@ -322,6 +324,11 @@ const fetchProfile = async () => {
   } catch { currentUser.value = null }
 }
 
+const fetchWalletBalance = async () => {
+  if (!isLogin.value) return
+  try { const w: any = await getWallet(); walletBalance.value = w?.available ?? 0 } catch {}
+}
+
 const fetchUnreadCount = async () => {
   if (!isLogin.value) return
   try { const res: any = await notificationApi.unreadCount(); unreadCount.value = res?.count ?? res ?? 0 } catch {}
@@ -334,7 +341,7 @@ const handleCommand = (cmd: string) => {
   }
 }
 
-onMounted(() => { fetchProfile(); fetchUnreadCount(); fetchData() })
+onMounted(() => { fetchProfile(); fetchUnreadCount(); fetchWalletBalance(); fetchData(); window.addEventListener("notification-read", fetchUnreadCount) })
 </script>
 
 <style>
