@@ -3,31 +3,26 @@
     <!-- 侧边栏 -->
     <aside class="sidebar">
       <div class="logo" @click="$router.push('/task')">
-        <span class="logo-icon">煜</span>
+        <span class="logo-mark">煜</span>
         <span class="logo-text">浩煜</span>
       </div>
       <nav class="nav">
         <router-link to="/task" class="nav-item" :class="{ active: $route.path === '/task' || $route.path === '/' }">
-          <el-icon><List /></el-icon>
-          <span>任务大厅</span>
+          <el-icon><List /></el-icon><span>任务大厅</span>
         </router-link>
         <template v-if="isLogin">
           <router-link to="/my-task" class="nav-item" :class="{ active: $route.path === '/my-task' }">
-            <el-icon><Checked /></el-icon>
-            <span>我的任务</span>
+            <el-icon><Checked /></el-icon><span>我的任务</span>
           </router-link>
           <router-link to="/my-orders" class="nav-item" :class="{ active: $route.path === '/my-orders' }">
-            <el-icon><Document /></el-icon>
-            <span>我接的订单</span>
+            <el-icon><Document /></el-icon><span>我接的订单</span>
           </router-link>
           <router-link to="/notifications" class="nav-item" :class="{ active: $route.path === '/notifications' }">
-            <el-icon><Bell /></el-icon>
-            <span>通知</span>
+            <el-icon><Bell /></el-icon><span>通知</span>
             <span v-if="unreadCount" class="badge">{{ unreadCount }}</span>
           </router-link>
           <router-link to="/wallet" class="nav-item" :class="{ active: $route.path === '/wallet' }">
-            <el-icon><Wallet /></el-icon>
-            <span>钱包</span>
+            <el-icon><Wallet /></el-icon><span>钱包</span>
           </router-link>
         </template>
       </nav>
@@ -41,28 +36,19 @@
 
     <!-- 主区域 -->
     <main class="main-area">
-      <!-- 顶栏 -->
       <header class="topbar">
         <div class="topbar-left">
-          <span class="greeting">👋 {{ isLogin && currentUser ? currentUser.nickname : '欢迎来到浩煜' }}</span>
+          <span class="greeting">👋 {{ isLogin && currentUser ? currentUser.nickname : '可信价值协作平台' }}</span>
         </div>
         <div class="topbar-right">
-          <span v-if="isLogin && currentUser" class="balance-badge">
-            💰 ¥{{ (walletBalance / 100).toFixed(2) }}
-          </span>
+          <span v-if="isLogin && currentUser" class="balance-badge">💰 ¥{{ (walletBalance / 100).toFixed(2) }}</span>
           <template v-if="isLogin">
-            <el-avatar
-              :size="34"
-              :src="currentUser?.avatar ? getFullUrl(currentUser.avatar) : undefined"
-              :style="!currentUser?.avatar ? { backgroundColor: '#6366f1', color: '#fff', fontSize: '14px' } : {}"
-            >
+            <el-avatar :size="34" :src="currentUser?.avatar ? getFullUrl(currentUser.avatar) : undefined"
+              :style="!currentUser?.avatar ? { backgroundColor: '#6366f1', color: '#fff', fontSize: '14px' } : {}">
               {{ currentUser?.email ? currentUser.email[0].toUpperCase() : '?' }}
             </el-avatar>
             <el-dropdown trigger="click" @command="handleCommand">
-              <span class="dropdown-trigger">
-                {{ currentUser?.nickname }}
-                <el-icon><CaretBottom /></el-icon>
-              </span>
+              <span class="dropdown-trigger">{{ currentUser?.nickname }} <el-icon><CaretBottom /></el-icon></span>
               <template #dropdown>
                 <el-dropdown-menu>
                   <el-dropdown-item command="profile">个人资料</el-dropdown-item>
@@ -78,39 +64,63 @@
         </div>
       </header>
 
-      <!-- 内容区 -->
       <div class="content" v-if="$route.path === '/' || $route.path === '/task'">
         <!-- Hero -->
-        <div class="hero">
-          <div class="hero-glass">
-            <span class="hero-badge">🔒 资金托管保障</span>
-            <h1>让每一份能力都被看见</h1>
-            <p>发布需求，响应服务，可信交易。资金托管、过程留痕、信用沉淀。</p>
+        <section class="hero">
+          <div class="hero-bg"></div>
+          <div class="hero-content">
+            <span class="hero-tag">🔒 资金托管 · 信用沉淀 · 智能仲裁</span>
+            <h1>浩煜<span class="glow-text"> Haoyu</span></h1>
+            <p class="hero-subtitle">可信价值协作平台 — 连接真实需求，激活真实能力，保障可信交付</p>
             <div class="hero-actions">
               <el-button type="primary" size="large" round @click="openCreateDialog" v-if="isLogin" class="btn-glow">✨ 发布需求</el-button>
               <el-button size="large" round @click="$router.push('/register')" v-else class="btn-glow">免费注册</el-button>
               <el-button size="large" round class="btn-outline" @click="$router.push('/trust')">了解保障</el-button>
             </div>
-            <div class="hero-stats">
-              <div class="hs-item"><strong>{{ tasks.length }}</strong><span>开放需求</span></div>
-              <div class="hs-div"></div>
-              <div class="hs-item"><strong>0%</strong><span>前30单免服务费</span></div>
-              <div class="hs-div"></div>
-              <div class="hs-item"><strong>💰</strong><span>托管保障</span></div>
-            </div>
           </div>
-        </div>
+        </section>
 
-        <!-- 搜索 + 筛选 -->
+        <!-- 数据看板 -->
+        <section class="dashboard">
+          <div class="stat-item">
+            <span class="stat-number">{{ tasks.length }}</span>
+            <span class="stat-label">开放需求</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item">
+            <span class="stat-number">0%</span>
+            <span class="stat-label">服务费率（前30单）</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item">
+            <span class="stat-number">🔒</span>
+            <span class="stat-label">资金托管保障</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item">
+            <span class="stat-number">⚡</span>
+            <span class="stat-label">智能调度匹配</span>
+          </div>
+        </section>
+
+        <!-- 价值流转图 -->
+        <section class="value-flow">
+          <div class="flow-step"><span class="flow-icon">📝</span><span>需求发布</span></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step"><span class="flow-icon">🔒</span><span>资金托管</span></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step"><span class="flow-icon">🤝</span><span>协作执行</span></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step"><span class="flow-icon">✅</span><span>成果验收</span></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step"><span class="flow-icon">💰</span><span>价值结算</span></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step"><span class="flow-icon">⭐</span><span>信用沉淀</span></div>
+        </section>
+
+        <!-- 搜索 -->
         <div class="filter-row">
-          <el-input
-            v-model="searchKeyword"
-            placeholder="搜索任务..."
-            :prefix-icon="Search"
-            clearable
-            size="large"
-            class="search-input"
-          />
+          <el-input v-model="searchKeyword" placeholder="搜索任务..." :prefix-icon="Search" clearable size="large" class="search-input" />
           <el-select v-model="priceFilter" size="large" class="filter-select">
             <el-option label="全部赏金" value="all" />
             <el-option label="¥100以下" value="low" />
@@ -120,65 +130,58 @@
           <el-button size="large" @click="fetchData" :icon="Refresh">刷新</el-button>
         </div>
 
-        <!-- 统计条 -->
-        <div class="stats-row" v-if="tasks.length">
-          <span>共 <strong>{{ tasks.length }}</strong> 个任务</span>
-          <span>·</span>
-          <span v-if="isLogin && currentUser">
-            <router-link to="/my-task" class="link">我的发布</router-link>
-          </span>
-        </div>
-
-        <!-- 任务卡片 -->
+        <!-- 任务网格 -->
         <div v-loading="loading" class="task-grid">
           <el-empty v-if="!loading && !tasks.length" description="还没有任务，来做第一个发布者吧">
             <el-button type="primary" round @click="openCreateDialog">✨ 发布第一个需求</el-button>
           </el-empty>
-
-          <div
-            v-for="task in tasks"
-            :key="task.id"
-            class="task-card"
-            @click="$router.push(`/task/${task.id}`)"
-          >
+          <div v-for="task in tasks" :key="task.id" class="task-card card-lift glow-border" @click="$router.push(`/task/${task.id}`)">
             <div class="card-top">
-              <span class="card-category">
-                {{ categoryLabel(task.category) }}
+              <span class="card-category">{{ categoryLabel(task.category) }}
                 <span v-if="task.isPublicWelfare" class="welfare-badge">公益</span>
               </span>
-              <span class="card-mode" v-if="task.serviceMode !== 'ONLINE'">
-                {{ task.serviceMode === 'OFFLINE' ? '📍线下' : '🌐均可' }}
-              </span>
+              <span :class="['status-badge', statusClass(task.status)]">{{ statusLabel(task.status) }}</span>
             </div>
             <h3 class="card-title">{{ task.title }}</h3>
             <p class="card-desc">{{ truncate(task.description, 80) }}</p>
             <div class="card-bottom">
-              <span class="card-price">¥{{ (task.price / 100).toFixed(2) }}</span>
+              <span class="card-price glow-amber">¥{{ (task.price / 100).toFixed(2) }}</span>
               <span class="card-meta">
-                <span class="card-status" :class="task.status">{{ statusLabel(task.status) }}</span>
-                <span class="card-views">👁 {{ task.views || 0 }}</span>
+                <span>{{ task.serviceMode === 'OFFLINE' ? '📍线下' : task.serviceMode === 'BOTH' ? '🌐均可' : '💻线上' }}</span>
+                <span>👁 {{ task.views || 0 }}</span>
               </span>
             </div>
           </div>
         </div>
 
-        <!-- 底部 -->
-        <div class="page-footer">
+        <!-- 信任机制区 -->
+        <section class="trust-section">
+          <h3>🔒 浩煜信任引擎</h3>
+          <div class="trust-grid">
+            <div class="trust-item"><span>💰</span> 资金托管</div>
+            <div class="trust-item"><span>📝</span> 过程留痕</div>
+            <div class="trust-item"><span>⭐</span> 信用沉淀</div>
+            <div class="trust-item"><span>⚖️</span> 争议仲裁</div>
+            <div class="trust-item"><span>🔍</span> 风控审计</div>
+            <div class="trust-item"><span>🤖</span> AI 调度</div>
+          </div>
+        </section>
+
+        <footer class="page-footer">
           <span>浩煜 Haoyu — 可信价值协作平台</span>
           <span class="dot">·</span>
           <router-link to="/trust">信任与保障</router-link>
           <span class="dot">·</span>
           <span>资金托管 · 信用沉淀 · 争议协调</span>
-        </div>
+        </footer>
       </div>
 
-      <!-- 子路由内容 -->
       <div class="content" v-else>
         <router-view />
       </div>
     </main>
 
-    <!-- 发布对话框 -->
+    <!-- 发布弹窗 -->
     <el-dialog v-model="showCreateDialog" title="发布新需求" width="560px" destroy-on-close>
       <el-form :model="createForm" label-position="top">
         <el-form-item label="标题" required>
@@ -190,6 +193,12 @@
         <el-form-item label="赏金 (¥)">
           <el-input-number v-model="createForm.price" :min="1" :step="10" :precision="2" style="width:200px" />
         </el-form-item>
+        <el-form-item label="配图（可选）">
+          <el-upload :http-request="handleUpload" :show-file-list="false" accept="image/*">
+            <el-button type="primary" plain :loading="uploadingImg">{{ createForm.image ? '已选图片' : '上传图片' }}</el-button>
+          </el-upload>
+          <el-image v-if="createForm.image" :src="getFullUrl(createForm.image)" style="width:100px;height:100px;border-radius:8px;margin-top:8px" fit="cover" />
+        </el-form-item>
         <el-form-item label="分类">
           <el-select v-model="createForm.category" style="width:100%">
             <el-option label="技能服务" value="SKILL_SERVICE" />
@@ -200,18 +209,6 @@
             <el-option label="公益互助" value="PUBLIC_WELFARE" />
             <el-option label="其他" value="OTHER" />
           </el-select>
-        </el-form-item>
-        <el-form-item label="配图（可选）">
-          <el-upload
-            :http-request="handleUpload"
-            :show-file-list="false"
-            accept="image/*"
-          >
-            <el-button type="primary" plain :loading="uploadingImg">
-              {{ createForm.image ? '已选图片' : '上传图片' }}
-            </el-button>
-          </el-upload>
-          <el-image v-if="createForm.image" :src="getFullUrl(createForm.image)" style="width:100px;height:100px;border-radius:8px;margin-top:8px" fit="cover" />
         </el-form-item>
         <el-form-item label="服务方式">
           <el-radio-group v-model="createForm.serviceMode">
@@ -230,12 +227,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed, onUnmounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Plus, Refresh, Search, CaretBottom, List, Checked, Wallet, User, Document, Bell, Setting, Lock } from '@element-plus/icons-vue'
 import { getTaskList, createTask, uploadTaskImage, type Task } from '@/api/task'
-import { createOrder } from '@/api/order'
 import { getProfile, type UserProfile } from '@/api/user'
 import { notificationApi } from '@/api/notification'
 import { getWallet } from '@/api/wallet'
@@ -256,56 +252,30 @@ const showCreateDialog = ref(false)
 const submitting = ref(false)
 const uploadingImg = ref(false)
 
-const createForm = reactive({
-  title: '',
-  desc: '',
-  price: 100,
-  category: 'SKILL_SERVICE',
-  serviceMode: 'ONLINE',
-  image: '',
-})
-
-const canSeeUserManage = computed(() => {
-  const role = currentUser.value?.role
-  return role === 'ADMIN' || role === 'SUPER_ADMIN'
-})
+const createForm = reactive({ title: '', desc: '', price: 100, category: 'SKILL_SERVICE', serviceMode: 'ONLINE', image: '' })
+const canSeeUserManage = computed(() => ['ADMIN', 'SUPER_ADMIN'].includes(currentUser.value?.role || ''))
 
 const categoryLabel = (c: string) => {
-  const m: Record<string, string> = {
-    SKILL_SERVICE: '技能服务', LIFE_ASSISTANCE: '生活协助',
-    FAMILY_CARE: '家庭关怀', REMOTE_ASSISTANCE: '远程协助',
-    COMMUNITY_COLLABORATION: '社区协作', PUBLIC_WELFARE: '公益互助', OTHER: '其他',
-  }
+  const m: Record<string, string> = { SKILL_SERVICE: '技能', LIFE_ASSISTANCE: '生活', FAMILY_CARE: '家庭', REMOTE_ASSISTANCE: '远程', COMMUNITY_COLLABORATION: '社区', PUBLIC_WELFARE: '公益', OTHER: '其他' }
   return m[c] || c
 }
-
 const statusLabel = (s: string) => {
-  const m: Record<string, string> = {
-    PENDING: '待接单', ASSIGNED: '进行中', SUBMITTED: '待验收',
-    COMPLETED: '已完成', CANCELLED: '已取消', DISPUTED: '争议中',
-  }
+  const m: Record<string, string> = { PENDING: '待接单', ASSIGNED: '进行中', IN_PROGRESS: '服务中', SUBMITTED: '待验收', COMPLETED: '已完成', CANCELLED: '已取消', DISPUTED: '争议中' }
   return m[s] || s
 }
-
-const truncate = (text: string, len: number) => {
-  if (!text) return ''
-  return text.length > len ? text.slice(0, len) + '...' : text
+const statusClass = (s: string) => {
+  const m: Record<string, string> = { PENDING: 'pending', ASSIGNED: 'active', IN_PROGRESS: 'active', SUBMITTED: 'active', COMPLETED: 'done', CANCELLED: 'danger', DISPUTED: 'danger' }
+  return m[s] || 'pending'
 }
-
-const getFullUrl = (path: string) => {
-  if (!path) return ''
-  return path.startsWith('http') ? path : `http://localhost:3000${path}`
-}
+const truncate = (text: string, len: number) => text && text.length > len ? text.slice(0, len) + '...' : text || ''
+const getFullUrl = (path: string) => path ? (path.startsWith('http') ? path : `http://localhost:3000${path}`) : ''
 
 const fetchData = async () => {
   loading.value = true
   try {
     const res: any = await getTaskList()
     let list = Array.isArray(res) ? res : res?.data || []
-    if (searchKeyword.value) {
-      const q = searchKeyword.value.toLowerCase()
-      list = list.filter((t: any) => t.title?.toLowerCase().includes(q) || t.description?.toLowerCase().includes(q))
-    }
+    if (searchKeyword.value) list = list.filter((t: any) => t.title?.includes(searchKeyword.value))
     if (priceFilter.value === 'low') list = list.filter((t: any) => t.price <= 9900)
     else if (priceFilter.value === 'mid') list = list.filter((t: any) => t.price >= 10000 && t.price <= 49900)
     else if (priceFilter.value === 'high') list = list.filter((t: any) => t.price >= 50000)
@@ -314,24 +284,13 @@ const fetchData = async () => {
   finally { loading.value = false }
 }
 
-const openCreateDialog = () => {
-  if (!isLogin.value) { router.push('/login'); return }
-  showCreateDialog.value = true
-}
+const openCreateDialog = () => { if (!isLogin.value) { router.push('/login'); return }; showCreateDialog.value = true }
 
 const submitTask = async () => {
   if (!createForm.title.trim()) { ElMessage.warning('请输入标题'); return }
-  if (createForm.price <= 0) { ElMessage.warning('赏金必须大于0'); return }
   submitting.value = true
   try {
-    await createTask({
-      title: createForm.title,
-      description: createForm.desc,
-      price: Math.round(createForm.price * 100),
-      category: createForm.category,
-      serviceMode: createForm.serviceMode,
-      image: createForm.image || undefined,
-    } as any)
+    await createTask({ title: createForm.title, description: createForm.desc, price: Math.round(createForm.price * 100), category: createForm.category, serviceMode: createForm.serviceMode, image: createForm.image || undefined } as any)
     ElMessage.success('发布成功')
     showCreateDialog.value = false
     createForm.title = ''; createForm.desc = ''; createForm.price = 100; createForm.image = ''
@@ -340,181 +299,106 @@ const submitTask = async () => {
   finally { submitting.value = false }
 }
 
-// 上传图片
 const handleUpload = async (options: any) => {
   uploadingImg.value = true
-  try {
-    const formData = new FormData()
-    formData.append('file', options.file)
-    const res: any = await uploadTaskImage(formData)
-    createForm.image = res?.url || res?.data?.url || ''
-    ElMessage.success('图片上传成功')
-  } catch { ElMessage.error('上传失败') }
+  try { const fd = new FormData(); fd.append('file', options.file); const res: any = await uploadTaskImage(fd); createForm.image = res?.url || ''; ElMessage.success('上传成功') }
+  catch { ElMessage.error('上传失败') }
   finally { uploadingImg.value = false }
 }
 
 const fetchProfile = async () => {
-  try {
-    const cached = localStorage.getItem('currentUser')
-    if (cached) currentUser.value = JSON.parse(cached)
-    if (isLogin.value) {
-      const res = await getProfile()
-      currentUser.value = res as any
-      localStorage.setItem('currentUser', JSON.stringify(res))
-    }
-  } catch { currentUser.value = null }
+  try { if (isLogin.value) { const res = await getProfile(); currentUser.value = res as any; localStorage.setItem('currentUser', JSON.stringify(res)) } }
+  catch { currentUser.value = null }
 }
+const fetchUnreadCount = async () => { if (!isLogin.value) return; try { const r: any = await notificationApi.unreadCount(); unreadCount.value = r?.count ?? r ?? 0 } catch {} }
+const fetchWalletBalance = async () => { if (!isLogin.value) return; try { const w: any = await getWallet(); walletBalance.value = w?.available ?? 0 } catch {} }
+const handleCommand = (cmd: string) => { if (cmd === 'profile') router.push('/profile'); if (cmd === 'logout') { localStorage.clear(); currentUser.value = null; router.push('/task'); ElMessage.success('已退出') } }
 
-const fetchWalletBalance = async () => {
-  if (!isLogin.value) return
-  try { const w: any = await getWallet(); walletBalance.value = w?.available ?? 0 } catch {}
-}
-
-const fetchUnreadCount = async () => {
-  if (!isLogin.value) return
-  try { const res: any = await notificationApi.unreadCount(); unreadCount.value = res?.count ?? res ?? 0 } catch {}
-}
-
-const handleCommand = (cmd: string) => {
-  if (cmd === 'profile') router.push('/profile')
-  if (cmd === 'logout') {
-    localStorage.clear(); currentUser.value = null; router.push('/task'); ElMessage.success('已退出')
-  }
-}
-
-onMounted(() => { fetchProfile(); fetchUnreadCount(); fetchWalletBalance(); fetchData(); window.addEventListener("notification-read", fetchUnreadCount) })
+onMounted(() => { fetchProfile(); fetchUnreadCount(); fetchWalletBalance(); fetchData(); window.addEventListener('notification-read', fetchUnreadCount) })
 </script>
-
-<style>
-/* 全局重置 */
-body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; color: #1e293b; }
-</style>
 
 <style scoped>
 .app-shell { display: flex; min-height: 100vh; }
 
 /* === 侧边栏 === */
 .sidebar {
-  width: 200px; background: rgba(255,255,255,0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-  border-right: 1px solid rgba(226,232,240,0.6);
-  display: flex; flex-direction: column; position: fixed; top: 0; bottom: 0; z-index: 100;
+  width: 200px; background: rgba(10, 14, 23, 0.95); backdrop-filter: blur(20px);
+  border-right: 1px solid rgba(51, 65, 85, 0.3); display: flex; flex-direction: column;
+  position: fixed; top: 0; bottom: 0; z-index: 100;
 }
 .logo { display: flex; align-items: center; gap: 8px; padding: 20px 16px; cursor: pointer; }
-.logo-icon { width: 32px; height: 32px; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; }
-.logo-text { font-size: 18px; font-weight: 700; color: #1e293b; }
+.logo-mark { width: 32px; height: 32px; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; }
+.logo-text { font-size: 18px; font-weight: 700; color: #e2e8f0; }
 .nav { flex: 1; padding: 8px; display: flex; flex-direction: column; gap: 2px; }
-.nav-item {
-  display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px;
-  color: #64748b; text-decoration: none; font-size: 14px; transition: all 0.15s; position: relative;
-}
-.nav-item:hover { background: #f1f5f9; color: #1e293b; }
-.nav-item.active { background: #eef2ff; color: #6366f1; font-weight: 600; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; color: #94a3b8; text-decoration: none; font-size: 14px; transition: all 0.2s; position: relative; }
+.nav-item:hover { background: rgba(99, 102, 241, 0.1); color: #e2e8f0; }
+.nav-item.active { background: rgba(99, 102, 241, 0.15); color: #a5b4fc; font-weight: 600; }
 .nav-item.small { font-size: 12px; padding: 6px 12px; }
-.badge {
-  position: absolute; right: 10px; background: #ef4444; color: #fff; font-size: 11px;
-  min-width: 18px; height: 18px; border-radius: 9px; display: flex; align-items: center; justify-content: center;
-}
-.sidebar-footer { padding: 8px; border-top: 1px solid rgba(226,232,240,0.6); }
+.badge { position: absolute; right: 10px; background: #ef4444; color: #fff; font-size: 11px; min-width: 18px; height: 18px; border-radius: 9px; display: flex; align-items: center; justify-content: center; }
+.sidebar-footer { padding: 8px; border-top: 1px solid rgba(51, 65, 85, 0.3); }
 
 /* === 顶栏 === */
-.topbar {
-  height: 56px; background: rgba(255,255,255,0.75); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(226,232,240,0.5);
-  display: flex; align-items: center; justify-content: space-between; padding: 0 24px;
-  position: sticky; top: 0; z-index: 50;
-}
-.greeting { font-size: 14px; color: #64748b; }
+.topbar { height: 56px; background: rgba(10, 14, 23, 0.8); backdrop-filter: blur(16px); border-bottom: 1px solid rgba(51, 65, 85, 0.3); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; position: sticky; top: 0; z-index: 50; }
+.greeting { font-size: 14px; color: #94a3b8; }
 .topbar-right { display: flex; align-items: center; gap: 12px; }
-.balance-badge {
-  background: #f0fdf4; color: #16a34a; padding: 4px 12px; border-radius: 20px;
-  font-size: 13px; font-weight: 600;
-}
-.dropdown-trigger { cursor: pointer; font-size: 14px; color: #334155; display: flex; align-items: center; gap: 4px; }
+.balance-badge { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: #6ee7b7; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 600; }
+.dropdown-trigger { cursor: pointer; font-size: 14px; color: #cbd5e1; display: flex; align-items: center; gap: 4px; }
 
 /* === 主区域 === */
-.main-area {
-  flex: 1; margin-left: 200px;
-  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 50%, #f8fafc 100%);
-  min-height: 100vh;
-}
-.content { max-width: 1000px; margin: 0 auto; padding: 0 24px 40px; }
+.main-area { flex: 1; margin-left: 200px; background: #0a0e17; min-height: 100vh; }
+.content { max-width: 1100px; margin: 0 auto; padding: 0 24px 40px; }
 
 /* === Hero === */
-.hero {
-  text-align: center; padding: 56px 0 40px;
-  background: radial-gradient(ellipse at 50% 0%, rgba(99,102,241,0.08) 0%, transparent 70%);
-}
-.hero-glass {
-  display: inline-block; max-width: 640px;
-  background: rgba(255,255,255,0.7); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255,255,255,0.8); border-radius: 20px; padding: 40px 48px;
-  box-shadow: 0 8px 32px rgba(99,102,241,0.06);
-}
-.hero-badge {
-  display: inline-block; background: linear-gradient(135deg, #dbeafe, #ede9fe);
-  color: #6366f1; padding: 4px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-bottom: 16px;
-}
-.hero h1 { font-size: 30px; font-weight: 800; color: #1e293b; margin: 0 0 8px; letter-spacing: -0.5px; }
-.hero p { font-size: 15px; color: #64748b; margin: 0 0 24px; line-height: 1.6; }
+.hero { position: relative; overflow: hidden; padding: 64px 0 48px; text-align: center; }
+.hero-bg { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 0%, rgba(99,102,241,0.08) 0%, transparent 60%), radial-gradient(ellipse at 80% 50%, rgba(6,182,212,0.04) 0%, transparent 50%); }
+.hero-content { position: relative; z-index: 1; }
+.hero-tag { display: inline-block; padding: 4px 16px; border-radius: 20px; background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.2); color: #a5b4fc; font-size: 12px; font-weight: 600; margin-bottom: 16px; letter-spacing: 0.5px; }
+.hero h1 { font-size: 40px; font-weight: 800; color: #e2e8f0; margin: 0 0 12px; letter-spacing: -1px; }
+.hero-subtitle { font-size: 16px; color: #94a3b8; margin: 0 0 28px; }
 .hero-actions { display: flex; gap: 12px; justify-content: center; }
-.btn-glow { box-shadow: 0 4px 16px rgba(99,102,241,0.25); transition: all 0.3s; }
-.btn-glow:hover { box-shadow: 0 6px 24px rgba(99,102,241,0.35); transform: translateY(-1px); }
-.btn-outline { background: transparent; border: 1.5px solid #e2e8f0; color: #64748b; }
-.btn-outline:hover { border-color: #6366f1; color: #6366f1; }
-.hero-stats { display: flex; gap: 0; justify-content: center; margin-top: 24px; padding-top: 20px; border-top: 1px solid rgba(0,0,0,0.05); }
-.hs-item { padding: 0 20px; }
-.hs-item strong { display: block; font-size: 18px; color: #1e293b; }
-.hs-item span { display: block; font-size: 11px; color: #94a3b8; margin-top: 2px; }
-.hs-div { width: 1px; background: #e2e8f0; }
+.btn-glow { background: linear-gradient(135deg, #6366f1, #8b5cf6) !important; border: none !important; box-shadow: 0 4px 20px rgba(99,102,241,0.3); }
+.btn-glow:hover { box-shadow: 0 6px 30px rgba(99,102,241,0.5); transform: translateY(-1px); }
+.btn-outline { background: transparent !important; border: 1px solid rgba(51,65,85,0.5) !important; color: #94a3b8 !important; }
+.btn-outline:hover { border-color: #6366f1 !important; color: #a5b4fc !important; }
+
+/* === 数据看板 === */
+.dashboard { display: flex; justify-content: center; gap: 0; margin-bottom: 40px; padding: 24px; background: rgba(17,24,39,0.5); border: 1px solid rgba(51,65,85,0.3); border-radius: 14px; backdrop-filter: blur(12px); }
+.stat-item { flex: 1; text-align: center; padding: 0 16px; }
+.stat-divider { width: 1px; background: rgba(51,65,85,0.4); }
+
+/* === 价值流转 === */
+.value-flow { display: flex; align-items: center; justify-content: center; gap: 0; margin-bottom: 40px; padding: 20px; background: rgba(17,24,39,0.3); border: 1px solid rgba(51,65,85,0.2); border-radius: 14px; overflow-x: auto; }
+.flow-step { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 12px; font-size: 12px; color: #94a3b8; white-space: nowrap; }
+.flow-icon { font-size: 20px; }
+.flow-arrow { color: #475569; font-size: 18px; padding: 0 4px; }
 
 /* === 筛选 === */
-.filter-row {
-  display: flex; gap: 12px; align-items: center; margin-bottom: 16px;
-}
+.filter-row { display: flex; gap: 12px; align-items: center; margin-bottom: 20px; }
 .search-input { max-width: 360px; }
 .filter-select { width: 160px; }
 
-/* === 统计 === */
-.stats-row { display: flex; gap: 10px; align-items: center; font-size: 13px; color: #94a3b8; margin-bottom: 16px; }
-.stats-row strong { color: #475569; }
-.link { color: #6366f1; text-decoration: none; }
-
 /* === 卡片 === */
-.task-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
-.task-card {
-  background: rgba(255,255,255,0.8); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255,255,255,0.9); border-radius: 16px; padding: 24px;
-  cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative; overflow: hidden;
-}
-.task-card::before {
-  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
-  background: linear-gradient(90deg, #6366f1, #8b5cf6, #a78bfa); opacity: 0; transition: opacity 0.3s;
-}
-.task-card:hover::before { opacity: 1; }
-.task-card:hover { border-color: #c7d2fe; box-shadow: 0 12px 40px rgba(99,102,241,0.1); transform: translateY(-2px); }
+.task-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; margin-bottom: 40px; }
+.task-card { background: rgba(17,24,39,0.7); backdrop-filter: blur(16px); border: 1px solid rgba(51,65,85,0.3); border-radius: 14px; padding: 22px; cursor: pointer; position: relative; overflow: hidden; }
+.task-card:hover { border-color: rgba(99,102,241,0.3); box-shadow: 0 8px 40px rgba(99,102,241,0.08); }
 .card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-.card-category {
-  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px;
-  background: linear-gradient(135deg, #eef2ff, #ede9fe); color: #6366f1; padding: 3px 10px; border-radius: 6px;
-}
-.welfare-badge { background: #fef3c7; color: #d97706; padding: 2px 8px; border-radius: 4px; margin-left: 6px; font-size: 10px; font-weight: 600; }
-.card-mode { font-size: 12px; color: #94a3b8; }
-.card-title { font-size: 16px; font-weight: 700; color: #1e293b; margin: 0 0 8px; line-height: 1.4; }
-.card-desc { font-size: 13px; color: #94a3b8; margin: 0 0 16px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.card-category { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; background: rgba(99,102,241,0.1); color: #a5b4fc; padding: 3px 10px; border-radius: 6px; }
+.welfare-badge { background: rgba(245,158,11,0.15); color: #fcd34d; padding: 2px 8px; border-radius: 4px; margin-left: 6px; font-size: 10px; }
+.card-title { font-size: 16px; font-weight: 600; color: #e2e8f0; margin: 0 0 8px; line-height: 1.4; }
+.card-desc { font-size: 13px; color: #64748b; margin: 0 0 14px; line-height: 1.5; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .card-bottom { display: flex; justify-content: space-between; align-items: center; }
-.card-price { font-size: 22px; font-weight: 800; background: linear-gradient(135deg, #6366f1, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-.card-meta { display: flex; gap: 10px; align-items: center; font-size: 12px; color: #94a3b8; }
-.card-status.PENDING { color: #f59e0b; }
-.card-status.ASSIGNED, .card-status.SUBMITTED { color: #6366f1; }
-.card-status.COMPLETED { color: #16a34a; }
-.card-views { color: #cbd5e1; }
+.card-price { font-size: 20px; font-weight: 800; }
+.card-meta { display: flex; gap: 10px; font-size: 12px; color: #64748b; }
+
+/* === 信任机制 === */
+.trust-section { margin-bottom: 40px; padding: 32px; background: rgba(17,24,39,0.4); border: 1px solid rgba(51,65,85,0.2); border-radius: 14px; text-align: center; }
+.trust-section h3 { font-size: 18px; color: #e2e8f0; margin-bottom: 20px; }
+.trust-grid { display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; }
+.trust-item { font-size: 14px; color: #94a3b8; display: flex; align-items: center; gap: 6px; padding: 8px 16px; background: rgba(17,24,39,0.5); border: 1px solid rgba(51,65,85,0.3); border-radius: 8px; }
+.trust-item span { font-size: 16px; }
 
 /* === 页脚 === */
-.page-footer {
-  text-align: center; padding: 40px 0 20px; font-size: 13px; color: #94a3b8;
-  display: flex; gap: 8px; justify-content: center;
-}
-.page-footer a { color: #6366f1; text-decoration: none; }
-.dot { color: #cbd5e1; }
+.page-footer { text-align: center; padding: 24px 0; font-size: 13px; color: #475569; display: flex; gap: 8px; justify-content: center; }
+.page-footer a { color: #818cf8; }
+.dot { color: #334155; }
 </style>
