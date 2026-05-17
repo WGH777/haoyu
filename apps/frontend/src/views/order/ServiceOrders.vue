@@ -158,11 +158,11 @@ onMounted(loadOrders)
 .task-title {
   font-size: 15px;
   font-weight: 600;
-  color: #303133;
+  color: #cbd5e1;
   text-decoration: none;
 }
 .task-title:hover {
-  color: #409eff;
+  color: #818cf8;
 }
 .task-meta {
   display: flex;

@@ -3,7 +3,7 @@
 </template>
 
 <style>
-/* 全局重置一些默认样式，让页面撑满屏幕 */
+/* 全局重置 */
 html, body, #app {
   margin: 0;
   padding: 0;

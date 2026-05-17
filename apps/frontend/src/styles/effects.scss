@@ -1,12 +1,12 @@
-// 浩煜 Haoyu — 视觉效果系统
-// 玻璃拟态 · 发光 · 渐变 · 微动效
+// 浩煜 Haoyu — 视觉效果系统 V2
+// 玻璃拟态 · 发光 · 渐变 · 榜单侧栏 · 状态流转
 
 // === 玻璃拟态 ===
 .glass-card {
   background: rgba(17, 24, 39, 0.7);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(51, 65, 85, 0.4);
+  border: 1px solid rgba(148, 163, 184, 0.14);
   border-radius: 14px;
 }
 
@@ -14,7 +14,7 @@
   @extend .glass-card;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   &:hover {
-    border-color: rgba(99, 102, 241, 0.4);
+    border-color: rgba(99, 102, 241, 0.3);
     box-shadow: 0 8px 40px rgba(99, 102, 241, 0.08);
     transform: translateY(-2px);
   }
@@ -47,6 +47,7 @@
   background: linear-gradient(135deg, #fcd34d, #f59e0b);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 // === 状态发光标签 ===
@@ -67,25 +68,25 @@
 }
 .status-badge.pending {
   background: rgba(245, 158, 11, 0.1);
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  border: 1px solid rgba(245, 158, 11, 0.25);
   color: #fcd34d;
   &::before { background: #f59e0b; }
 }
 .status-badge.active {
   background: rgba(99, 102, 241, 0.1);
-  border: 1px solid rgba(99, 102, 241, 0.3);
+  border: 1px solid rgba(99, 102, 241, 0.25);
   color: #a5b4fc;
   &::before { background: #6366f1; }
 }
 .status-badge.done {
   background: rgba(16, 185, 129, 0.1);
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  border: 1px solid rgba(16, 185, 129, 0.25);
   color: #6ee7b7;
   &::before { background: #10b981; }
 }
 .status-badge.danger {
   background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  border: 1px solid rgba(239, 68, 68, 0.25);
   color: #fca5a5;
   &::before { background: #ef4444; }
 }
@@ -93,6 +94,53 @@
 @keyframes pulse-dot {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }
+}
+
+// === 状态流转步骤条 ===
+.flow-steps {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  overflow-x: auto;
+  padding: 8px 0;
+}
+.flow-step-dot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 56px;
+  font-size: 10px;
+  color: #475569;
+  position: relative;
+}
+.flow-step-dot .dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: #334155;
+  border: 2px solid #475569;
+  transition: all 0.3s ease;
+}
+.flow-step-dot.active .dot {
+  background: #6366f1;
+  border-color: #818cf8;
+  box-shadow: 0 0 8px rgba(99, 102, 241, 0.4);
+}
+.flow-step-dot.done .dot {
+  background: #10b981;
+  border-color: #34d399;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.3);
+}
+.flow-step-dot.active { color: #a5b4fc; }
+.flow-step-dot.done { color: #6ee7b7; }
+.flow-step-connector {
+  flex: 1; height: 2px; min-width: 16px;
+  background: #334155;
+  margin-bottom: 16px;
+  transition: background 0.3s ease;
+}
+.flow-step-connector.done {
+  background: linear-gradient(90deg, #10b981, #6366f1);
 }
 
 // === 进度条 ===
@@ -113,7 +161,7 @@
 .stat-number {
   font-size: 28px;
   font-weight: 800;
-  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
   background: linear-gradient(135deg, #a5b4fc, #67e8f9);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -131,6 +179,159 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   &:hover {
     transform: translateY(-3px);
-    box-shadow: 0 12px 40px rgba(99, 102, 241, 0.12);
+    box-shadow: 0 12px 40px rgba(99, 102, 241, 0.1);
+  }
+}
+
+// ==========================================
+// 榜单侧栏（Leaderboard Sidebar）
+// ==========================================
+.leaderboard-panel {
+  background: rgba(17, 24, 39, 0.55);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(148, 163, 184, 0.1);
+  border-radius: 14px;
+  padding: 20px;
+  min-width: 200px;
+}
+.leaderboard-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.leaderboard-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  margin-bottom: 4px;
+  transition: background 0.2s ease;
+  cursor: default;
+}
+.leaderboard-item:hover {
+  background: rgba(99, 102, 241, 0.06);
+}
+.leaderboard-rank {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  background: rgba(148, 163, 184, 0.08);
+  flex-shrink: 0;
+}
+.leaderboard-rank.top-1 { background: linear-gradient(135deg, #f59e0b, #fbbf24); color: #0a0e17; }
+.leaderboard-rank.top-2 { background: linear-gradient(135deg, #94a3b8, #cbd5e1); color: #0a0e17; }
+.leaderboard-rank.top-3 { background: linear-gradient(135deg, #d97706, #f59e0b); color: #0a0e17; }
+.leaderboard-name {
+  font-size: 13px;
+  color: #cbd5e1;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.leaderboard-value {
+  font-size: 12px;
+  font-weight: 600;
+  color: #94a3b8;
+  font-variant-numeric: tabular-nums;
+}
+
+// ==========================================
+// 高级任务卡片（协作市场专用）
+// ==========================================
+.task-card-premium {
+  background: rgba(17, 24, 39, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  border-radius: 14px;
+  padding: 22px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  // 顶部微光条
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.4), transparent);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+  }
+  &:hover {
+    border-color: rgba(99, 102, 241, 0.3);
+    box-shadow: 0 8px 40px rgba(99, 102, 241, 0.08);
+    transform: translateY(-2px);
+    &::before { opacity: 1; }
+  }
+  &:active {
+    transform: translateY(0);
+  }
+
+  .premium-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .premium-card-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #f1f5f9;
+    margin: 0 0 8px;
+    line-height: 1.4;
+  }
+  .premium-card-desc {
+    font-size: 13px;
+    color: #64748b;
+    margin: 0 0 14px;
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .premium-card-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .premium-card-price {
+    font-size: 20px;
+    font-weight: 800;
+    font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
+  }
+  .premium-card-meta {
+    display: flex;
+    gap: 10px;
+    font-size: 12px;
+    color: #64748b;
+  }
+  .premium-card-category {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    background: rgba(99, 102, 241, 0.1);
+    color: #a5b4fc;
+    padding: 3px 10px;
+    border-radius: 6px;
   }
 }
