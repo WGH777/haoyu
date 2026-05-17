@@ -126,6 +126,12 @@ const router = createRouter({
 
     // 404
     {
+      path: '/help',
+      name: 'help',
+      component: () => import('@/views/HelpCenter.vue'),
+      meta: { public: true },
+    },
+    {
       path: '/:pathMatch(.*)*',
       component: () => import('@/views/NotFound.vue'),
       meta: { public: true },

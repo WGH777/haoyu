@@ -28,6 +28,7 @@
       </nav>
       <div class="sidebar-footer">
         <router-link to="/trust" class="nav-item small">信任中心</router-link>
+        <router-link to="/help" class="nav-item small">帮助中心</router-link>
         <template v-if="isLogin && canSeeUserManage">
           <router-link to="/admin" class="nav-item small">管理后台</router-link>
         </template>
