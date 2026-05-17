@@ -7,7 +7,7 @@
       </el-button>
     </div>
 
-    <el-empty v-if="!notifications.length" description="暂无通知" />
+    <el-empty v-if="!notifications.length" description="没有新通知，一切安好" />
 
     <div v-else class="notification-list">
       <div
