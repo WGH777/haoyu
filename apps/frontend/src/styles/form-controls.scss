@@ -250,14 +250,24 @@ html {
   padding: 6px 0;
 }
 
-// 下拉选项
+// 下拉选项 — flex 居中，解决文字偏下问题
 .el-select-dropdown__item {
   color: rgba(226, 232, 240, 0.82) !important;
   background: transparent !important;
-  border-radius: 8px;
-  margin: 2px 6px;
-  padding: 8px 12px;
+  border-radius: 10px;
+  margin: 3px 8px;
+  padding: 0 14px;
+  height: 40px;
+  line-height: normal;
+  display: flex;
+  align-items: center;
   transition: background 0.15s ease, color 0.15s ease;
+  box-sizing: border-box;
+}
+
+// 干掉内部 span 的行高干扰
+.el-select-dropdown__item span {
+  line-height: normal;
 }
 
 // hover — 柔和高亮，绝不出现白色
