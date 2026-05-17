@@ -1,0 +1,340 @@
+// 浩煜 Haoyu — 表单控件统一视觉系统 V1
+// 设计原则：深色柔和 · 低对比边框 · 统一光晕 · 不割裂
+
+// ==========================================
+// 表单设计 Token
+// ==========================================
+:root {
+  --hy-input-bg: rgba(255, 255, 255, 0.055);
+  --hy-input-bg-hover: rgba(255, 255, 255, 0.075);
+  --hy-input-bg-focus: rgba(255, 255, 255, 0.085);
+
+  --hy-input-border: rgba(148, 163, 184, 0.18);
+  --hy-input-border-hover: rgba(125, 211, 252, 0.24);
+  --hy-input-border-focus: rgba(96, 165, 250, 0.40);
+
+  --hy-input-text: rgba(241, 245, 249, 0.94);
+  --hy-input-placeholder: rgba(203, 213, 225, 0.42);
+  --hy-input-muted: rgba(226, 232, 240, 0.58);
+
+  --hy-input-glow: 0 0 0 3px rgba(96, 165, 250, 0.10);
+  --hy-input-radius: 14px;
+
+  --hy-panel-bg: rgba(15, 23, 42, 0.82);
+  --hy-panel-border: rgba(148, 163, 184, 0.16);
+
+  --hy-primary-gradient: linear-gradient(135deg, #6366f1, #8b5cf6);
+  --hy-soft-gradient: linear-gradient(135deg, rgba(99, 102, 241, 0.86), rgba(139, 92, 246, 0.86));
+}
+
+// ==========================================
+// Element Plus 输入框统一覆盖（全局）
+// ==========================================
+.el-input__wrapper {
+  background: var(--hy-input-bg) !important;
+  border: 1px solid var(--hy-input-border) !important;
+  box-shadow: none !important;
+  border-radius: var(--hy-input-radius) !important;
+  transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.el-input__wrapper:hover {
+  background: var(--hy-input-bg-hover) !important;
+  border-color: var(--hy-input-border-hover) !important;
+}
+
+.el-input__wrapper.is-focus {
+  background: var(--hy-input-bg-focus) !important;
+  border-color: var(--hy-input-border-focus) !important;
+  box-shadow: var(--hy-input-glow) !important;
+}
+
+.el-input__inner {
+  color: var(--hy-input-text) !important;
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+}
+
+.el-input__inner::placeholder,
+.el-textarea__inner::placeholder {
+  color: var(--hy-input-placeholder) !important;
+  font-weight: 400;
+}
+
+// ==========================================
+// 文本域
+// ==========================================
+.el-textarea__inner {
+  min-height: 96px;
+  background: var(--hy-input-bg) !important;
+  border: 1px solid var(--hy-input-border) !important;
+  border-radius: 16px !important;
+  color: var(--hy-input-text) !important;
+  box-shadow: none !important;
+  resize: vertical;
+  transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.el-textarea__inner:hover {
+  background: var(--hy-input-bg-hover) !important;
+  border-color: var(--hy-input-border-hover) !important;
+}
+
+.el-textarea__inner:focus {
+  background: var(--hy-input-bg-focus) !important;
+  border-color: var(--hy-input-border-focus) !important;
+  box-shadow: var(--hy-input-glow) !important;
+}
+
+// ==========================================
+// 金额步进器 — 一体式深色控件
+// ==========================================
+.el-input-number {
+  background: transparent;
+  border-radius: var(--hy-input-radius) !important;
+  overflow: hidden;
+}
+
+.el-input-number .el-input__wrapper {
+  background: var(--hy-input-bg) !important;
+  border: 1px solid var(--hy-input-border) !important;
+  box-shadow: none !important;
+  border-radius: var(--hy-input-radius) !important;
+}
+
+.el-input-number .el-input__wrapper:hover {
+  background: var(--hy-input-bg-hover) !important;
+  border-color: var(--hy-input-border-hover) !important;
+}
+
+.el-input-number__decrease,
+.el-input-number__increase {
+  background: rgba(255, 255, 255, 0.035) !important;
+  border-color: rgba(148, 163, 184, 0.12) !important;
+  color: rgba(226, 232, 240, 0.74) !important;
+  font-size: 16px;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+
+.el-input-number__decrease:hover,
+.el-input-number__increase:hover {
+  background: rgba(255, 255, 255, 0.075) !important;
+  color: #ffffff !important;
+}
+
+// ==========================================
+// 分类下拉框 — 深色面板
+// ==========================================
+.el-select .el-input__wrapper {
+  background: var(--hy-input-bg) !important;
+  border: 1px solid var(--hy-input-border) !important;
+  box-shadow: none !important;
+  border-radius: var(--hy-input-radius) !important;
+}
+
+.el-select-dropdown {
+  background: rgba(15, 23, 42, 0.96) !important;
+  border: 1px solid var(--hy-panel-border) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.36) !important;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.el-select-dropdown__item {
+  color: rgba(226, 232, 240, 0.82) !important;
+  border-radius: 8px;
+  margin: 2px 6px;
+}
+
+.el-select-dropdown__item.hover,
+.el-select-dropdown__item:hover {
+  background: rgba(99, 102, 241, 0.14) !important;
+  color: #ffffff !important;
+}
+
+.el-select-dropdown__item.selected {
+  color: #ffffff !important;
+  background: rgba(99, 102, 241, 0.22) !important;
+  font-weight: 600;
+}
+
+// ==========================================
+// 单选项 / 复选框 柔和
+// ==========================================
+.el-radio {
+  color: rgba(226, 232, 240, 0.72) !important;
+}
+
+.el-radio__inner,
+.el-checkbox__inner {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(148, 163, 184, 0.28) !important;
+}
+
+.el-radio__input.is-checked .el-radio__inner {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+  border-color: rgba(129, 140, 248, 0.80) !important;
+}
+
+.el-radio__input.is-checked + .el-radio__label {
+  color: #ffffff !important;
+}
+
+.el-checkbox__input.is-checked .el-checkbox__inner {
+  background: #6366f1 !important;
+  border-color: #6366f1 !important;
+}
+
+.el-radio__label,
+.el-checkbox__label {
+  color: rgba(226, 232, 240, 0.72) !important;
+}
+
+// ==========================================
+// 按钮层级规范
+// ==========================================
+
+// 主按钮
+.el-button--primary {
+  background: var(--hy-primary-gradient) !important;
+  border: none !important;
+  border-radius: 12px !important;
+  box-shadow: 0 10px 26px rgba(99, 102, 241, 0.28);
+  font-weight: 700;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+}
+
+.el-button--primary:hover {
+  box-shadow: 0 12px 32px rgba(99, 102, 241, 0.40);
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}
+
+.el-button--primary:active {
+  transform: translateY(0);
+}
+
+// 默认按钮 → 弱按钮风格
+.el-button--default {
+  background: rgba(255, 255, 255, 0.055) !important;
+  border: 1px solid rgba(148, 163, 184, 0.18) !important;
+  border-radius: 12px !important;
+  color: rgba(226, 232, 240, 0.86) !important;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+
+.el-button--default:hover {
+  background: rgba(255, 255, 255, 0.085) !important;
+  color: #ffffff !important;
+}
+
+// Plain 按钮作为次主按钮（用于上传等）
+.el-button--primary.is-plain {
+  background: var(--hy-soft-gradient) !important;
+  border: 1px solid rgba(129, 140, 248, 0.30) !important;
+  border-radius: 12px !important;
+  color: #ffffff !important;
+  font-weight: 600;
+  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.20);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+}
+
+.el-button--primary.is-plain:hover {
+  filter: brightness(1.08);
+  box-shadow: 0 10px 24px rgba(99, 102, 241, 0.28);
+  transform: translateY(-1px);
+}
+
+.el-button--primary.is-plain:active {
+  transform: translateY(0);
+}
+
+// ==========================================
+// 表单标签
+// ==========================================
+.el-form-item__label {
+  color: rgba(203, 213, 225, 0.78) !important;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+}
+
+// ==========================================
+// 密码输入框
+// ==========================================
+.el-input--password .el-input__inner {
+  color: var(--hy-input-text) !important;
+  caret-color: #6366f1;
+}
+
+// ==========================================
+// 搜索框专项 — 取消白色外壳割裂
+// ==========================================
+.hy-search,
+.search-box {
+  width: 100%;
+}
+
+.hy-search .el-input__wrapper,
+.search-box .el-input__wrapper,
+.search-input .el-input__wrapper {
+  height: 48px;
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(148, 163, 184, 0.18) !important;
+  border-radius: 16px !important;
+  box-shadow: none !important;
+  padding: 0 14px !important;
+}
+
+.hy-search .el-input__wrapper:hover,
+.search-box .el-input__wrapper:hover,
+.search-input .el-input__wrapper:hover {
+  background: rgba(255, 255, 255, 0.075) !important;
+  border-color: rgba(125, 211, 252, 0.24) !important;
+}
+
+.hy-search .el-input__wrapper.is-focus,
+.search-box .el-input__wrapper.is-focus,
+.search-input .el-input__wrapper.is-focus {
+  background: rgba(255, 255, 255, 0.085) !important;
+  border-color: rgba(96, 165, 250, 0.40) !important;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.10) !important;
+}
+
+.hy-search .el-input__prefix,
+.search-box .el-input__prefix,
+.search-input .el-input__prefix {
+  color: rgba(203, 213, 225, 0.58) !important;
+}
+
+// ==========================================
+// 发布弹窗整体暗色
+// ==========================================
+.el-dialog {
+  background: rgba(15, 23, 42, 0.92) !important;
+  border: 1px solid rgba(148, 163, 184, 0.14) !important;
+  border-radius: 22px !important;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.42) !important;
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+}
+
+.el-dialog__header {
+  color: rgba(241, 245, 249, 0.92) !important;
+}
+
+.el-dialog__body {
+  color: #94a3b8 !important;
+}
+
+// ==========================================
+// Switch
+// ==========================================
+.el-switch__core {
+  background: rgba(148, 163, 184, 0.2) !important;
+}
+
+.el-switch.is-checked .el-switch__core {
+  background: #6366f1 !important;
+  border-color: #6366f1 !important;
+}

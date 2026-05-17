@@ -8,6 +8,7 @@ import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import './styles/tokens.scss'
 import './styles/effects.scss'
 import './styles/theme.scss'
+import './styles/form-controls.scss'
 import './style.css'
 
 import App from './App.vue'
