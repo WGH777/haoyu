@@ -7,7 +7,7 @@
         <p>免费注册，开始发布需求或提供服务</p>
       </div>
 
-      <el-form :model="form" :rules="rules" ref="formRef" label-position="top">
+      <el-form :model="form" :rules="rules" ref="formRef" label-position="top" @keyup.enter="handleRegister">
         <el-form-item label="昵称" prop="nickname">
           <el-input v-model="form.nickname" placeholder="你的称呼" size="large" />
         </el-form-item>

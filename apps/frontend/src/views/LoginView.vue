@@ -7,7 +7,7 @@
         <p>登录浩煜，继续你的协作之旅</p>
       </div>
 
-      <el-form :model="form" :rules="rules" ref="loginFormRef" label-position="top">
+      <el-form :model="form" :rules="rules" ref="loginFormRef" label-position="top" @keyup.enter="handleLogin">
         <el-form-item label="邮箱" prop="email">
           <el-input v-model="form.email" placeholder="your@email.com" size="large" />
         </el-form-item>
