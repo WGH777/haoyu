@@ -16,7 +16,9 @@ export type NotificationType =
   | 'ORDER_CANCELLED'
   | 'DISPUTE_RESOLVED'
   | 'DEADLINE_WARNING'
-  | 'PROVIDER_UNRESPONSIVE';
+  | 'PROVIDER_UNRESPONSIVE'
+  | 'MATCHING_ALERT'
+  | 'NEWBIE_NUDGE';
 
 @Injectable()
 export class NotificationService {

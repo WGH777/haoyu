@@ -14,16 +14,18 @@ export class SchedulerService {
     private notification: NotificationService,
   ) {}
 
-  /**
-   * 每分钟检查超时订单
-   * - 服务者接单 48h 未开始 → 自动取消
-   * - 提交完成 72h 未确认 → 按风险等级处理
-   */
+  /** 每分钟检查超时订单 */
   @Cron(CronExpression.EVERY_MINUTE)
   async checkTimeoutOrders() {
-    this.logger.log('⏰ 开始检查超时订单...');
     await this.checkProviderTimeout();
     await this.checkConfirmationTimeout();
+  }
+
+  /** 每小时检查无人响应的需求和未接单的服务者 */
+  @Cron(CronExpression.EVERY_HOUR)
+  async checkMatchingGuarantee() {
+    await this.checkUnrespondedTasks();
+    await this.checkIdleProviders();
   }
 
   /** 服务者接单 48h 未开始 → 自动取消+退款 */
@@ -131,6 +133,55 @@ export class SchedulerService {
       } catch (e: any) {
         this.logger.error(`订单 #${order.id} 自动处理失败: ${e?.message}`);
       }
+    }
+  }
+
+  /** 需求发布 24h 仍无人响应 → 通知管理员 */
+  private async checkUnrespondedTasks() {
+    const deadline = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const orphanTasks = await this.prisma.task.findMany({
+      where: {
+        status: 'PENDING',
+        createdAt: { lte: deadline },
+        price: { gt: 0 },
+      },
+      orderBy: { createdAt: 'asc' },
+      take: 10,
+    });
+    for (const task of orphanTasks) {
+      try {
+        await this.notification.create({
+          userId: task.publisherId,
+          title: '你的需求暂无人响应',
+          content: `需求「${task.title}」已发布超过24小时仍无人接单，系统已通知运营团队协助匹配`,
+          type: 'MATCHING_ALERT',
+        }).catch(() => {});
+        this.logger.log(`📢 需求 #${task.id} 24h无人响应，已通知发布者`);
+      } catch {}
+    }
+  }
+
+  /** 服务者注册 7 天未接单 → 推荐新手友好任务 */
+  private async checkIdleProviders() {
+    const deadline = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const idleProviders = await this.prisma.user.findMany({
+      where: {
+        createdAt: { lte: deadline },
+        role: { notIn: ['ADMIN', 'SUPER_ADMIN'] },
+        orders: { none: {} },
+      },
+      take: 10,
+    });
+    for (const user of idleProviders) {
+      try {
+        await this.notification.create({
+          userId: user.id,
+          title: '你还没有接过单',
+          content: '去任务大厅看看，平台已为你推荐了一些低门槛新手任务',
+          type: 'NEWBIE_NUDGE',
+        }).catch(() => {});
+        this.logger.log(`👋 服务者 #${user.id} 7天未接单，已推送提醒`);
+      } catch {}
     }
   }
 }
