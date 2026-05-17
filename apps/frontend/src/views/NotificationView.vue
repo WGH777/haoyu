@@ -95,16 +95,21 @@ onMounted(async () => {
 .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
 .page-header h2 { margin: 0; font-size: 20px; font-weight: 700; }
 .notification-item {
-  padding: 14px 16px; margin-bottom: 8px; border-radius: 8px; cursor: pointer;
-  background: #fff; border: 1px solid #ebeef5; transition: all 0.2s; user-select: none;
+  padding: 14px 16px; margin-bottom: 8px; border-radius: 10px; cursor: pointer;
+  background: rgba(17, 24, 39, 0.45);
+  border: 1px solid rgba(148, 163, 184, 0.08);
+  transition: all 0.2s; user-select: none;
 }
-.notification-item.unread { background: #ecf5ff; border-color: #b3d8ff; }
-.notification-item:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); transform: translateY(-1px); }
+.notification-item.unread {
+  background: rgba(99, 102, 241, 0.06);
+  border-color: rgba(99, 102, 241, 0.15);
+}
+.notification-item:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.3); transform: translateY(-1px); }
 .notification-item:active { transform: scale(0.995); }
 .notify-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
 .notify-type { display: flex; align-items: center; gap: 6px; }
 .unread-dot { width: 6px; height: 6px; background: #ef4444; border-radius: 50%; }
-.notify-time { font-size: 12px; color: #999; }
-.notify-title { font-weight: 600; font-size: 15px; margin-bottom: 4px; }
-.notify-content { font-size: 13px; color: #666; line-height: 1.5; }
+.notify-time { font-size: 12px; color: #64748b; }
+.notify-title { font-weight: 600; font-size: 15px; margin-bottom: 4px; color: #f1f5f9; }
+.notify-content { font-size: 13px; color: #94a3b8; line-height: 1.5; }
 </style>

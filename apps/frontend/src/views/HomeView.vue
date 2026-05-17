@@ -343,6 +343,9 @@
     <router-link to="/task" class="mn-item" :class="{ active: $route.path === '/task' || $route.path === '/' }">
       <el-icon><List /></el-icon><span>大厅</span>
     </router-link>
+    <router-link to="/my-task" class="mn-item" :class="{ active: $route.path === '/my-task' }">
+      <el-icon><Files /></el-icon><span>我的</span>
+    </router-link>
     <router-link to="/my-orders" class="mn-item" :class="{ active: $route.path === '/my-orders' }">
       <el-icon><Connection /></el-icon><span>订单</span>
     </router-link>

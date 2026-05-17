@@ -415,7 +415,7 @@ onMounted(() => {
 
 .filter-label {
   margin-right: 8px;
-  color: #606266;
+  color: #94a3b8;
   font-size: 13px;
 }
 
@@ -428,12 +428,12 @@ onMounted(() => {
 
 .progress-text {
   font-size: 12px;
-  color: #606266;
+  color: #94a3b8;
   min-width: 40px;
 }
 
 .progress-none {
   font-size: 12px;
-  color: #909399;
+  color: #64748b;
 }
 </style>
