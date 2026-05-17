@@ -25,6 +25,31 @@
 
   --hy-primary-gradient: linear-gradient(135deg, #6366f1, #8b5cf6);
   --hy-soft-gradient: linear-gradient(135deg, rgba(99, 102, 241, 0.86), rgba(139, 92, 246, 0.86));
+
+  // ---- Element Plus CSS 变量覆盖（关键：Element Plus 内部用这些渲染下拉/popper/select）----
+  // 下拉面板背景
+  --el-bg-color-overlay: rgba(15, 23, 42, 0.96);
+  // 下拉选项 hover 背景 — 原来默认 #f5f7fa（白）
+  --el-fill-color-light: rgba(99, 102, 241, 0.14);
+  // select 选项 hover 背景
+  --el-select-option-hover-bg-color: rgba(99, 102, 241, 0.14);
+  // select 选项选中背景
+  --el-select-option-selected-bg-color: rgba(99, 102, 241, 0.22);
+  // select 选项选中文字
+  --el-select-option-selected-text-color: #ffffff;
+  // select 选项文字
+  --el-select-option-text-color: rgba(226, 232, 240, 0.82);
+  // select 输入框背景
+  --el-select-input-bg-color: transparent;
+  // select 输入框文字
+  --el-select-input-color: rgba(241, 245, 249, 0.94);
+  // select placeholder
+  --el-select-placeholder-color: rgba(203, 213, 225, 0.38);
+  // dropdown 菜单背景
+  --el-dropdown-menuItem-hover-fill: rgba(99, 102, 241, 0.12);
+  --el-dropdown-menuItem-hover-color: #f1f5f9;
+  // popper 全局
+  --el-popper-border-radius: 14px;
 }
 
 // ==========================================
