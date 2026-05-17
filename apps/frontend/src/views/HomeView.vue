@@ -77,7 +77,7 @@
             <p class="hero-subtitle">可信价值协作平台 — 连接真实需求，激活真实能力，保障可信交付</p>
             <div class="hero-actions">
               <el-button type="primary" size="large" round @click="openCreateDialog" v-if="isLogin" class="btn-glow">✨ 发布需求</el-button>
-              <el-button size="large" round @click="$router.push('/register')" v-else class="btn-glow">免费注册</el-button>
+              <el-button size="large" round @click="$router.push('/register')" v-else class="btn-glow">创建协作身份</el-button>
               <el-button size="large" round class="btn-outline" @click="$router.push('/trust')">了解保障</el-button>
             </div>
           </div>
@@ -639,6 +639,8 @@ onMounted(() => {
 .btn-glow {
   background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
   border: none !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
   box-shadow: 0 4px 20px rgba(99,102,241,0.3);
 }
 .btn-glow:hover {
