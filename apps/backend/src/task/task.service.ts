@@ -78,6 +78,9 @@ export class TaskService {
       }
     }
 
+    // 自动风险评估
+    const autoRisk = assessRisk(createTaskDto, price);
+
     // TODO Phase 3: 阶梯费率 (0%/2%/5%/10%)
     const SERVICE_FEE_RATE = 0; // P0 阶段暂免服务费
     const serviceFee = Math.max(0, Math.round(price * SERVICE_FEE_RATE));
@@ -114,6 +117,7 @@ export class TaskService {
           image: image || null,
           publisherId: userId,
           status: 'PENDING',
+          riskLevel: autoRisk,
         },
       });
 
@@ -359,4 +363,28 @@ export class TaskService {
 
     return this.prisma.subTask.delete({ where: { id: subTaskId } });
   }
+}
+
+/** 自动风险评估引擎 */
+function assessRisk(dto: { title?: string; description?: string; serviceMode?: string; category?: string }, price: number): string {
+  let score = 0
+  const text = `${dto.title || ''} ${dto.description || ''}`.toLowerCase()
+
+  // 金额风险
+  if (price > 100000) score += 3
+  else if (price > 50000) score += 2
+  else if (price > 10000) score += 1
+
+  // 关键词风险
+  const highRiskWords = ['密码','验证码','转账','银行卡','身份证','账号','贷款','刷单','佣金','返利','赌博']
+  const medRiskWords = ['代购','代付','代收','垫付','押金','保证金']
+  for (const w of highRiskWords) if (text.includes(w)) score += 3
+  for (const w of medRiskWords) if (text.includes(w)) score += 1
+
+  // 线下服务额外风险
+  if (dto.serviceMode === 'OFFLINE') score += 1
+
+  if (score >= 6) return 'HIGH'
+  if (score >= 3) return 'MEDIUM'
+  return 'LOW'
 }
