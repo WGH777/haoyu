@@ -166,104 +166,10 @@
 
         <!-- 主内容区（任务网格 + 榜单侧栏） -->
         <div class="market-layout">
-          <!-- 左侧：任务卡片网格 -->
-          <div class="market-main" v-loading="loading">
-            <el-empty v-if="!loading && !tasks.length" description="这里暂时安静，新的需求可能正在路上 ✨">
-              <el-button type="primary" round @click="openCreateDialog">发布第一个需求</el-button>
-            </el-empty>
-
-            <div class="task-grid">
-              <div
-                v-for="task in tasks"
-                :key="task.id"
-                class="task-card-premium"
-                @click="$router.push(`/task/${task.id}`)"
-              >
-                <div class="premium-card-top">
-                  <span class="premium-card-category">
-                    {{ categoryLabel(task.category || '') }}
-                    <span v-if="task.isPublicWelfare" class="welfare-badge">公益</span>
-                  </span>
-                  <span :class="['status-badge', statusClass(task.status)]">
-                    {{ statusLabel(task.status) }}
-                  </span>
-                </div>
-
-                <h3 class="premium-card-title">{{ task.title }}</h3>
-                <p class="premium-card-desc">{{ truncate(task.description, 80) }}</p>
-
-                <!-- 迷你进度条 -->
-                <div class="progress-mini" style="margin-bottom: 12px;">
-                  <div class="progress-fill" :style="{ width: progressPercent(task.status) }"></div>
-                </div>
-
-                <div class="premium-card-bottom">
-                  <span class="premium-card-price glow-amber">¥{{ (task.price / 100).toFixed(2) }}</span>
-                  <span class="premium-card-meta">
-                    <span>{{ task.serviceMode === 'OFFLINE' ? '📍 线下' : task.serviceMode === 'BOTH' ? '🌐 均可' : '💻 线上' }}</span>
-                    <span>👁 {{ task.views || 0 }}</span>
-                  </span>
-                </div>
-              </div>
-            </div>
+          <div class="market-main">
+            <TaskGrid :tasks="tasks" :loading="loading" @select="id => $router.push(`/task/${id}`)" @create="openCreateDialog" />
           </div>
-
-          <!-- 右侧：榜单侧栏 -->
-          <aside class="leaderboard-sidebar">
-            <!-- 热门需求 -->
-            <div class="leaderboard-panel">
-              <div class="leaderboard-title">
-                <span>🔥</span> 热门需求
-              </div>
-              <div v-if="tasks.length" class="leaderboard-list">
-                <div
-                  v-for="(t, idx) in tasks.slice(0, 5)"
-                  :key="'hot-' + t.id"
-                  class="leaderboard-item"
-                  @click="$router.push(`/task/${t.id}`)"
-                  style="cursor: pointer;"
-                >
-                  <span class="leaderboard-rank" :class="'top-' + (idx + 1)" v-if="idx < 3">{{ idx + 1 }}</span>
-                  <span class="leaderboard-rank" v-else>{{ idx + 1 }}</span>
-                  <span class="leaderboard-name">{{ truncate(t.title, 16) }}</span>
-                  <span class="leaderboard-value">¥{{ (t.price / 100).toFixed(0) }}</span>
-                </div>
-              </div>
-              <div v-else style="font-size: 12px; color: #64748b; text-align: center; padding: 12px 0;">
-                暂无需求
-              </div>
-            </div>
-
-            <!-- 完成榜 -->
-            <div class="leaderboard-panel" style="margin-top: 16px;">
-              <div class="leaderboard-title">
-                <span>🏆</span> 完成榜
-              </div>
-              <div style="font-size: 12px; color: #64748b; text-align: center; padding: 20px 0;">
-                协作完成后上榜
-              </div>
-            </div>
-
-            <!-- 信用榜 -->
-            <div class="leaderboard-panel" style="margin-top: 16px;">
-              <div class="leaderboard-title">
-                <span>⭐</span> 信用榜
-              </div>
-              <div style="font-size: 12px; color: #64748b; text-align: center; padding: 20px 0;">
-                信用分达标后上榜
-              </div>
-            </div>
-
-            <!-- 最新加入 -->
-            <div class="leaderboard-panel" style="margin-top: 16px;">
-              <div class="leaderboard-title">
-                <span>🆕</span> 最新加入
-              </div>
-              <div style="font-size: 12px; color: #64748b; text-align: center; padding: 20px 0;">
-                新用户加入后展示
-              </div>
-            </div>
-          </aside>
+          <LeaderboardSidebar :tasks="tasks" @select="id => $router.push(`/task/${id}`)" />
         </div>
 
         <!-- 信任机制区 -->
@@ -295,50 +201,14 @@
     </main>
 
     <!-- 发布弹窗 -->
-    <el-dialog v-model="showCreateDialog" title="发布新需求" width="560px" destroy-on-close>
-      <el-form :model="createForm" label-position="top">
-        <el-form-item label="给这次协作起个清楚的名字" required>
-          <el-input v-model="createForm.title" placeholder="让人一眼知道你需要什么" maxlength="60" show-word-limit />
-        </el-form-item>
-        <el-form-item label="说说背景、目标和期望">
-          <el-input v-model="createForm.desc" type="textarea" :rows="3" placeholder="越具体，匹配到合适的人越快" />
-        </el-form-item>
-        <el-form-item label="你愿意为这个需求支付多少？（¥）">
-          <el-input-number v-model="createForm.price" :min="1" :step="10" :precision="2" style="width:200px" />
-        </el-form-item>
-        <el-form-item label="配图（可选）">
-          <el-upload :http-request="handleUpload" :show-file-list="false" accept="image/*">
-            <el-button type="primary" :loading="uploadingImg" class="upload-btn">
-              {{ createForm.image ? '已选图片' : '添加参考图' }}
-            </el-button>
-          </el-upload>
-          <p class="upload-hint" style="font-size:12px;color:rgba(203,213,225,0.48);margin-top:6px;">截图、样例图或补充说明都可以</p>
-          <el-image v-if="createForm.image" :src="getFullUrl(createForm.image)" style="width:100px;height:100px;border-radius:8px;margin-top:8px" fit="cover" />
-        </el-form-item>
-        <el-form-item label="分类">
-          <el-select v-model="createForm.category" style="width:100%">
-            <el-option label="技能服务" value="SKILL_SERVICE" />
-            <el-option label="生活协助" value="LIFE_ASSISTANCE" />
-            <el-option label="家庭关怀" value="FAMILY_CARE" />
-            <el-option label="远程协助" value="REMOTE_ASSISTANCE" />
-            <el-option label="社区协作" value="COMMUNITY_COLLABORATION" />
-            <el-option label="公益互助" value="PUBLIC_WELFARE" />
-            <el-option label="其他" value="OTHER" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="服务方式">
-          <el-radio-group v-model="createForm.serviceMode">
-            <el-radio label="ONLINE">线上</el-radio>
-            <el-radio label="OFFLINE">线下</el-radio>
-            <el-radio label="BOTH">均可</el-radio>
-          </el-radio-group>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="showCreateDialog = false">取消</el-button>
-        <el-button type="primary" @click="submitTask" :loading="submitting">确认发布</el-button>
-      </template>
-    </el-dialog>
+    <PublishDialog
+      v-model:visible="showCreateDialog"
+      :form="createForm"
+      :uploading="uploadingImg"
+      :submitting="submitting"
+      @submit="submitTask"
+      @upload="handleUpload"
+    />
   </div>
 
   <!-- 移动端底部导航 -->
@@ -374,6 +244,9 @@ import { getTaskList, createTask, uploadTaskImage, type Task } from '@/api/task'
 import { getProfile, type UserProfile } from '@/api/user'
 import { notificationApi } from '@/api/notification'
 import { getWallet } from '@/api/wallet'
+import TaskGrid from '@/components/TaskGrid.vue'
+import LeaderboardSidebar from '@/components/LeaderboardSidebar.vue'
+import PublishDialog from '@/components/PublishDialog.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -398,43 +271,6 @@ const createForm = reactive({
 const canSeeUserManage = computed(() =>
   ['ADMIN', 'SUPER_ADMIN'].includes(currentUser.value?.role || '')
 )
-
-// === 工具函数 ===
-const categoryLabel = (c: string) => {
-  const m: Record<string, string> = {
-    SKILL_SERVICE: '技能', LIFE_ASSISTANCE: '生活', FAMILY_CARE: '家庭',
-    REMOTE_ASSISTANCE: '远程', COMMUNITY_COLLABORATION: '社区',
-    PUBLIC_WELFARE: '公益', OTHER: '其他'
-  }
-  return m[c] || c
-}
-
-const statusLabel = (s: string) => {
-  const m: Record<string, string> = {
-    PENDING: '待接单', ASSIGNED: '进行中', IN_PROGRESS: '服务中',
-    SUBMITTED: '待验收', COMPLETED: '已完成', CANCELLED: '已取消', DISPUTED: '争议中'
-  }
-  return m[s] || s
-}
-
-const statusClass = (s: string) => {
-  const m: Record<string, string> = {
-    PENDING: 'pending', ASSIGNED: 'active', IN_PROGRESS: 'active',
-    SUBMITTED: 'active', COMPLETED: 'done', CANCELLED: 'danger', DISPUTED: 'danger'
-  }
-  return m[s] || 'pending'
-}
-
-const progressPercent = (s: string) => {
-  const m: Record<string, string> = {
-    PENDING: '0%', ASSIGNED: '25%', IN_PROGRESS: '50%',
-    SUBMITTED: '75%', COMPLETED: '100%', CANCELLED: '100%', DISPUTED: '100%'
-  }
-  return m[s] || '0%'
-}
-
-const truncate = (text: string, len: number) =>
-  text && text.length > len ? text.slice(0, len) + '...' : text || ''
 
 const getFullUrl = (path: string) =>
   path ? (path.startsWith('http') ? path : `http://localhost:3000${path}`) : ''
@@ -693,45 +529,9 @@ onMounted(() => {
   box-shadow: none !important;
 }
 
-/* 上传按钮 */
-.upload-btn {
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.86), rgba(139, 92, 246, 0.86)) !important;
-  border: 1px solid rgba(129, 140, 248, 0.30) !important;
-  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.20) !important;
-}
-
-/* ==========================================
-   市场布局（任务网格 + 榜单侧栏）
-   ========================================== */
-.market-layout {
-  display: flex; gap: 24px; margin-bottom: 40px; align-items: flex-start;
-}
+/* === 布局 === */
+.market-layout { display: flex; gap: 24px; margin-bottom: 40px; align-items: flex-start; }
 .market-main { flex: 1; min-width: 0; }
-
-/* 任务卡片网格 */
-.task-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
-  gap: 20px;
-}
-
-/* 福利标签微调 */
-.welfare-badge {
-  background: rgba(245,158,11,0.15);
-  color: #fcd34d;
-  padding: 2px 8px;
-  border-radius: 4px;
-  margin-left: 6px;
-  font-size: 10px;
-}
-
-/* === 榜单侧栏 === */
-.leaderboard-sidebar {
-  width: 220px;
-  flex-shrink: 0;
-  position: sticky;
-  top: 72px;
-}
 
 /* === 信任机制 === */
 .trust-section {
