@@ -44,6 +44,22 @@ export class TaskController {
     return this.taskService.create(req.user.id, createTaskDto);
   }
 
+  @Get('related/:id')
+  @ApiOperation({ summary: '推荐相关任务' })
+  async findRelated(@Param('id', ParseIntPipe) id: number) {
+    const task = await this.taskService.findOne(id);
+    return this.prisma.task.findMany({
+      where: {
+        id: { not: id },
+        status: { in: ['PENDING', 'ASSIGNED'] },
+        OR: [{ category: task.category }, { serviceMode: task.serviceMode }],
+      },
+      include: { publisher: { select: { id: true, email: true, nickname: true, verified: true } } },
+      take: 4,
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   @Get()
   @ApiOperation({ summary: '获取任务列表（任务大厅）' })
   findAll() {

@@ -538,6 +538,17 @@
       </template>
     </el-dialog>
 
+    <!-- 推荐任务 -->
+    <el-card v-if="relatedTasks.length" class="related-card" shadow="never">
+      <template #header><span style="font-weight:600">🔗 你可能会感兴趣</span></template>
+      <div class="related-grid">
+        <div v-for="rt in relatedTasks" :key="rt.id" class="related-item" @click="$router.push(`/task/${rt.id}`)">
+          <span class="related-title">{{ rt.title }}</span>
+          <span class="related-price">¥{{ ((rt.price||0)/100).toFixed(0) }}</span>
+        </div>
+      </div>
+    </el-card>
+
     <!-- 留言区（订单参与方可见） -->
     <div v-if="myOrder || publisherOrder" class="comment-section">
       <h4>💬 沟通记录</h4>
@@ -567,6 +578,7 @@ import {
   createSubTask,
   updateSubTask,
   deleteSubTask,
+  getRelatedTasks,
   type Task,
   type SubTask,
 } from '@/api/task'
@@ -631,6 +643,12 @@ const route = useRoute()
 const router = useRouter()
 
 const task = ref<Task | null>(null)
+const relatedTasks = ref<Task[]>([])
+
+const fetchRelated = async (id: number) => {
+  try { const r: any = await getRelatedTasks(id); relatedTasks.value = Array.isArray(r) ? r : r?.data || [] }
+  catch { relatedTasks.value = [] }
+}
 const myOrder = ref<OrderItem | null>(null)
 const publisherOrder = ref<OrderItem | null>(null)
 const currentUser = ref<UserProfile | null>(null)
@@ -799,6 +817,7 @@ const loadTask = async () => {
 
   const res = (await findTaskDetail(taskId)) as Task
   task.value = res
+  fetchRelated(res.id)
 
   // 如果正在编辑的子任务已不存在，则退出编辑态
   if (editingSubTaskId.value !== null) {
@@ -1401,4 +1420,16 @@ onMounted(() => {
     position: static;
   }
 }
+
+.related-card { margin-top: 16px; }
+.related-grid { display: flex; flex-direction: column; gap: 8px; }
+.related-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 14px; border-radius: 10px;
+  background: rgba(17,24,39,0.35); border: 1px solid rgba(148,163,184,0.08);
+  cursor: pointer; transition: background 0.2s, border-color 0.2s;
+}
+.related-item:hover { background: rgba(99,102,241,0.08); border-color: rgba(99,102,241,0.2); }
+.related-title { font-size: 14px; color: #cbd5e1; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.related-price { font-size: 14px; font-weight: 700; color: #fcd34d; margin-left: 12px; }
 </style>

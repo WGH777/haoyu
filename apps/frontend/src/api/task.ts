@@ -136,6 +136,10 @@ export const findTaskDetail = (id: number) => {
   return getTaskDetail(id)
 }
 
+export const getRelatedTasks = (id: number) => {
+  return http.get<Task[]>('/task/related/' + id)
+}
+
 /**
  * 我发布的任务（含子任务）
  */
