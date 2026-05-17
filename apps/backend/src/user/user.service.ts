@@ -113,6 +113,17 @@ export class UserService {
     });
   }
 
+  /** 用户信用统计 */
+  async getCreditStats(userId: number) {
+    const [completed, cancelled, allAsWorker] = await Promise.all([
+      this.prisma.order.count({ where: { workerId: userId, status: 'COMPLETED' } }),
+      this.prisma.order.count({ where: { workerId: userId, status: 'CANCELLED' } }),
+      this.prisma.order.count({ where: { workerId: userId } }),
+    ]);
+    const completionRate = allAsWorker > 0 ? Math.round((completed / allAsWorker) * 100) : 0;
+    return { completed, cancelled, totalAsWorker: allAsWorker, completionRate };
+  }
+
   /**
    * 🔥 核心修复：级联删除用户
    * 在删除用户前，必须先删除他产生的所有关联数据（流水、订单、任务、子任务）

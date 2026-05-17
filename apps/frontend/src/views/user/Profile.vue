@@ -83,6 +83,10 @@
                 <el-tag v-if="profile?.verified" type="success" size="small">✅ 已认证 ({{ profile?.certLevel || 'BASIC' }})</el-tag>
                 <el-button v-else type="primary" size="small" @click="applyVerify" :loading="applying">申请认证</el-button>
               </el-descriptions-item>
+              <el-descriptions-item label="信用" v-if="profile?.credit">
+                <span style="color:#6ee7b7;font-weight:600">完成率 {{ profile.credit.completionRate }}%</span>
+                <span style="color:#94a3b8;font-size:12px;margin-left:8px">{{ profile.credit.completed }} 完成 / {{ profile.credit.totalAsWorker }} 总接单</span>
+              </el-descriptions-item>
             </el-descriptions>
           </div>
 

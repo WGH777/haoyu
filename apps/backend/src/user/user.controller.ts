@@ -61,7 +61,11 @@ export class UserController {
   @ApiOperation({ summary: '获取当前登录用户的个人信息' })
   async getProfile(@Req() req: any) {
     const userId = req.user.id;
-    return this.userService.findById(userId);
+    const [profile, credit] = await Promise.all([
+      this.userService.findById(userId),
+      this.userService.getCreditStats(userId),
+    ]);
+    return { ...profile, credit };
   }
 
   /**

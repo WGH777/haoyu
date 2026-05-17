@@ -29,6 +29,7 @@ export interface UserProfile {
   bio?: string | null
   verified?: boolean
   certLevel?: string
+  credit?: { completed: number; cancelled: number; totalAsWorker: number; completionRate: number }
 }
 
 export interface LoginDto {
