@@ -685,6 +685,11 @@ onMounted(() => {
 }
 .search-input { max-width: 380px; }
 .filter-select { width: 170px; }
+.filter-select .el-input__wrapper {
+  background: rgba(255, 255, 255, 0.02) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  box-shadow: none !important;
+}
 
 /* ==========================================
    市场布局（任务网格 + 榜单侧栏）
