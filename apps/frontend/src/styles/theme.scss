@@ -214,3 +214,109 @@ html, body {
 .el-loading-mask {
   background: rgba(10, 14, 23, 0.6) !important;
 }
+
+// ===== 移动端响应式 =====
+@media (max-width: 768px) {
+  // 隐藏桌面侧边栏
+  .app-shell > .sidebar {
+    display: none !important;
+  }
+
+  // 主区域全宽
+  .app-shell > .main-area {
+    margin-left: 0 !important;
+    padding-bottom: 64px; // 给底部导航留空间
+  }
+
+  // 内容区 padding 缩小
+  .content {
+    padding: 0 12px 24px !important;
+  }
+
+  // Hero 缩小
+  .hero {
+    padding: 32px 0 24px !important;
+  }
+  .hero h1 {
+    font-size: 24px !important;
+  }
+  .hero-subtitle {
+    font-size: 14px !important;
+  }
+
+  // 数据看板滚动
+  .dashboard {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .stat-item {
+    flex: 1 1 40%;
+    min-width: 120px;
+    padding: 8px;
+  }
+  .stat-divider {
+    display: none;
+  }
+
+  // 价值流转横向滚动
+  .value-flow {
+    gap: 4px;
+    padding: 12px;
+  }
+  .flow-arrow {
+    display: none;
+  }
+
+  // 卡片单列
+  .task-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  // 信任网格
+  .trust-grid {
+    gap: 8px;
+  }
+  .trust-item {
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+
+  // 筛选行
+  .filter-row {
+    flex-wrap: wrap;
+  }
+  .search-input {
+    max-width: 100% !important;
+    flex: 1;
+  }
+
+  // 弹窗全屏
+  .el-dialog {
+    width: 92% !important;
+    margin: 10px auto !important;
+    border-radius: 14px !important;
+  }
+
+  // 表格横向滚动
+  .el-table {
+    font-size: 12px;
+  }
+
+  // 登录卡片
+  .login-box, .register-box {
+    width: 90% !important;
+    padding: 24px !important;
+  }
+
+  // 钱包卡片
+  .balance-cards {
+    flex-direction: column !important;
+    gap: 10px !important;
+  }
+
+  // 留言区
+  .comment-section {
+    padding: 12px !important;
+  }
+}
