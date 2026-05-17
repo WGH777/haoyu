@@ -442,6 +442,8 @@ html, body {
     width: 92% !important;
     margin: 10px auto !important;
     border-radius: 14px !important;
+    max-height: 85vh;
+    overflow-y: auto;
   }
 
   .el-table {
