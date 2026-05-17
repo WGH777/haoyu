@@ -128,6 +128,21 @@ export class AdminController {
     });
   }
 
+  /** 仪表盘统计数据 */
+  @Get('dashboard')
+  async dashboard() {
+    const [totalTasks, totalOrders, totalUsers, completedOrders] = await Promise.all([
+      this.prisma.task.count(),
+      this.prisma.order.count(),
+      this.prisma.user.count(),
+      this.prisma.order.findMany({ where: { status: 'COMPLETED' }, select: { task: { select: { price: true } } } }),
+    ]);
+    const totalVolume = completedOrders.reduce((sum: number, o: any) => sum + (o.task?.price || 0), 0);
+    const taskByCategory = await this.prisma.task.groupBy({ by: ['category'], _count: true });
+    const orderByStatus = await this.prisma.order.groupBy({ by: ['status'], _count: true });
+    return { totalTasks, totalOrders, totalUsers, totalVolume, taskByCategory, orderByStatus };
+  }
+
   /** 审计日志列表 */
   @Get('audit-logs')
   async getAuditLogs() {
