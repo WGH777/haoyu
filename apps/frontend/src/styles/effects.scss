@@ -1,0 +1,136 @@
+// 浩煜 Haoyu — 视觉效果系统
+// 玻璃拟态 · 发光 · 渐变 · 微动效
+
+// === 玻璃拟态 ===
+.glass-card {
+  background: rgba(17, 24, 39, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(51, 65, 85, 0.4);
+  border-radius: 14px;
+}
+
+.glass-card-hover {
+  @extend .glass-card;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  &:hover {
+    border-color: rgba(99, 102, 241, 0.4);
+    box-shadow: 0 8px 40px rgba(99, 102, 241, 0.08);
+    transform: translateY(-2px);
+  }
+}
+
+// === 发光效果 ===
+.glow-border {
+  position: relative;
+  overflow: hidden;
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #6366f1, #06b6d4, transparent);
+    opacity: 0;
+    transition: opacity 0.4s;
+  }
+  &:hover::after { opacity: 1; }
+}
+
+.glow-text {
+  background: linear-gradient(135deg, #a5b4fc, #67e8f9);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.glow-amber {
+  background: linear-gradient(135deg, #fcd34d, #f59e0b);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+// === 状态发光标签 ===
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  &::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    animation: pulse-dot 2s infinite;
+  }
+}
+.status-badge.pending {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: #fcd34d;
+  &::before { background: #f59e0b; }
+}
+.status-badge.active {
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  color: #a5b4fc;
+  &::before { background: #6366f1; }
+}
+.status-badge.done {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #6ee7b7;
+  &::before { background: #10b981; }
+}
+.status-badge.danger {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+  &::before { background: #ef4444; }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+// === 进度条 ===
+.progress-mini {
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(51, 65, 85, 0.4);
+  overflow: hidden;
+  .progress-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: linear-gradient(90deg, #6366f1, #06b6d4);
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+// === 数据看板数字 ===
+.stat-number {
+  font-size: 28px;
+  font-weight: 800;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  background: linear-gradient(135deg, #a5b4fc, #67e8f9);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+// === 卡片悬浮 ===
+.card-lift {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px rgba(99, 102, 241, 0.12);
+  }
+}

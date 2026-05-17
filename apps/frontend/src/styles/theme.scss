@@ -1,0 +1,183 @@
+// 浩煜 Haoyu — Element Plus 深色科技主题覆盖
+// 引入设计令牌
+
+// === 全局重置 ===
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #0a0e17;
+  color: #e2e8f0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+// === Element Plus 暗色覆盖 ===
+
+// 卡片
+.el-card {
+  background: rgba(17, 24, 39, 0.8) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(51, 65, 85, 0.5) !important;
+  border-radius: 14px !important;
+  color: #e2e8f0 !important;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+}
+.el-card__header {
+  border-bottom: 1px solid rgba(51, 65, 85, 0.4) !important;
+  color: #e2e8f0 !important;
+}
+.el-card__body {
+  color: #94a3b8 !important;
+}
+
+// 按钮
+.el-button--primary {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+  border: none !important;
+  box-shadow: 0 2px 12px rgba(99, 102, 241, 0.3);
+  transition: all 0.3s;
+}
+.el-button--primary:hover {
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.5);
+  transform: translateY(-1px);
+  background: linear-gradient(135deg, #818cf8, #a78bfa) !important;
+}
+.el-button {
+  border-radius: 8px !important;
+}
+
+// 标签
+.el-tag {
+  border-radius: 6px !important;
+  font-weight: 600;
+}
+.el-tag--primary {
+  background: rgba(99, 102, 241, 0.15) !important;
+  border-color: rgba(99, 102, 241, 0.3) !important;
+  color: #a5b4fc !important;
+}
+.el-tag--success {
+  background: rgba(16, 185, 129, 0.15) !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+  color: #6ee7b7 !important;
+}
+.el-tag--warning {
+  background: rgba(245, 158, 11, 0.15) !important;
+  border-color: rgba(245, 158, 11, 0.3) !important;
+  color: #fcd34d !important;
+}
+.el-tag--danger {
+  background: rgba(239, 68, 68, 0.15) !important;
+  border-color: rgba(239, 68, 68, 0.3) !important;
+  color: #fca5a5 !important;
+}
+
+// 菜单
+.el-menu {
+  background: transparent !important;
+  border-right: none !important;
+}
+.el-menu-item {
+  color: #94a3b8 !important;
+  border-radius: 8px;
+  margin: 2px 8px;
+}
+.el-menu-item:hover {
+  background: rgba(99, 102, 241, 0.1) !important;
+  color: #e2e8f0 !important;
+}
+.el-menu-item.is-active {
+  background: rgba(99, 102, 241, 0.15) !important;
+  color: #a5b4fc !important;
+}
+
+// 表格
+.el-table {
+  background: transparent !important;
+  color: #e2e8f0 !important;
+}
+.el-table th {
+  background: rgba(17, 24, 39, 0.6) !important;
+  color: #94a3b8 !important;
+  border-bottom: 1px solid rgba(51, 65, 85, 0.4) !important;
+}
+.el-table td {
+  border-bottom: 1px solid rgba(51, 65, 85, 0.2) !important;
+}
+.el-table tr {
+  background: transparent !important;
+}
+.el-table--striped .el-table__body tr.el-table__row--striped td {
+  background: rgba(17, 24, 39, 0.3) !important;
+}
+
+// 对话框
+.el-dialog {
+  background: #111827 !important;
+  border: 1px solid rgba(51, 65, 85, 0.5) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5) !important;
+}
+.el-dialog__header {
+  color: #e2e8f0 !important;
+}
+.el-dialog__body {
+  color: #94a3b8 !important;
+}
+
+// 输入框
+.el-input__inner, .el-textarea__inner {
+  background: rgba(17, 24, 39, 0.6) !important;
+  border: 1px solid rgba(51, 65, 85, 0.5) !important;
+  color: #e2e8f0 !important;
+  border-radius: 8px !important;
+}
+.el-input__inner:focus, .el-textarea__inner:focus {
+  border-color: rgba(99, 102, 241, 0.5) !important;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15) !important;
+}
+
+// 下拉菜单
+.el-dropdown-menu {
+  background: #111827 !important;
+  border: 1px solid rgba(51, 65, 85, 0.5) !important;
+}
+.el-dropdown-menu__item {
+  color: #94a3b8 !important;
+}
+.el-dropdown-menu__item:hover {
+  background: rgba(99, 102, 241, 0.1) !important;
+  color: #e2e8f0 !important;
+}
+
+// 分页
+.el-pagination button, .el-pager li {
+  background: rgba(17, 24, 39, 0.6) !important;
+  color: #94a3b8 !important;
+}
+.el-pager li.is-active {
+  background: rgba(99, 102, 241, 0.2) !important;
+  color: #a5b4fc !important;
+}
+
+// Tabs
+.el-tabs__item {
+  color: #94a3b8 !important;
+}
+.el-tabs__item.is-active {
+  color: #a5b4fc !important;
+}
+.el-tabs__active-bar {
+  background: linear-gradient(90deg, #6366f1, #8b5cf6) !important;
+}
+
+// 空状态
+.el-empty__description p {
+  color: #64748b !important;
+}
+
+// Loading
+.el-loading-mask {
+  background: rgba(10, 14, 23, 0.6) !important;
+}
