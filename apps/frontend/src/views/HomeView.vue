@@ -308,7 +308,7 @@
         </el-form-item>
         <el-form-item label="配图（可选）">
           <el-upload :http-request="handleUpload" :show-file-list="false" accept="image/*">
-            <el-button type="primary" plain :loading="uploadingImg" class="upload-btn">
+            <el-button type="primary" :loading="uploadingImg" class="upload-btn">
               {{ createForm.image ? '已选图片' : '添加参考图' }}
             </el-button>
           </el-upload>
@@ -536,10 +536,9 @@ const handleCommand = (cmd: string) => {
   if (cmd === 'profile') router.push('/profile')
   if (cmd === 'logout') {
     localStorage.clear()
-    currentUser.value = null
     ElMessage.success('已退出登录')
-    // 强制整页刷新，避免同一路由下组件不重新挂载
-    router.push('/task').then(() => window.location.reload())
+    // 直接跳转首页，让 Vue 重新初始化，避免状态残留
+    window.location.href = '/task'
   }
 }
 
@@ -690,6 +689,13 @@ onMounted(() => {
   background: rgba(255, 255, 255, 0.02) !important;
   border: 1px solid rgba(255, 255, 255, 0.06) !important;
   box-shadow: none !important;
+}
+
+/* 上传按钮 */
+.upload-btn {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.86), rgba(139, 92, 246, 0.86)) !important;
+  border: 1px solid rgba(129, 140, 248, 0.30) !important;
+  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.20) !important;
 }
 
 /* ==========================================
