@@ -214,30 +214,6 @@ html, body {
   color: #6366f1 !important;
 }
 
-// Select / DatePicker
-.el-select .el-input__wrapper, .el-date-editor .el-input__wrapper {
-  background: rgba(15, 23, 42, 0.9) !important;
-  box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.16) !important;
-  border-radius: 12px !important;
-}
-
-// Select dropdown
-.el-select-dropdown {
-  background: #111827 !important;
-  border: 1px solid rgba(148, 163, 184, 0.14) !important;
-}
-.el-select-dropdown__item {
-  color: #94a3b8 !important;
-}
-.el-select-dropdown__item.hover, .el-select-dropdown__item:hover {
-  background: rgba(99, 102, 241, 0.08) !important;
-  color: #f1f5f9 !important;
-}
-.el-select-dropdown__item.selected {
-  color: #a5b4fc !important;
-  font-weight: 600;
-}
-
 // ---- Radio / Checkbox 柔和 ----
 .el-radio__inner, .el-checkbox__inner {
   background: rgba(255, 255, 255, 0.04) !important;
@@ -261,31 +237,6 @@ html, body {
   font-weight: 500 !important;
   font-size: 13px !important;
   margin-bottom: 4px !important;
-}
-
-// ---- 下拉菜单 ----
-// 干掉 el-popper 的白色容器背景
-.el-popper.is-light {
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-}
-.el-popper__arrow::before {
-  background: #111827 !important;
-  border-color: rgba(148, 163, 184, 0.14) !important;
-}
-.el-dropdown-menu {
-  background: #111827 !important;
-  border: 1px solid rgba(148, 163, 184, 0.14) !important;
-  border-radius: 10px !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
-}
-.el-dropdown-menu__item {
-  color: #94a3b8 !important;
-}
-.el-dropdown-menu__item:hover {
-  background: rgba(99, 102, 241, 0.12) !important;
-  color: #f1f5f9 !important;
 }
 
 // ---- 分页 ----
