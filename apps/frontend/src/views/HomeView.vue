@@ -224,6 +224,26 @@
       </template>
     </el-dialog>
   </div>
+
+  <!-- 移动端底部导航 -->
+  <nav class="mobile-nav">
+    <router-link to="/task" class="mn-item" :class="{ active: $route.path === '/task' || $route.path === '/' }">
+      <el-icon><List /></el-icon><span>大厅</span>
+    </router-link>
+    <router-link to="/my-orders" class="mn-item" :class="{ active: $route.path === '/my-orders' }">
+      <el-icon><Connection /></el-icon><span>订单</span>
+    </router-link>
+    <div class="mn-item" @click="openCreateDialog" v-if="isLogin">
+      <span class="mn-publish">＋</span><span>发布</span>
+    </div>
+    <router-link to="/notifications" class="mn-item" :class="{ active: $route.path === '/notifications' }">
+      <el-icon><Bell /></el-icon><span>通知</span>
+      <span v-if="unreadCount" class="mn-badge">{{ unreadCount }}</span>
+    </router-link>
+    <router-link to="/wallet" class="mn-item" :class="{ active: $route.path === '/wallet' }">
+      <el-icon><Wallet /></el-icon><span>钱包</span>
+    </router-link>
+  </nav>
 </template>
 
 <script setup lang="ts">
@@ -400,5 +420,38 @@ onMounted(() => { fetchProfile(); fetchUnreadCount(); fetchWalletBalance(); fetc
 /* === 页脚 === */
 .page-footer { text-align: center; padding: 24px 0; font-size: 13px; color: #475569; display: flex; gap: 8px; justify-content: center; }
 .page-footer a { color: #818cf8; }
+
+/* === 移动端底部导航 === */
+.mobile-nav {
+  display: none;
+  position: fixed; bottom: 0; left: 0; right: 0; height: 60px;
+  background: rgba(10, 14, 23, 0.95); backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(51, 65, 85, 0.4); z-index: 200;
+  justify-content: space-around; align-items: center;
+}
+.mn-item {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  color: #64748b; text-decoration: none; font-size: 10px;
+  position: relative; cursor: pointer;
+}
+.mn-item.active { color: #a5b4fc; }
+.mn-item:hover { color: #94a3b8; }
+.mn-publish {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff; font-size: 22px; display: flex; align-items: center; justify-content: center;
+  margin-top: -16px; box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
+}
+.mn-badge {
+  position: absolute; top: -2px; right: -8px; background: #ef4444; color: #fff;
+  font-size: 10px; min-width: 16px; height: 16px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+}
+@media (max-width: 768px) {
+  .mobile-nav { display: flex !important; }
+  .app-shell > .sidebar { display: none !important; }
+  .main-area { margin-left: 0 !important; padding-bottom: 72px !important; }
+  .topbar { padding: 0 12px !important; }
+}
 .dot { color: #334155; }
 </style>
