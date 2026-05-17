@@ -264,6 +264,16 @@ html, body {
 }
 
 // ---- 下拉菜单 ----
+// 干掉 el-popper 的白色容器背景
+.el-popper.is-light {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+.el-popper__arrow::before {
+  background: #111827 !important;
+  border-color: rgba(148, 163, 184, 0.14) !important;
+}
 .el-dropdown-menu {
   background: #111827 !important;
   border: 1px solid rgba(148, 163, 184, 0.14) !important;
@@ -274,7 +284,7 @@ html, body {
   color: #94a3b8 !important;
 }
 .el-dropdown-menu__item:hover {
-  background: rgba(99, 102, 241, 0.08) !important;
+  background: rgba(99, 102, 241, 0.12) !important;
   color: #f1f5f9 !important;
 }
 

@@ -127,6 +127,14 @@
 // ==========================================
 // 分类下拉框 — 深色面板
 // ==========================================
+// 干掉 el-popper 的白色容器背景
+.el-select__popper .el-popper.is-light,
+.el-select-dropdown .el-popper.is-light {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
 .el-select .el-input__wrapper {
   background: var(--hy-input-bg) !important;
   border: 1px solid var(--hy-input-border) !important;

@@ -537,8 +537,9 @@ const handleCommand = (cmd: string) => {
   if (cmd === 'logout') {
     localStorage.clear()
     currentUser.value = null
-    router.push('/task')
     ElMessage.success('已退出登录')
+    // 强制整页刷新，避免同一路由下组件不重新挂载
+    router.push('/task').then(() => window.location.reload())
   }
 }
 
