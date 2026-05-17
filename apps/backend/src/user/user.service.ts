@@ -105,6 +105,14 @@ export class UserService {
     });
   }
 
+  async requestVerify(userId: number) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { certLevel: 'PENDING' },
+      select: { id: true, verified: true, certLevel: true },
+    });
+  }
+
   /**
    * 🔥 核心修复：级联删除用户
    * 在删除用户前，必须先删除他产生的所有关联数据（流水、订单、任务、子任务）

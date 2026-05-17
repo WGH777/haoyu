@@ -79,6 +79,10 @@
               <el-descriptions-item label="创建时间">
                 {{ profile ? formatTime(profile.createdAt) : '-' }}
               </el-descriptions-item>
+              <el-descriptions-item label="认证状态">
+                <el-tag v-if="profile?.verified" type="success" size="small">✅ 已认证 ({{ profile?.certLevel || 'BASIC' }})</el-tag>
+                <el-button v-else type="primary" size="small" @click="applyVerify" :loading="applying">申请认证</el-button>
+              </el-descriptions-item>
             </el-descriptions>
           </div>
 
@@ -257,6 +261,7 @@ const profileRules: FormRules<typeof profileForm> = {
 
 const passwordFormRef = ref<FormInstance>()
 const submitting = ref(false)
+const applying = ref(false)
 
 const passwordForm = reactive({
   oldPassword: '',
@@ -429,6 +434,15 @@ const handleChangePassword = async () => {
   } finally {
     submitting.value = false
   }
+}
+
+const applyVerify = async () => {
+  applying.value = true
+  try {
+    await http.patch(`/user/verify-request`)
+    ElMessage.success('认证申请已提交，管理员审核中')
+  } catch { ElMessage.error('申请失败') }
+  finally { applying.value = false }
 }
 
 onMounted(() => {

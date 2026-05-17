@@ -211,6 +211,14 @@ export class UserController {
     return this.userService.verify(id, body.verified, body.certLevel || 'BASIC');
   }
 
+  /** 用户自助申请认证 */
+  @UseGuards(JwtAuthGuard)
+  @Patch('verify-request')
+  @ApiBearerAuth()
+  async requestVerify(@Req() req: any) {
+    return this.userService.requestVerify(req.user.id);
+  }
+
   /**
    * （超级管理员）删除用户
    */
