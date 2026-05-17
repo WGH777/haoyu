@@ -1124,7 +1124,7 @@ onMounted(() => {
 
 .task-card-header .task-id {
   font-size: 13px;
-  color: #909399;
+  color: #64748b;
 }
 
 .price-tag {
@@ -1168,20 +1168,21 @@ onMounted(() => {
   align-items: center;
   gap: 10px;
   margin-bottom: 16px;
-  color: #606266;
+  color: #94a3b8;
   font-size: 14px;
-  background: #f8f9fa;
-  padding: 10px;
-  border-radius: 8px;
+  background: rgba(17, 24, 39, 0.35);
+  border: 1px solid rgba(148, 163, 184, 0.08);
+  padding: 10px 14px;
+  border-radius: 10px;
 }
 
 .avatar-small {
-  border: 1px solid #e5e7eb;
+  /* fits dark theme by default */
 }
 
 .publisher-info .time {
   margin-left: auto;
-  color: #909399;
+  color: #64748b;
   font-size: 12px;
 }
 
@@ -1199,14 +1200,14 @@ onMounted(() => {
 
 .desc-header {
   font-weight: 700;
-  border-left: 4px solid #409eff;
+  border-left: 3px solid #6366f1;
   padding-left: 10px;
 }
 
 .task-desc {
   white-space: pre-wrap;
   line-height: 1.7;
-  color: #303133;
+  color: #cbd5e1;
 }
 
 .subtask-card {
@@ -1236,12 +1237,12 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
   padding: 10px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.06);
   transition: background 0.2s;
 }
 
 .subtask-item:hover {
-  background: #fafafa;
+  background: rgba(99, 102, 241, 0.04);
 }
 
 .subtask-main {
@@ -1261,15 +1262,15 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #606266;
+  color: #94a3b8;
 }
 
 .ok-icon {
-  color: #67c23a;
+  color: #10b981;
 }
 
 .wait-icon {
-  color: #909399;
+  color: #64748b;
 }
 
 .item-done {
@@ -1278,7 +1279,7 @@ onMounted(() => {
 
 .subtask-done-text {
   text-decoration: line-through;
-  color: #909399;
+  color: #64748b;
 }
 
 .subtask-actions {
@@ -1298,7 +1299,7 @@ onMounted(() => {
 }
 
 .placeholder-text {
-  color: #909399;
+  color: #64748b;
   font-size: 13px;
 }
 
@@ -1313,12 +1314,12 @@ onMounted(() => {
   align-items: center;
   margin-bottom: 12px;
   font-size: 14px;
-  border-bottom: 1px dashed #ebeef5;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.08);
   padding-bottom: 8px;
 }
 
 .status-box .label {
-  color: #606266;
+  color: #94a3b8;
 }
 
 .status-box .value {
@@ -1326,11 +1327,11 @@ onMounted(() => {
 }
 
 .value.publisher {
-  color: #409eff;
+  color: #818cf8;
 }
 
 .value.worker {
-  color: #67c23a;
+  color: #6ee7b7;
 }
 
 .submission-view {
@@ -1348,13 +1349,13 @@ onMounted(() => {
 }
 
 .content-box {
-  background: #f8f9fa;
-  border: 1px solid #ebeef5;
-  border-radius: 8px;
-  padding: 10px;
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(148, 163, 184, 0.1);
+  border-radius: 10px;
+  padding: 12px;
   white-space: pre-wrap;
   line-height: 1.6;
-  color: #303133;
+  color: #cbd5e1;
 }
 
 .preview-img {

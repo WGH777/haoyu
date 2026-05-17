@@ -10,7 +10,7 @@
 </template>
 
 <style scoped>
-.not-found { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #f8fafc; }
+.not-found { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #0a0e17; }
 .nf-card { text-align: center; }
 .nf-icon { font-size: 64px; display: block; margin-bottom: 16px; }
 .nf-card h1 { font-size: 72px; font-weight: 800; color: #6366f1; margin: 0 0 8px; }

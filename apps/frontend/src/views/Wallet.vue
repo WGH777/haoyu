@@ -5,22 +5,22 @@
     <div class="balance-cards">
       <div class="bal-card available">
         <span class="bal-label">可用余额</span>
-        <span class="bal-amount">¥{{ (wallet?.available || 0) / 100 }}</span>
+        <span class="bal-amount">¥{{ ((wallet?.available || 0) / 100).toFixed(2) }}</span>
       </div>
       <div class="bal-card frozen">
         <span class="bal-label">冻结中</span>
-        <span class="bal-amount">¥{{ (wallet?.frozen || 0) / 100 }}</span>
+        <span class="bal-amount">¥{{ ((wallet?.frozen || 0) / 100).toFixed(2) }}</span>
         <span class="bal-hint">托管中的资金</span>
       </div>
       <div class="bal-card total">
         <span class="bal-label">总资产</span>
-        <span class="bal-amount">¥{{ ((wallet?.available || 0) + (wallet?.frozen || 0)) / 100 }}</span>
+        <span class="bal-amount">¥{{ (((wallet?.available || 0) + (wallet?.frozen || 0)) / 100).toFixed(2) }}</span>
       </div>
     </div>
 
     <div class="ledger-section">
       <h3>收支明细</h3>
-      <el-empty v-if="!ledger.length" description="暂无记录" />
+      <el-empty v-if="!ledger.length" description="还没有交易记录，完成协作后会出现在这里" />
       <div v-else class="ledger-list">
         <div v-for="entry in ledger" :key="entry.id" class="ledger-item">
           <div class="ledger-left">
@@ -80,25 +80,32 @@ onMounted(async () => {
 .bal-card.frozen { background: linear-gradient(135deg, #f59e0b, #f97316); }
 .bal-card.total { background: linear-gradient(135deg, #10b981, #059669); }
 .bal-label { display: block; font-size: 13px; opacity: 0.85; margin-bottom: 6px; }
-.bal-amount { font-size: 26px; font-weight: 700; }
+.bal-amount { font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .bal-hint { display: block; font-size: 11px; opacity: 0.7; margin-top: 4px; }
 
 .ledger-section h3 { font-size: 16px; font-weight: 600; margin-bottom: 12px; }
 .ledger-list { display: flex; flex-direction: column; gap: 2px; }
 .ledger-item {
   display: flex; justify-content: space-between; align-items: center;
-  padding: 12px 16px; background: #fff; border-radius: 8px; border: 1px solid #f1f5f9;
+  padding: 12px 16px;
+  background: rgba(17, 24, 39, 0.45);
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.08);
+  transition: background 0.2s ease;
+}
+.ledger-item:hover {
+  background: rgba(17, 24, 39, 0.65);
 }
 .ledger-left { display: flex; gap: 10px; align-items: center; }
 .ledger-type {
   font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 4px;
 }
-.ledger-type.IN { background: #dcfce7; color: #16a34a; }
-.ledger-type.OUT { background: #fee2e2; color: #dc2626; }
-.ledger-remark { font-size: 13px; color: #475569; }
+.ledger-type.IN { background: rgba(16, 185, 129, 0.12); color: #6ee7b7; }
+.ledger-type.OUT { background: rgba(239, 68, 68, 0.12); color: #fca5a5; }
+.ledger-remark { font-size: 13px; color: #94a3b8; }
 .ledger-right { text-align: right; }
-.ledger-amount { font-size: 15px; font-weight: 600; display: block; }
-.ledger-amount.IN { color: #16a34a; }
-.ledger-amount.OUT { color: #dc2626; }
-.ledger-time { font-size: 11px; color: #94a3b8; }
+.ledger-amount { font-size: 15px; font-weight: 600; display: block; font-variant-numeric: tabular-nums; }
+.ledger-amount.IN { color: #6ee7b7; }
+.ledger-amount.OUT { color: #fca5a5; }
+.ledger-time { font-size: 11px; color: #64748b; }
 </style>

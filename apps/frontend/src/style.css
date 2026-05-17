@@ -1,12 +1,12 @@
-/* 浩煜 Haoyu — 全局基础样式 */
-/* 深色科技背景 · 全屏自适应 */
+/* 浩煜 Haoyu — 全局基础样式 V2 */
+/* 深色科技背景 · 全屏自适应 · 柔和滚动条 */
 
 :root {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif;
   line-height: 1.6;
   font-weight: 400;
   color-scheme: dark;
-  color: #e2e8f0;
+  color: #f1f5f9;
   background-color: #0a0e17;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -42,16 +42,30 @@ a:hover {
   color: #a5b4fc;
 }
 
+/* 滚动条 — 全局柔和深色 */
 ::-webkit-scrollbar {
   width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #0a0e17;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: rgba(148, 163, 184, 0.2);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: rgba(148, 163, 184, 0.35);
+}
+
+/* Firefox 滚动条 */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.2) transparent;
+}
+
+/* 选中文本颜色 */
+::selection {
+  background: rgba(99, 102, 241, 0.3);
+  color: #f1f5f9;
 }

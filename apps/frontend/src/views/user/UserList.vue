@@ -739,22 +739,22 @@ watch(
 .filter-label {
   margin-right: 8px;
   font-size: 13px;
-  color: #606266;
+  color: #94a3b8;
 }
 
 .user-id-text {
   margin-left: 4px;
   font-size: 12px;
-  color: #909399;
+  color: #64748b;
 }
 
 .text-green {
-  color: #67c23a;
+  color: #6ee7b7;
   font-weight: 600;
 }
 
 .text-red {
-  color: #f56c6c;
+  color: #fca5a5;
   font-weight: 600;
 }
 </style>

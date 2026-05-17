@@ -189,13 +189,15 @@ onMounted(() => { loadOrders(); loadDisputes() })
 
 .stats-row { display: flex; gap: 16px; margin-bottom: 24px; }
 .stat-card {
-  flex: 1; padding: 16px; border-radius: 10px; background: #fff; border: 1px solid #e2e8f0;
+  flex: 1; padding: 16px; border-radius: 10px;
+  background: rgba(17, 24, 39, 0.45);
+  border: 1px solid rgba(148, 163, 184, 0.12);
   text-align: center;
 }
-.stat-card.green { border-color: #bbf7d0; background: #f0fdf4; }
-.stat-card.orange { border-color: #fde68a; background: #fffbeb; }
-.stat-card.red { border-color: #fecaca; background: #fef2f2; }
-.stat-card.purple { border-color: #ddd6fe; background: #f5f3ff; }
-.stat-num { display: block; font-size: 24px; font-weight: 700; color: #1e293b; }
+.stat-card.green { border-color: rgba(16, 185, 129, 0.25); background: rgba(16, 185, 129, 0.06); }
+.stat-card.orange { border-color: rgba(245, 158, 11, 0.25); background: rgba(245, 158, 11, 0.06); }
+.stat-card.red { border-color: rgba(239, 68, 68, 0.25); background: rgba(239, 68, 68, 0.06); }
+.stat-card.purple { border-color: rgba(99, 102, 241, 0.25); background: rgba(99, 102, 241, 0.06); }
+.stat-num { display: block; font-size: 24px; font-weight: 700; color: #f1f5f9; }
 .stat-label { display: block; font-size: 12px; color: #94a3b8; margin-top: 4px; }
 </style>
