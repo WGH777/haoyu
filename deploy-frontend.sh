@@ -1,14 +1,20 @@
 #!/bin/bash
-# deploy-frontend.sh — 构建前端并部署到 Nginx 站点
+# 浩煜 Haoyu — 自动构建 + 部署脚本
 set -e
 
-echo "📦 构建前端..."
-cd /root/.openclaw/workspace/haoyu-repo/apps/frontend
-npx vite build
+REPO="/root/.openclaw/workspace/haoyu-repo"
+DEPLOY="/var/www/haoyu"
 
-echo "📂 部署到 /var/www/haoyu..."
-rm -rf /var/www/haoyu/*
-cp -r dist/* /var/www/haoyu/
-chmod -R 755 /var/www/haoyu
+cd "$REPO/apps/frontend"
 
-echo "✅ 前端已部署: www.haoyulv.com"
+echo "🔨 构建前端..."
+npm run build
+
+echo "📦 部署到 $DEPLOY ..."
+rm -rf "$DEPLOY/assets" "$DEPLOY/favicon.svg" "$DEPLOY/index.html" "$DEPLOY/vite.svg"
+cp -r dist/* "$DEPLOY/"
+
+echo "🔄 重载 Nginx..."
+nginx -s reload
+
+echo "✅ 部署完成 — $(date '+%H:%M:%S')"
