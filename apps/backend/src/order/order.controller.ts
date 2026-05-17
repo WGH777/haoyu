@@ -85,6 +85,17 @@ export class OrderController {
     return this.orderService.completeOrder(orderId, req.user.id, dto);
   }
 
+  @Patch(':id/cancel')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '取消订单 (发布者/接单者均可)' })
+  cancel(
+    @Param('id', ParseIntPipe) orderId: number,
+    @Req() req: any,
+  ) {
+    return this.orderService.cancelOrder(orderId, req.user.id);
+  }
+
   /**
    * 获取我的所有订单/任务（我接取的）
    */
