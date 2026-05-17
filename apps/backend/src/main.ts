@@ -49,7 +49,9 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config);
   // 文档访问路径：http://localhost:3000/api/docs
-  SwaggerModule.setup('api/docs', app, document);
+  if (process.env.NODE_ENV !== 'production') {
+    SwaggerModule.setup('api/docs', app, document);
+  }
   
   // 启动
   const port = parseInt(process.env.PORT || '3000', 10);

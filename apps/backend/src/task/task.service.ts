@@ -11,7 +11,7 @@ import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 
 type RoleStr = 'USER' | 'ADMIN' | 'SUPER_ADMIN' | string;
-type TaskStatus = 'PENDING' | 'ASSIGNED' | 'SUBMITTED' | 'COMPLETED' | 'ONGOING';
+type TaskStatus = 'PENDING' | 'ASSIGNED' | 'IN_PROGRESS' | 'SUBMITTED' | 'COMPLETED' | 'ONGOING';
 
 @Injectable()
 export class TaskService {
@@ -21,7 +21,8 @@ export class TaskService {
 
   private readonly taskTransitions: Record<TaskStatus, TaskStatus[]> = {
     PENDING: ['ASSIGNED'],
-    ASSIGNED: ['SUBMITTED'],
+    ASSIGNED: ['IN_PROGRESS', 'SUBMITTED'],
+    IN_PROGRESS: ['SUBMITTED'],
     SUBMITTED: ['COMPLETED', 'ASSIGNED'],
     COMPLETED: [],
     ONGOING: [], // 兼容旧状态，不允许再流转
@@ -142,7 +143,7 @@ export class TaskService {
   async findAll() {
     return this.prisma.task.findMany({
       where: {
-        status: { in: ['PENDING', 'ASSIGNED', 'SUBMITTED', 'ONGOING'] },
+        status: { in: ['PENDING', 'ASSIGNED', 'IN_PROGRESS', 'SUBMITTED', 'ONGOING'] },
       },
       select: {
         id: true,

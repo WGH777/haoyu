@@ -332,6 +332,11 @@ const submitTask = async () => {
 }
 
 const handleUpload = async (options: any) => {
+  const file = options.file as File
+  if (file.size > 5 * 1024 * 1024) {
+    ElMessage.warning('图片不能超过 5MB，请压缩后重试')
+    return
+  }
   uploadingImg.value = true
   try {
     const fd = new FormData(); fd.append('file', options.file)

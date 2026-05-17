@@ -239,7 +239,7 @@ export class OrderService {
     if (order.workerId !== workerId) {
       throw new ForbiddenException('您无权操作此订单（仅执行者可提交）');
     }
-    if (order.status !== 'ASSIGNED') {
+    if (order.status !== 'ASSIGNED' && order.status !== 'IN_PROGRESS') {
       if (order.status === 'DISPUTED') {
         throw new BadRequestException('订单争议中，无法提交成果');
       }
@@ -253,9 +253,9 @@ export class OrderService {
     }
 
     return this.withTxRetry(async (tx: Prisma.TransactionClient) => {
-      // 1) 抢占提交权：ASSIGNED -> SUBMITTED
+      // 1) 抢占提交权：ASSIGNED/IN_PROGRESS -> SUBMITTED
       const updated = await tx.order.updateMany({
-        where: { id: orderId, status: 'ASSIGNED' },
+        where: { id: orderId, status: { in: ['ASSIGNED', 'IN_PROGRESS'] } },
         data: {
           status: 'SUBMITTED',
           submissionContent: dto.content,
@@ -662,6 +662,13 @@ export class OrderService {
           where: { id: platformWallet.id },
           data: { available: { increment: serviceFee } },
         });
+      }
+
+      // 账本记录
+      await tx.ledgerEntry.create({ data: { walletId: publisherWallet.id, userId: order.task.publisherId, orderId, amount: totalCost, direction: 'OUT', type: 'SETTLEMENT', remark: `订单#${orderId} 自动确认结算` } });
+      await tx.ledgerEntry.create({ data: { walletId: workerWallet!.id, userId: order.workerId, orderId, amount: netReward, direction: 'IN', type: 'SETTLEMENT', remark: `订单#${orderId} 自动确认收入` } });
+      if (serviceFee > 0 && platformWallet) {
+        await tx.ledgerEntry.create({ data: { walletId: platformWallet.id, orderId, amount: serviceFee, direction: 'IN', type: 'PLATFORM_FEE', remark: `订单#${orderId} 服务费` } });
       }
 
       return tx.order.findUnique({ where: { id: orderId } });

@@ -27,6 +27,7 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { AdminAuditService } from '../admin/admin-audit.service';
 
 type RoleStr = 'USER' | 'ADMIN' | 'SUPER_ADMIN';
 const ROLE_ALLOWLIST: RoleStr[] = ['USER', 'ADMIN', 'SUPER_ADMIN'];
@@ -34,7 +35,10 @@ const ROLE_ALLOWLIST: RoleStr[] = ['USER', 'ADMIN', 'SUPER_ADMIN'];
 @ApiTags('用户管理')
 @Controller('user')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly audit: AdminAuditService,
+  ) {}
 
   /**
    * （超级管理员）创建用户
@@ -155,6 +159,7 @@ export class UserController {
   })
   @ApiOperation({ summary: '（超级管理员）修改用户角色' })
   changeRole(
+    @Req() req: any,
     @Param('id', ParseIntPipe) id: number,
     @Body() body: { role: RoleStr },
   ) {
@@ -163,6 +168,7 @@ export class UserController {
         `role 非法，可选值：${ROLE_ALLOWLIST.join(', ')}`,
       );
     }
+    await this.audit.log({ adminId: req.user.id, action: 'CHANGE_ROLE', targetType: 'USER', targetId: id, detail: `role=${body.role}` });
     return this.userService.update(id, { role: body.role } as any);
   }
 
@@ -189,10 +195,12 @@ export class UserController {
   })
   @ApiOperation({ summary: '（超级管理员）重置用户密码' })
   async resetPasswordByAdmin(
+    @Req() req: any,
     @Param('id', ParseIntPipe) id: number,
     @Body() body: { newPassword: string },
   ) {
     await this.userService.adminResetPassword(id, body.newPassword);
+    await this.audit.log({ adminId: req.user.id, action: 'RESET_PASSWORD', targetType: 'USER', targetId: id }).catch(() => {});
     return { message: '密码已重置' };
   }
 
@@ -205,10 +213,13 @@ export class UserController {
   @ApiBearerAuth()
   @ApiOperation({ summary: '（管理员）审核服务者认证' })
   verifyUser(
+    @Req() req: any,
     @Param('id', ParseIntPipe) id: number,
     @Body() body: { verified: boolean; certLevel?: string },
   ) {
-    return this.userService.verify(id, body.verified, body.certLevel || 'BASIC');
+    const result = await this.userService.verify(id, body.verified, body.certLevel || 'BASIC');
+    await this.audit.log({ adminId: req.user.id, action: 'VERIFY_USER', targetType: 'USER', targetId: id, detail: `verified=${body.verified} level=${body.certLevel}` }).catch(() => {});
+    return result;
   }
 
   /** 用户自助申请认证 */
@@ -228,7 +239,10 @@ export class UserController {
   @ApiBearerAuth()
   @ApiParam({ name: 'id', type: Number, description: '用户 ID' })
   @ApiOperation({ summary: '（超级管理员）删除用户' })
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.userService.remove(id);
+  remove(@Req() req: any, @Param('id', ParseIntPipe) id: number) {
+    const result = this.userService.remove(id);
+    this.audit.log({ adminId: req.user.id, action: 'DELETE_USER', targetType: 'USER', targetId: id }).catch(() => {});
+    return result;
+  }
   }
 }

@@ -32,7 +32,7 @@ const EXTENSION_TO_TYPE: Record<string, string> = {
   '.pdf': 'pdf',
 };
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 /**
  * 验证文件魔数是否匹配其扩展名
