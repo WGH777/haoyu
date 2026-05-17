@@ -66,11 +66,12 @@ const handleLogin = async () => {
 <style scoped>
 .login-page {
   min-height: 100vh; display: flex; align-items: center; justify-content: center;
-  background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+  background: #0a0e17;
 }
 .login-box {
-  background: #fff; border-radius: 16px; padding: 40px; width: 400px;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+  background: rgba(17, 24, 39, 0.8); backdrop-filter: blur(20px);
+  border: 1px solid rgba(51, 65, 85, 0.4); border-radius: 16px; padding: 40px; width: 400px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.4);
 }
 .login-header { text-align: center; margin-bottom: 28px; }
 .logo-mark {
@@ -78,8 +79,8 @@ const handleLogin = async () => {
   color: #fff; border-radius: 12px; display: inline-flex; align-items: center;
   justify-content: center; font-size: 24px; font-weight: 700; margin-bottom: 12px;
 }
-.login-header h1 { font-size: 22px; font-weight: 700; color: #1e293b; margin: 0 0 4px; }
-.login-header p { color: #94a3b8; font-size: 14px; margin: 0; }
+.login-header h1 { font-size: 22px; font-weight: 700; color: #e2e8f0; margin: 0 0 4px; }
+.login-header p { color: #64748b; font-size: 14px; margin: 0; }
 .login-footer {
   margin-top: 20px; text-align: center; font-size: 13px; color: #94a3b8;
   display: flex; gap: 8px; justify-content: center;
