@@ -45,6 +45,9 @@ export interface TaskItem {
   views?: number
   status: TaskStatus
   image?: string | null
+  category?: string
+  isPublicWelfare?: boolean
+  serviceMode?: 'ONLINE' | 'OFFLINE' | 'BOTH' | string
   createdAt: string
   updatedAt: string
 
