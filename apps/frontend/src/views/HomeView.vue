@@ -91,18 +91,18 @@
           </div>
           <div class="stat-divider"></div>
           <div class="stat-item">
-            <span class="stat-number">0%</span>
-            <span class="stat-label">服务费率（前30单）</span>
+            <span class="stat-number">{{ completedCount }}</span>
+            <span class="stat-label">已完成</span>
           </div>
           <div class="stat-divider"></div>
           <div class="stat-item">
-            <span class="stat-number">🔒</span>
-            <span class="stat-label">资金托管保障</span>
+            <span class="stat-number">¥{{ escrowTotal }}</span>
+            <span class="stat-label">托管中</span>
           </div>
           <div class="stat-divider"></div>
           <div class="stat-item">
-            <span class="stat-number">⚡</span>
-            <span class="stat-label">智能调度匹配</span>
+            <span class="stat-number">{{ completedCount <= 30 ? '免费' : completedCount <= 50 ? '2%' : completedCount <= 100 ? '5%' : '10%' }}</span>
+            <span class="stat-label">服务费率</span>
           </div>
         </section>
 
@@ -271,6 +271,12 @@ const createForm = reactive({
 const canSeeUserManage = computed(() =>
   ['ADMIN', 'SUPER_ADMIN'].includes(currentUser.value?.role || '')
 )
+
+const completedCount = computed(() => tasks.value.filter(t => t.status === 'COMPLETED').length)
+const escrowTotal = computed(() => {
+  const sum = tasks.value.filter(t => ['PENDING','ASSIGNED','SUBMITTED','IN_PROGRESS'].includes(t.status)).reduce((s, t) => s + (t.price || 0), 0)
+  return (sum / 100).toFixed(2)
+})
 
 const getFullUrl = (path: string) =>
   path ? (path.startsWith('http') ? path : `http://localhost:3000${path}`) : ''

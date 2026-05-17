@@ -128,6 +128,15 @@ export class AdminController {
     });
   }
 
+  /** 审计日志列表 */
+  @Get('audit-logs')
+  async getAuditLogs() {
+    return this.prisma.adminActionLog.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+    });
+  }
+
   // =========================
   // 仲裁 / 干预（RBAC 5.2 + 审计）
   // =========================
