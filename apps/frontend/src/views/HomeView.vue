@@ -149,7 +149,7 @@
         <div class="filter-row">
           <el-input
             v-model="searchKeyword"
-            placeholder="搜索你需要的服务..."
+            placeholder="找需求、找能力、找协作机会"
             :prefix-icon="Search"
             clearable
             size="large"
@@ -297,7 +297,7 @@
     <!-- 发布弹窗 -->
     <el-dialog v-model="showCreateDialog" title="发布新需求" width="560px" destroy-on-close>
       <el-form :model="createForm" label-position="top">
-        <el-form-item label="起个清楚的名字" required>
+        <el-form-item label="给这次协作起个清楚的名字" required>
           <el-input v-model="createForm.title" placeholder="让人一眼知道你需要什么" maxlength="60" show-word-limit />
         </el-form-item>
         <el-form-item label="说说背景、目标和期望">
@@ -308,8 +308,11 @@
         </el-form-item>
         <el-form-item label="配图（可选）">
           <el-upload :http-request="handleUpload" :show-file-list="false" accept="image/*">
-            <el-button type="primary" plain :loading="uploadingImg">{{ createForm.image ? '已选图片' : '上传图片' }}</el-button>
+            <el-button type="primary" plain :loading="uploadingImg" class="upload-btn">
+              {{ createForm.image ? '已选图片' : '添加参考图' }}
+            </el-button>
           </el-upload>
+          <p class="upload-hint" style="font-size:12px;color:rgba(203,213,225,0.48);margin-top:6px;">截图、样例图或补充说明都可以</p>
           <el-image v-if="createForm.image" :src="getFullUrl(createForm.image)" style="width:100px;height:100px;border-radius:8px;margin-top:8px" fit="cover" />
         </el-form-item>
         <el-form-item label="分类">
@@ -333,7 +336,7 @@
       </el-form>
       <template #footer>
         <el-button @click="showCreateDialog = false">取消</el-button>
-        <el-button type="primary" @click="submitTask" :loading="submitting">发布需求</el-button>
+        <el-button type="primary" @click="submitTask" :loading="submitting">确认发布</el-button>
       </template>
     </el-dialog>
   </div>
