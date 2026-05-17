@@ -125,16 +125,44 @@
 }
 
 // ==========================================
-// 分类下拉框 — 深色面板
+// 下拉组件全面覆盖 — 消除所有白底/白hover/割裂
+// el-select / el-dropdown / el-popper 均 teleport 到 body，
+// 必须在全局样式（非 scoped）中覆盖
 // ==========================================
-// 干掉 el-popper 的白色容器背景
-.el-select__popper .el-popper.is-light,
-.el-select-dropdown .el-popper.is-light {
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
+
+// --- 1. 干掉所有 el-popper 白色容器 ---
+.el-popper {
+  background: rgba(15, 23, 42, 0.96) !important;
+  border: 1px solid rgba(148, 163, 184, 0.14) !important;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.42) !important;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-radius: 14px !important;
+  // 覆盖 Element Plus CSS 变量
+  --el-popper-bg-color: rgba(15, 23, 42, 0.96);
+  --el-popper-border-color: rgba(148, 163, 184, 0.14);
+  --el-popper-text-color: rgba(226, 232, 240, 0.82);
 }
 
+// select 专属 popper
+.el-select__popper {
+  background: rgba(15, 23, 42, 0.96) !important;
+  border: 1px solid rgba(148, 163, 184, 0.14) !important;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.42) !important;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-radius: 14px !important;
+  --el-popper-bg-color: rgba(15, 23, 42, 0.96);
+  --el-popper-border-color: rgba(148, 163, 184, 0.14);
+}
+
+// popper 箭头 → 深色
+.el-popper__arrow::before {
+  background: rgba(15, 23, 42, 0.96) !important;
+  border-color: rgba(148, 163, 184, 0.14) !important;
+}
+
+// --- 2. el-select 输入框（页面上可见的触发器）---
 .el-select .el-input__wrapper {
   background: var(--hy-input-bg) !important;
   border: 1px solid var(--hy-input-border) !important;
@@ -142,31 +170,120 @@
   border-radius: var(--hy-input-radius) !important;
 }
 
+.el-select .el-input__wrapper:hover {
+  background: var(--hy-input-bg-hover) !important;
+  border-color: var(--hy-input-border-hover) !important;
+}
+
+.el-select .el-input__wrapper.is-focus {
+  background: var(--hy-input-bg-focus) !important;
+  border-color: var(--hy-input-border-focus) !important;
+  box-shadow: var(--hy-input-glow) !important;
+}
+
+.el-select .el-input__inner {
+  color: var(--hy-input-text) !important;
+}
+
+.el-select .el-input__inner::placeholder {
+  color: var(--hy-input-placeholder) !important;
+}
+
+// --- 3. el-select 下拉面板（teleported to body）---
 .el-select-dropdown {
   background: rgba(15, 23, 42, 0.96) !important;
-  border: 1px solid var(--hy-panel-border) !important;
+  border: 1px solid rgba(148, 163, 184, 0.14) !important;
   border-radius: 14px !important;
-  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.36) !important;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.42) !important;
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
 }
 
-.el-select-dropdown__item {
-  color: rgba(226, 232, 240, 0.82) !important;
-  border-radius: 8px;
-  margin: 2px 6px;
+// 下拉列表容器
+.el-select-dropdown__wrap {
+  background: transparent !important;
+  max-height: 274px;
 }
 
+.el-select-dropdown__list {
+  background: transparent !important;
+  padding: 6px 0;
+}
+
+// 下拉选项
+.el-select-dropdown__item {
+  color: rgba(226, 232, 240, 0.82) !important;
+  background: transparent !important;
+  border-radius: 8px;
+  margin: 2px 6px;
+  padding: 8px 12px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+// hover — 柔和高亮，绝不出现白色
 .el-select-dropdown__item.hover,
 .el-select-dropdown__item:hover {
   background: rgba(99, 102, 241, 0.14) !important;
   color: #ffffff !important;
 }
 
+// selected — 蓝紫渐变高亮
 .el-select-dropdown__item.selected {
   color: #ffffff !important;
   background: rgba(99, 102, 241, 0.22) !important;
   font-weight: 600;
+}
+
+// selected + hover
+.el-select-dropdown__item.selected.hover,
+.el-select-dropdown__item.selected:hover {
+  background: rgba(99, 102, 241, 0.30) !important;
+}
+
+// disabled
+.el-select-dropdown__item.is-disabled {
+  color: rgba(148, 163, 184, 0.35) !important;
+  cursor: not-allowed;
+}
+
+// --- 4. el-dropdown 用户菜单 ---
+.el-dropdown-menu {
+  background: rgba(17, 24, 39, 0.98) !important;
+  border: 1px solid rgba(148, 163, 184, 0.14) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5) !important;
+  padding: 6px 0;
+}
+
+.el-dropdown-menu__item {
+  color: #94a3b8 !important;
+  background: transparent !important;
+  margin: 2px 6px;
+  border-radius: 8px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.el-dropdown-menu__item:hover,
+.el-dropdown-menu__item:focus {
+  background: rgba(99, 102, 241, 0.12) !important;
+  color: #f1f5f9 !important;
+}
+
+// --- 5. el-cascader / el-autocomplete / el-date-picker 下拉 ---
+.el-cascader__dropdown,
+.el-autocomplete__dropdown,
+.el-date-picker {
+  background: rgba(15, 23, 42, 0.96) !important;
+  border: 1px solid rgba(148, 163, 184, 0.14) !important;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.42) !important;
+}
+
+// --- 6. el-popover ---
+.el-popover {
+  background: rgba(15, 23, 42, 0.96) !important;
+  border: 1px solid rgba(148, 163, 184, 0.14) !important;
+  color: rgba(226, 232, 240, 0.82) !important;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5) !important;
 }
 
 // ==========================================
