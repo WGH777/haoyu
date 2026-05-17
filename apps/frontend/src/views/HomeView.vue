@@ -759,33 +759,49 @@ onMounted(() => {
    ========================================== */
 .mobile-nav {
   display: none;
-  position: fixed; bottom: 0; left: 0; right: 0; height: 60px;
-  background: rgba(10, 14, 23, 0.95); backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-top: 1px solid rgba(148, 163, 184, 0.12);
+  position: fixed; bottom: 0; left: 0; right: 0;
+  height: 64px;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+  background: rgba(10, 14, 23, 0.96);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-top: 1px solid rgba(148, 163, 184, 0.1);
   z-index: 200;
   justify-content: space-around; align-items: center;
 }
 .mn-item {
-  display: flex; flex-direction: column; align-items: center; gap: 2px;
-  color: #64748b; text-decoration: none; font-size: 10px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 2px;
+  min-width: 48px; min-height: 48px;
+  color: #64748b; text-decoration: none; font-size: 11px;
   position: relative; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: color 0.15s ease;
 }
+.mn-item .el-icon { font-size: 20px; }
 .mn-item.active { color: #a5b4fc; }
-.mn-item:hover { color: #94a3b8; }
+.mn-item:active { color: #c7d2fe; }
 .mn-publish {
-  width: 40px; height: 40px; border-radius: 50%;
+  width: 44px; height: 44px; border-radius: 50%;
   background: linear-gradient(135deg, #6366f1, #8b5cf6);
-  color: #fff; font-size: 22px;
+  color: #fff; font-size: 26px;
   display: flex; align-items: center; justify-content: center;
-  margin-top: -16px;
-  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
+  margin-top: -20px;
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.35);
+}
+.mn-publish:active {
+  transform: scale(0.92);
+  box-shadow: 0 2px 12px rgba(99, 102, 241, 0.25);
 }
 .mn-badge {
-  position: absolute; top: -2px; right: -8px;
+  position: absolute; top: 0; right: -6px;
   background: #ef4444; color: #fff;
   font-size: 10px; min-width: 16px; height: 16px; border-radius: 8px;
   display: flex; align-items: center; justify-content: center;
+  pointer-events: none;
 }
 
 /* ==========================================
@@ -802,22 +818,38 @@ onMounted(() => {
 
 @media (max-width: 768px) {
   .mobile-nav { display: flex !important; }
+  .app-shell {
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
   .app-shell > .sidebar { display: none !important; }
-  .main-area { margin-left: 0 !important; padding-bottom: 72px !important; }
+  .main-area {
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100vw;
+    padding-bottom: 80px !important;
+  }
   .topbar { padding: 0 12px !important; }
-  .content { padding: 0 12px 24px !important; }
+  .topbar .greeting { font-size: 13px; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .content { padding: 0 12px 32px !important; max-width: 100vw; }
   .hero { padding: 32px 0 24px !important; }
   .hero h1 { font-size: 24px !important; }
   .hero-subtitle { font-size: 14px !important; }
-  .dashboard { flex-wrap: wrap; gap: 8px; }
+  .hero-actions { flex-direction: column; align-items: center; gap: 10px; }
+  .hero-actions .el-button { width: 80%; }
+  .dashboard { flex-wrap: wrap; gap: 8px; padding: 14px; }
   .stat-item { flex: 1 1 40%; min-width: 120px; padding: 8px; }
   .stat-divider { display: none; }
-  .value-flow-enhanced { gap: 4px; padding: 12px; overflow-x: auto; }
+  .value-flow-enhanced { gap: 4px; padding: 10px; overflow-x: auto; }
   .value-flow-enhanced .flow-step-connector { min-width: 8px; }
   .task-grid { grid-template-columns: 1fr !important; gap: 12px !important; }
-  .filter-row { flex-wrap: wrap; }
+  .market-layout { flex-direction: column; }
+  .filter-row { flex-wrap: wrap; gap: 8px; }
+  .filter-row .el-button { flex-shrink: 0; }
   .search-input { max-width: 100% !important; flex: 1; }
+  .filter-select { width: 130px !important; flex-shrink: 0; }
   .trust-grid { gap: 8px; }
   .trust-item { font-size: 12px; padding: 6px 10px; }
+  .balance-badge { display: none; }
 }
 </style>
