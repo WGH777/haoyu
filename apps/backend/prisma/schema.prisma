@@ -20,6 +20,8 @@ model User {
   nickname       String
   bio            String?
   role           String        @default("USER")
+  verified       Boolean       @default(false)
+  certLevel      String        @default("NONE")
   refreshToken   String?
 
   avatar         String?                       // 用户头像 URL

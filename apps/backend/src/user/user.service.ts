@@ -97,6 +97,14 @@ export class UserService {
   // Phase 2: updateBalance 已废弃 — 余额现通过 WalletService 操作
   // 保留为空方法避免编译报错，Phase 3 全部切换后可删除
 
+  async verify(id: number, verified: boolean, certLevel: string) {
+    return this.prisma.user.update({
+      where: { id },
+      data: { verified, certLevel },
+      select: { id: true, email: true, nickname: true, verified: true, certLevel: true },
+    });
+  }
+
   /**
    * 🔥 核心修复：级联删除用户
    * 在删除用户前，必须先删除他产生的所有关联数据（流水、订单、任务、子任务）

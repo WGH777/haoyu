@@ -197,6 +197,21 @@ export class UserController {
   }
 
   /**
+   * （管理员）审核服务者认证
+   */
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
+  @Patch(':id/verify')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '（管理员）审核服务者认证' })
+  verifyUser(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { verified: boolean; certLevel?: string },
+  ) {
+    return this.userService.verify(id, body.verified, body.certLevel || 'BASIC');
+  }
+
+  /**
    * （超级管理员）删除用户
    */
   @UseGuards(JwtAuthGuard, RolesGuard)

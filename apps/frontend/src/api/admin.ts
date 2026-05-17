@@ -83,8 +83,8 @@ export const forceCompleteOrder = (orderId: number, reason?: string) => {
 }
 
 /**
- * 强制驳回订单 (判给发布者)
+ * 管理员审核服务者认证
  */
-export const forceRejectOrder = (orderId: number, reason?: string) => {
-  return http.post(`/admin/orders/${orderId}/force-reject`, { reason })
+export const verifyUser = (userId: number, verified: boolean, certLevel?: string) => {
+  return http.patch(`/user/${userId}/verify`, { verified, certLevel: certLevel || 'BASIC' })
 }

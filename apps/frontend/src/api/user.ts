@@ -13,6 +13,8 @@ export interface UserItem {
   avatar?: string | null
   createdAt?: string
   updatedAt?: string
+  verified?: boolean
+  certLevel?: string
 }
 
 export interface UserProfile {
@@ -25,6 +27,8 @@ export interface UserProfile {
   createdAt: string
   updatedAt: string
   bio?: string | null
+  verified?: boolean
+  certLevel?: string
 }
 
 export interface LoginDto {
