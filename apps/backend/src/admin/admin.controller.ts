@@ -128,6 +128,23 @@ export class AdminController {
     });
   }
 
+  /** 管理员给指定用户钱包充值（测试用） */
+  @Post('credit')
+  async creditWallet(@Body() body: { userId: number; amount: number; remark?: string }) {
+    if (!body.userId || !body.amount || body.amount <= 0) {
+      throw new BadRequestException('userId 和 amount(分) 必填，amount 必须大于 0');
+    }
+    await this.prisma.wallet.updateMany({
+      where: { userId: body.userId, currency: 'CNY' },
+      data: { available: { increment: body.amount } },
+    });
+    await this.audit.log({
+      adminId: 0, action: 'CREDIT_WALLET', targetType: 'USER', targetId: body.userId,
+      detail: `amount=${body.amount} remark=${body.remark || ''}`,
+    });
+    return { message: `已为用户 #${body.userId} 充值 ${body.amount} 分` };
+  }
+
   /** 仪表盘统计数据 */
   @Get('dashboard')
   async dashboard() {

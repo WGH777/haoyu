@@ -26,6 +26,10 @@
       </div>
     </div>
 
+    <div style="margin-bottom:16px">
+      <el-button type="warning" size="small" @click="creditVisible = true">💳 用户充值</el-button>
+    </div>
+
     <el-tabs v-model="activeTab">
       <el-tab-pane label="订单管理" name="orders">
         <el-table :data="orders" stripe>
@@ -107,11 +111,27 @@
         <el-button type="primary" @click="doForceComplete">确认</el-button>
       </template>
     </el-dialog>
+
+    <!-- 钱包充值弹窗 -->
+    <el-dialog v-model="creditVisible" title="用户钱包充值" width="400px">
+      <el-form label-position="top">
+        <el-form-item label="用户ID">
+          <el-input-number v-model="creditForm.userId" :min="1" style="width:100%" />
+        </el-form-item>
+        <el-form-item label="充值金额（元）">
+          <el-input-number v-model="creditForm.amount" :min="1" :step="10" :precision="2" style="width:100%" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="creditVisible = false">取消</el-button>
+        <el-button type="primary" @click="doCredit" :loading="crediting">确认充值</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { getAdminOrders, forceCompleteOrder } from '@/api/admin'
 import http from '@/api/http'
 import { disputeApi } from '@/api/dispute'
@@ -131,6 +151,9 @@ const totalVolume = computed(() => {
 const fcVisible = ref(false)
 const fcReason = ref('')
 const selectedOrder = ref<any>(null)
+const creditVisible = ref(false)
+const crediting = ref(false)
+const creditForm = reactive({ userId: 1, amount: 100 })
 
 const orderTag = (s: string) => {
   const m: Record<string, string> = { ASSIGNED: 'primary', SUBMITTED: 'warning', COMPLETED: 'success', CANCELLED: 'info', DISPUTED: 'danger' }
@@ -163,6 +186,15 @@ const doForceComplete = async () => {
     fcVisible.value = false
     loadOrders()
   } catch (e: any) { ElMessage.error(e?.response?.data?.message || '操作失败') }
+}
+
+const doCredit = async () => {
+  crediting.value = true
+  try {
+    await http.post('/admin/credit', { userId: creditForm.userId, amount: Math.round(creditForm.amount * 100) })
+    ElMessage.success('充值成功'); creditVisible.value = false
+  } catch { ElMessage.error('充值失败') }
+  finally { crediting.value = false }
 }
 
 const forceCancel = async (row: any) => {
