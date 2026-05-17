@@ -2,7 +2,7 @@
   <div class="orders-page">
     <h2>我接的订单</h2>
 
-    <el-empty v-if="!orders.length" description="还没有接过订单" />
+    <el-empty v-if="!orders.length" description="还没有接过订单，去任务大厅逛逛" />
 
     <div v-else class="order-list">
       <el-card

@@ -12,10 +12,10 @@
         </router-link>
         <template v-if="isLogin">
           <router-link to="/my-task" class="nav-item" :class="{ active: $route.path === '/my-task' }">
-            <el-icon><Checked /></el-icon><span>我的任务</span>
+            <el-icon><Files /></el-icon><span>我的任务</span>
           </router-link>
           <router-link to="/my-orders" class="nav-item" :class="{ active: $route.path === '/my-orders' }">
-            <el-icon><Document /></el-icon><span>我接的订单</span>
+            <el-icon><Connection /></el-icon><span>我接的订单</span>
           </router-link>
           <router-link to="/notifications" class="nav-item" :class="{ active: $route.path === '/notifications' }">
             <el-icon><Bell /></el-icon><span>通知</span>
@@ -132,7 +132,7 @@
 
         <!-- 任务网格 -->
         <div v-loading="loading" class="task-grid">
-          <el-empty v-if="!loading && !tasks.length" description="还没有任务，来做第一个发布者吧">
+          <el-empty v-if="!loading && !tasks.length" description="这里暂时安静，新的需求可能正在路上">
             <el-button type="primary" round @click="openCreateDialog">✨ 发布第一个需求</el-button>
           </el-empty>
           <div v-for="task in tasks" :key="task.id" class="task-card card-lift glow-border" @click="$router.push(`/task/${task.id}`)">
@@ -184,13 +184,13 @@
     <!-- 发布弹窗 -->
     <el-dialog v-model="showCreateDialog" title="发布新需求" width="560px" destroy-on-close>
       <el-form :model="createForm" label-position="top">
-        <el-form-item label="标题" required>
-          <el-input v-model="createForm.title" placeholder="简单描述你的需求" maxlength="60" show-word-limit />
+        <el-form-item label="给这次协作起个清楚的名字" required>
+          <el-input v-model="createForm.title" placeholder="让人一眼知道你需要什么" maxlength="60" show-word-limit />
         </el-form-item>
-        <el-form-item label="描述">
-          <el-input v-model="createForm.desc" type="textarea" :rows="3" placeholder="详细说明需求内容、要求等" />
+        <el-form-item label="说说背景、目标和期望">
+          <el-input v-model="createForm.desc" type="textarea" :rows="3" placeholder="越具体，匹配到合适的人越快" />
         </el-form-item>
-        <el-form-item label="赏金 (¥)">
+        <el-form-item label="你愿意支付多少？(¥)">
           <el-input-number v-model="createForm.price" :min="1" :step="10" :precision="2" style="width:200px" />
         </el-form-item>
         <el-form-item label="配图（可选）">
@@ -230,7 +230,7 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Plus, Refresh, Search, CaretBottom, List, Checked, Wallet, User, Document, Bell, Setting, Lock } from '@element-plus/icons-vue'
+import { Plus, Refresh, Search, CaretBottom, List, Checked, Wallet, User, Document, Bell, Setting, Lock, Files, Connection, Shield } from '@element-plus/icons-vue'
 import { getTaskList, createTask, uploadTaskImage, type Task } from '@/api/task'
 import { getProfile, type UserProfile } from '@/api/user'
 import { notificationApi } from '@/api/notification'
