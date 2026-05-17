@@ -83,8 +83,19 @@
         </el-table>
       </el-tab-pane>
 
-      <el-tab-pane label="用户管理" name="users">
-        <p class="hint">用户管理功能请使用左侧菜单「用户管理」入口</p>
+      <el-tab-pane label="操作审计" name="audit">
+        <el-table :data="auditLogs" stripe>
+          <el-table-column prop="id" label="ID" width="60" />
+          <el-table-column label="操作" min-width="140">
+            <template #default="{ row }">{{ row.action }}</template>
+          </el-table-column>
+          <el-table-column prop="operatorId" label="操作人ID" width="100" />
+          <el-table-column label="时间" width="170">
+            <template #default="{ row }">{{ formatTime(row.createdAt) }}</template>
+          </el-table-column>
+          <el-table-column prop="detail" label="详情" min-width="200" />
+        </el-table>
+        <el-empty v-if="!auditLogs.length" description="暂无审计记录" />
       </el-tab-pane>
     </el-tabs>
 
@@ -102,12 +113,14 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { getAdminOrders, forceCompleteOrder } from '@/api/admin'
+import http from '@/api/http'
 import { disputeApi } from '@/api/dispute'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const activeTab = ref('orders')
 const orders = ref<any[]>([])
 const disputes = ref<any[]>([])
+const auditLogs = ref<any[]>([])
 
 const totalVolume = computed(() => {
   const total = orders.value
@@ -130,6 +143,11 @@ const disputeTag = (s: string) => {
 }
 
 const formatTime = (t: string) => new Date(t).toLocaleString('zh-CN')
+
+const fetchAuditLogs = async () => {
+  try { const r: any = await http.get('/admin/audit-logs'); auditLogs.value = r.data || r || [] }
+  catch { auditLogs.value = [] }
+}
 
 const forceComplete = (row: any) => {
   selectedOrder.value = row
@@ -180,7 +198,7 @@ const loadDisputes = async () => {
   } catch { disputes.value = [] }
 }
 
-onMounted(() => { loadOrders(); loadDisputes() })
+onMounted(() => { loadOrders(); loadDisputes(); fetchAuditLogs() })
 </script>
 
 <style scoped>
