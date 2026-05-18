@@ -40,4 +40,32 @@ export class CreateTaskDto {
   @IsString()
   @IsOptional()
   image?: string | null;
+
+  @ApiProperty({
+    description: '任务分类',
+    required: false,
+    default: 'SKILL_SERVICE',
+    example: 'SKILL_SERVICE',
+  })
+  @IsString()
+  @IsOptional()
+  category?: string;
+
+  @ApiProperty({
+    description: '服务模式',
+    required: false,
+    default: 'ONLINE',
+    enum: ['ONLINE', 'OFFLINE'],
+  })
+  @IsString()
+  @IsOptional()
+  serviceMode?: string;
+
+  @ApiProperty({
+    description: '线下服务地点（serviceMode=OFFLINE 时必填）',
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  serviceLocation?: string;
 }

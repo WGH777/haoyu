@@ -20,6 +20,7 @@ import {
 } from '@nestjs/swagger';
 
 import { UserService } from './user.service';
+import { RequireConfirmation } from '../auth/decorators/require-confirmation.decorator';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
@@ -243,6 +244,7 @@ export class UserController {
   @ApiBearerAuth()
   @ApiParam({ name: 'id', type: Number, description: '用户 ID' })
   @ApiOperation({ summary: '（超级管理员）删除用户' })
+  @RequireConfirmation()
   remove(@Req() req: any, @Param('id', ParseIntPipe) id: number) {
     const result = this.userService.remove(id);
     this.audit.log({ adminId: req.user.id, action: 'DELETE_USER', targetType: 'USER', targetId: id }).catch(() => {});
@@ -259,6 +261,7 @@ export class UserController {
   @ApiParam({ name: 'id', type: Number, description: '用户 ID' })
   @ApiBody({ schema: { type: 'object', properties: { reason: { type: 'string', example: '违规发布' } } } })
   @ApiOperation({ summary: '（超级管理员）封禁用户' })
+  @RequireConfirmation()
   async banUser(
     @Req() req: any,
     @Param('id', ParseIntPipe) id: number,
@@ -278,6 +281,7 @@ export class UserController {
   @ApiBearerAuth()
   @ApiParam({ name: 'id', type: Number, description: '用户 ID' })
   @ApiOperation({ summary: '（超级管理员）解封用户' })
+  @RequireConfirmation()
   async unbanUser(@Req() req: any, @Param('id', ParseIntPipe) id: number) {
     const result = await this.userService.unban(id);
     this.audit.log({ adminId: req.user.id, action: 'UNBAN_USER', targetType: 'USER', targetId: id }).catch(() => {});

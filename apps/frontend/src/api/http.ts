@@ -7,7 +7,7 @@ import type {
   AxiosResponse,
   InternalAxiosRequestConfig,
 } from 'axios'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 // =========================================================
 // 🔄 智能环境配置
@@ -115,6 +115,24 @@ instance.interceptors.response.use(
         (error.response?.data as any)?.error ||
         error.message ||
         '网络出小差了'
+
+      // F-034: AI断点 — 需要人工确认的错误，弹窗确认后重试
+      if (message?.includes('需要人工确认') && originalRequest && !(originalRequest as any)._confirmRetry) {
+        return ElMessageBox.confirm(
+          '此操作涉及资金/账户安全，确认继续？',
+          '⚠️ 人工确认',
+          { confirmButtonText: '确认操作', cancelButtonText: '取消', type: 'warning' },
+        ).then(() => {
+          (originalRequest as any)._confirmRetry = true
+          originalRequest.headers = originalRequest.headers || {}
+          ;(originalRequest.headers as any)['X-Confirm'] = 'yes'
+          return instance(originalRequest)
+        }).catch(() => {
+          ElMessage.info('操作已取消')
+          return Promise.reject(error)
+        })
+      }
+
       ElMessage.error(message)
       return Promise.reject(error)
     }

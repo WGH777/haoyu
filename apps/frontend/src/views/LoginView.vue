@@ -56,6 +56,10 @@
         <span class="sep">|</span>
         <router-link to="/task">先看看平台</router-link>
       </div>
+
+      <div class="legal-links">
+        <router-link to="/terms">用户协议 &amp; 隐私政策</router-link>
+      </div>
     </div>
 
     <!-- 底部文案 -->

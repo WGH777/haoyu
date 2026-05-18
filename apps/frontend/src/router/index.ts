@@ -132,6 +132,12 @@ const router = createRouter({
       meta: { public: true },
     },
     {
+      path: '/terms',
+      name: 'terms',
+      component: () => import('@/views/LegalTerms.vue'),
+      meta: { public: true },
+    },
+    {
       path: '/:pathMatch(.*)*',
       component: () => import('@/views/NotFound.vue'),
       meta: { public: true },

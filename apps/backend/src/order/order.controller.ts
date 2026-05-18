@@ -20,6 +20,7 @@ import {
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { BanGuard } from '../user/ban.guard';
+import { RequireConfirmation } from '../auth/decorators/require-confirmation.decorator';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { SubmitResultDto } from './dto/submit-result.dto';
 import { CompleteOrderDto } from './dto/complete-order.dto';
@@ -73,6 +74,7 @@ export class OrderController {
    * 验收任务成果并结算（登录即可；服务端会校验是否发布者）
    */
   @Patch(':id/complete')
+  @RequireConfirmation()
   @UseGuards(JwtAuthGuard, BanGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '验收任务成果并结算 (由发布者调用)' })

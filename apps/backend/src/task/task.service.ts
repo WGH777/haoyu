@@ -65,7 +65,28 @@ export class TaskService {
   /* ==================== 核心业务 ==================== */
 
   async create(userId: number, createTaskDto: CreateTaskDto) {
-    const { title, description, price, image } = createTaskDto;
+    const { title, description, price, image, category, serviceMode } = createTaskDto;
+
+    // F-037: 专业资质服务边界 — 禁止医疗/法律/金融/心理等领域
+    const prohibitedCategories: Record<string, string> = {
+      MEDICAL: '医疗健康类服务需专业资质，平台暂不支持',
+      LEGAL: '法律咨询类服务需专业资质，平台暂不支持',
+      FINANCIAL: '金融投资类服务需专业资质，平台暂不支持',
+      PSYCHOLOGY: '心理咨询类服务需专业资质，平台暂不支持',
+      PHARMACY: '药品相关服务需专业资质，平台暂不支持',
+      INSURANCE: '保险相关服务需专业资质，平台暂不支持',
+      ACCOUNTING: '会计审计类服务需专业资质，平台暂不支持',
+    };
+    if (category && prohibitedCategories[category]) {
+      throw new BadRequestException(prohibitedCategories[category]);
+    }
+
+    // F-030: 线下服务安全保障 — 必须填写服务地点
+    const mode = serviceMode || 'ONLINE';
+    const loc = createTaskDto.serviceLocation;
+    if (mode === 'OFFLINE' && (!loc || loc.trim().length === 0)) {
+      throw new BadRequestException('线下服务必须填写服务地点');
+    }
 
     // 诈骗防范：新用户（注册<7天）首单限额 ¥500
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
@@ -115,6 +136,9 @@ export class TaskService {
           description: description ?? '',
           price,
           serviceFee,
+          category: category || 'SKILL_SERVICE',
+          serviceMode: mode,
+          serviceLocation: mode === 'OFFLINE' ? (loc || null) : null,
           image: image || null,
           publisherId: userId,
           status: 'PENDING',

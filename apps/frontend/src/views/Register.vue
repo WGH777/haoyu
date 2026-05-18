@@ -62,6 +62,10 @@
         <span>已有账号？</span>
         <router-link to="/login">去登录</router-link>
       </div>
+
+      <div class="legal-links">
+        <router-link to="/terms">用户协议 &amp; 隐私政策</router-link>
+      </div>
     </div>
 
     <div class="register-bottom-text">

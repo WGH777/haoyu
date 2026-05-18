@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
+import { SanitizeLogInterceptor } from './common/interceptors/sanitize-log.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -20,6 +21,9 @@ async function bootstrap() {
 
   // 安全响应头
   app.use(helmet({ contentSecurityPolicy: false }));
+
+  // 全局日志脱敏
+  app.useGlobalInterceptors(new SanitizeLogInterceptor());
 
   // 全局路由前缀
   app.setGlobalPrefix('api');

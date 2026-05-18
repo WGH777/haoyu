@@ -6,6 +6,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 
 import { WalletService } from './wallet.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RequireConfirmation } from '../auth/decorators/require-confirmation.decorator';
 
 @ApiTags('钱包中心')
 @ApiBearerAuth()
@@ -43,6 +44,7 @@ export class WalletController {
 
   /** 提现（模拟） */
   @Post('withdraw')
+  @RequireConfirmation()
   @ApiOperation({ summary: '提现（模拟）- amount 单位：分' })
   async withdraw(@Req() req: any, @Body() body: { amount: number }) {
     const wallet = await this.walletService.getWallet(req.user.id);

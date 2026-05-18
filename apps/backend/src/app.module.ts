@@ -3,6 +3,7 @@ import { Module } from '@nestjs/common';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
+import { ConfirmationGuard } from './auth/guards/confirmation.guard';
 import { join } from 'path';
 
 import { AppController } from './app.controller';
@@ -54,6 +55,7 @@ import { SchedulerModule } from './scheduler/scheduler.module';
   controllers: [AppController],
   providers: [AppService,
     { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_GUARD, useClass: ConfirmationGuard },
   ],
 })
 export class AppModule {}
