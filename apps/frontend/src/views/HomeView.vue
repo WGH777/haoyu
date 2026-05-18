@@ -342,10 +342,17 @@ const handleUpload = async (options: any) => {
   try {
     const fd = new FormData(); fd.append('file', options.file)
     const res: any = await uploadTaskImage(fd)
-    createForm.image = res?.url || ''
-    ElMessage.success('上传成功')
-  } catch {
-    ElMessage.error('上传失败')
+    // 兼容不同响应格式
+    const url = res?.url || res?.data?.url || ''
+    if (url) {
+      createForm.image = url
+      ElMessage.success('上传成功')
+    } else {
+      console.warn('Upload response missing url:', res)
+      ElMessage.warning('上传成功但图片未能显示，请重试')
+    }
+  } catch (e: any) {
+    ElMessage.error(e?.response?.data?.message || '上传失败')
   } finally {
     uploadingImg.value = false
   }
