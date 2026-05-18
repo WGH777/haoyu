@@ -21,8 +21,8 @@
         <span class="stat-label">待处理争议</span>
       </div>
       <div class="stat-card purple">
-        <span class="stat-num">¥{{ totalVolume }}</span>
-        <span class="stat-label">交易总额</span>
+        <span class="stat-num">{{ totalVolume }}</span>
+        <span class="stat-label">交易总额（煜米）</span>
       </div>
     </div>
 
@@ -36,7 +36,7 @@
           <div class="ov-card"><span class="ov-num">{{ dashboardData.totalTasks }}</span><span class="ov-label">总任务</span></div>
           <div class="ov-card"><span class="ov-num">{{ dashboardData.totalOrders }}</span><span class="ov-label">总订单</span></div>
           <div class="ov-card"><span class="ov-num">{{ dashboardData.totalUsers }}</span><span class="ov-label">总用户</span></div>
-          <div class="ov-card"><span class="ov-num">¥{{ (dashboardData.totalVolume/100).toFixed(0) }}</span><span class="ov-label">交易总额</span></div>
+          <div class="ov-card"><span class="ov-num">{{ (dashboardData.totalVolume/100).toFixed(0) }} 煜米</span><span class="ov-label">交易总额（煜米）</span></div>
         </div>
         <div v-if="dashboardData?.taskByCategory?.length" style="margin-top:20px">
           <h4 style="color:#94a3b8;margin-bottom:8px">任务分类分布</h4>
@@ -52,9 +52,9 @@
               <el-tag :type="orderTag(row.status)" size="small">{{ row.status }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="金额" width="100">
+          <el-table-column label="煜米" width="100">
             <template #default="{ row }">
-              ¥{{ ((row.task?.price || 0) / 100).toFixed(2) }}
+              {{ ((row.task?.price || 0) / 100).toFixed(2) }} 煜米
             </template>
           </el-table-column>
           <el-table-column label="操作" width="200">
@@ -130,7 +130,7 @@
         <el-form-item label="用户ID">
           <el-input-number v-model="creditForm.userId" :min="1" style="width:100%" />
         </el-form-item>
-        <el-form-item label="充值金额（元）">
+        <el-form-item label="充值金额（煜米）">
           <el-input-number v-model="creditForm.amount" :min="1" :step="10" :precision="2" style="width:100%" />
         </el-form-item>
       </el-form>

@@ -60,7 +60,7 @@
                   </el-tag>
                 </template>
               </el-table-column>
-              <el-table-column label="余额 (元)" width="120">
+              <el-table-column label="煜米" width="120">
                 <template #default="{ row }">
                   {{ ((row.balance || 0) / 100).toFixed(2) }}
                 </template>
@@ -156,7 +156,7 @@
                   {{ row.publisher?.nickname || row.publisher?.email || 'N/A' }}
                 </template>
               </el-table-column>
-              <el-table-column label="赏金 (元)" width="120">
+              <el-table-column label="煜米" width="120">
                 <template #default="{ row }">
                   {{ (row.price / 100).toFixed(2) }}
                 </template>
@@ -235,7 +235,7 @@
                   </el-tag>
                 </template>
               </el-table-column>
-              <el-table-column label="金额" width="120">
+              <el-table-column label="煜米" width="120">
                 <template #default="{ row }">
                   <span :class="row.amount > 0 ? 'text-green' : 'text-red'">
                     {{ formatTxnAmount(row) }}

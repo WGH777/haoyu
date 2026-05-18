@@ -27,7 +27,7 @@
           <div class="progress-fill" :style="{ width: progressPercent(task.status) }"></div>
         </div>
         <div class="premium-card-bottom">
-          <span class="premium-card-price glow-amber">¥{{ (task.price / 100).toFixed(2) }}</span>
+          <span class="premium-card-price glow-amber">{{ (task.price / 100).toFixed(2) }} 煜米</span>
           <span class="premium-card-meta">
             <span>{{ task.serviceMode === 'OFFLINE' ? '📍 线下' : task.serviceMode === 'BOTH' ? '🌐 均可' : '💻 线上' }}</span>
             <span>👁 {{ task.views || 0 }}</span>

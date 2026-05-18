@@ -7,7 +7,7 @@
       <el-form-item label="说说背景、目标和期望">
         <el-input v-model="form.desc" type="textarea" :rows="3" placeholder="越具体，匹配到合适的人越快" />
       </el-form-item>
-      <el-form-item label="你愿意为这个需求支付多少？（¥）">
+      <el-form-item label="你愿意为这个需求支付多少？（煜米）">
         <el-input-number v-model="form.price" :min="1" :step="10" :precision="2" style="width:200px" />
       </el-form-item>
       <el-form-item label="配图（可选）">

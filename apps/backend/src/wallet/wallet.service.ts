@@ -1,6 +1,6 @@
 // apps/backend/src/wallet/wallet.service.ts
 // Phase 2: WalletService 重写 — 基于 Wallet/LedgerEntry 模型的核心资金引擎
-// 金额单位：Int 分 | 原则：所有资金可变必须走本服务，永不直接改 User/Wallet 余额
+// 金额单位：Int（0.01煜米） | 原则：所有资金可变必须走本服务，永不直接改 User/Wallet 余额
 
 import {
   Injectable,
@@ -105,7 +105,7 @@ export class WalletService {
           frozen: { increment: amount },
         },
       });
-      if (updated.count !== 1) throw new BadRequestException('可用余额不足，冻结失败');
+      if (updated.count !== 1) throw new BadRequestException('煜米余额不足，冻结失败');
 
       const wallet = await tx.wallet.findUnique({ where: { id: walletId } })!;
 
@@ -144,7 +144,7 @@ export class WalletService {
           available: { increment: amount },
         },
       });
-      if (updated.count !== 1) throw new BadRequestException('冻结余额不足，解冻失败');
+      if (updated.count !== 1) throw new BadRequestException('冻结煜米不足，解冻失败');
 
       const wallet = await tx.wallet.findUnique({ where: { id: walletId } })!;
 
@@ -180,7 +180,7 @@ export class WalletService {
         where: { id: walletId, frozen: { gte: amount } },
         data: { frozen: { decrement: amount } },
       });
-      if (updated.count !== 1) throw new BadRequestException('托管余额不足，结算失败');
+      if (updated.count !== 1) throw new BadRequestException('托管煜米不足，结算失败');
 
       const wallet = await tx.wallet.findUnique({ where: { id: walletId } })!;
 
@@ -222,7 +222,7 @@ export class WalletService {
         where: { id: walletId, frozen: { gte: amount } },
         data: { frozen: { decrement: amount } },
       });
-      if (updated.count !== 1) throw new BadRequestException('托管余额不足，扣费失败');
+      if (updated.count !== 1) throw new BadRequestException('托管煜米不足，扣费失败');
 
       // 转入平台费系统账户
       await tx.wallet.update({
@@ -267,7 +267,7 @@ export class WalletService {
     remark?: string,
   ) {
     if (amount <= 0) throw new BadRequestException('金额必须大于 0');
-    // 提现最低 10 元（1000 分）
+    // 提现最低 10 煜米（1000 单位）
     if (amount < 1000) throw new BadRequestException('最低提现金额为 ¥10');
 
     return this.prisma.$tx(async (tx: any) => {
@@ -275,7 +275,7 @@ export class WalletService {
         where: { id: walletId, available: { gte: amount } },
         data: { available: { decrement: amount } },
       });
-      if (updated.count !== 1) throw new BadRequestException('可用余额不足');
+      if (updated.count !== 1) throw new BadRequestException('煜米余额不足');
 
       const wallet = await tx.wallet.findUnique({ where: { id: walletId } });
 

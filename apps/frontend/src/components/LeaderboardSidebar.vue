@@ -8,7 +8,7 @@
           <span class="leaderboard-rank" :class="'top-' + (idx + 1)" v-if="idx < 3">{{ idx + 1 }}</span>
           <span class="leaderboard-rank" v-else>{{ idx + 1 }}</span>
           <span class="leaderboard-name">{{ truncate(t.title, 16) }}</span>
-          <span class="leaderboard-value">¥{{ (t.price / 100).toFixed(0) }}</span>
+          <span class="leaderboard-value">{{ (t.price / 100).toFixed(0) }} 煜米</span>
         </div>
       </div>
       <div v-else class="empty-hint">暂无需求</div>

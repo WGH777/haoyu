@@ -52,9 +52,9 @@
                 </template>
               </el-table-column>
 
-              <el-table-column label="赏金" width="100">
+              <el-table-column label="煜米" width="100">
                 <template #default="scope">
-                  ¥ {{ (scope.row.task.price / 100).toFixed(2) }}
+                  {{ (scope.row.task.price / 100).toFixed(2) }} 煜米
                 </template>
               </el-table-column>
 
@@ -165,9 +165,9 @@
                 </template>
               </el-table-column>
 
-              <el-table-column label="赏金" width="100">
+              <el-table-column label="煜米" width="100">
                 <template #default="scope">
-                  ¥ {{ (scope.row.price / 100).toFixed(2) }}
+                  {{ (scope.row.price / 100).toFixed(2) }} 煜米
                 </template>
               </el-table-column>
 

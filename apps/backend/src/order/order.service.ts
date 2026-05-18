@@ -348,7 +348,7 @@ export class OrderService {
           throw new ConflictException('任务状态已变化，验收失败（并发命中）');
         }
 
-        // 3) 阶梯费率 + 金额计算（单位：分）
+        // 3) 阶梯费率 + 金额计算（单位：0.01煜米）
         const feeRate = await this.getServiceFeeRate(tx, order.workerId);
         const taskPrice = order.task.price;
         const serviceFee = Math.max(0, Math.round(taskPrice * feeRate));
@@ -368,7 +368,7 @@ export class OrderService {
           throw new BadRequestException('发布者钱包不存在，请先创建钱包');
         }
         if (publisherWallet.frozen < totalCost) {
-          throw new BadRequestException('发布者冻结余额不足，无法结算');
+          throw new BadRequestException('发布者冻结煜米不足，无法结算');
         }
 
         const workerWallet = await tx.wallet.findUnique({
@@ -554,7 +554,7 @@ export class OrderService {
         throw new BadRequestException('发布者钱包不存在，请先创建钱包');
       }
       if (publisherWallet.frozen < totalCost) {
-        throw new BadRequestException('冻结余额不足，无法退款');
+        throw new BadRequestException('冻结煜米不足，无法退款');
       }
 
       await tx.wallet.update({
@@ -636,7 +636,7 @@ export class OrderService {
         where: { userId_currency: { userId: order.task.publisherId, currency: 'CNY' } },
       });
       if (!publisherWallet || publisherWallet.frozen < totalCost) {
-        throw new BadRequestException('余额不足，自动确认失败');
+        throw new BadRequestException('煜米余额不足，自动确认失败');
       }
 
       await tx.wallet.update({

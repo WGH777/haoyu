@@ -26,7 +26,7 @@ export class CreateTaskDto {
   description?: string;
 
   @ApiProperty({
-    description: '赏金（单位：分，前端已把元转换为分）',
+    description: '煜米（单位：0.01煜米，前端×100提交）',
     example: 1000,
   })
   @IsInt({ message: '赏金必须是整数' })

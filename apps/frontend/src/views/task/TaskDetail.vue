@@ -16,7 +16,7 @@
 
           <div class="right">
             <el-tag type="danger" effect="plain" size="large" class="price-tag">
-              💰 赏金：¥ {{ ((task.price || 0) / 100).toFixed(2) }}
+              💰  {{ ((task.price || 0) / 100).toFixed(2) }} 煜米
             </el-tag>
           </div>
         </div>
@@ -362,7 +362,7 @@
                 <!-- 状态：已完成（COMPLETED） -->
                 <template v-else-if="isOrderCompleted">
                   <el-alert
-                    title="任务已完成，赏金已结算到您的账户。"
+                    title="任务已完成，煜米已结算到您的账户。"
                     type="success"
                     :closable="false"
                     show-icon
@@ -544,7 +544,7 @@
       <div class="related-grid">
         <div v-for="rt in relatedTasks" :key="rt.id" class="related-item" @click="$router.push(`/task/${rt.id}`)">
           <span class="related-title">{{ rt.title }}</span>
-          <span class="related-price">¥{{ ((rt.price||0)/100).toFixed(0) }}</span>
+          <span class="related-price">{{ ((rt.price||0)/100).toFixed(0) }} 煜米</span>
         </div>
       </div>
     </el-card>
@@ -1021,7 +1021,7 @@ const handleAccept = async () => {
   if (!publisherOrder.value) return
   try {
     await ElMessageBox.confirm(
-      '确认验收通过并结算赏金给执行者？',
+      '确认验收通过并结算煜米给执行者？',
       '提示',
       { type: 'warning' },
     )
@@ -1032,7 +1032,7 @@ const handleAccept = async () => {
   opLoading.value = true
   try {
     await completeOrder(publisherOrder.value.id, { isAccepted: true, comment: '' })
-    ElMessage.success('验收成功，赏金已结算')
+    ElMessage.success('验收成功，煜米已结算')
     await loadTask()
     await loadOrders()
   } catch (error) {

@@ -20,7 +20,7 @@
               <el-tag :type="statusType(order.status)" size="small">
                 {{ statusLabel(order.status) }}
               </el-tag>
-              <span>¥{{ ((order.task.price || 0) / 100).toFixed(2) }}</span>
+              <span>{{ ((order.task.price || 0) / 100).toFixed(2) }} 煜米</span>
             </div>
           </div>
           <div class="order-actions" v-if="order.status === 'ASSIGNED'">

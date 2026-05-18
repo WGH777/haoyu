@@ -42,7 +42,7 @@
           <span class="greeting">👋 {{ isLogin && currentUser ? currentUser.nickname : '可信价值协作平台' }}</span>
         </div>
         <div class="topbar-right">
-          <span v-if="isLogin && currentUser" class="balance-badge">💰 ¥{{ (walletBalance / 100).toFixed(2) }}</span>
+          <span v-if="isLogin && currentUser" class="balance-badge">💰 {{ (walletBalance / 100).toFixed(2) }}</span>
           <template v-if="isLogin">
             <el-avatar
               :size="34"
@@ -97,7 +97,7 @@
           </div>
           <div class="stat-divider"></div>
           <div class="stat-item">
-            <span class="stat-number">¥{{ escrowTotal }}</span>
+            <span class="stat-number">{{ escrowTotal }} 煜米</span>
             <span class="stat-label">托管中</span>
           </div>
           <div class="stat-divider"></div>
@@ -157,10 +157,10 @@
             class="search-input"
           />
           <el-select v-model="priceFilter" size="large" class="filter-select">
-            <el-option label="全部赏金" value="all" />
-            <el-option label="¥100 以下" value="low" />
-            <el-option label="¥100 – 500" value="mid" />
-            <el-option label="¥500 以上" value="high" />
+            <el-option label="全部预算" value="all" />
+            <el-option label="100 煜米以下" value="low" />
+            <el-option label="100 – 500 煜米" value="mid" />
+            <el-option label="500 煜米以上" value="high" />
           </el-select>
           <el-button size="large" @click="fetchData" :icon="Refresh" class="btn-outline">刷新</el-button>
         </div>
