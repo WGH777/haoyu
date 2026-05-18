@@ -203,4 +203,38 @@ export class UserService {
       data: { password: hashed },
     });
   }
+
+  /**
+   * 封禁用户
+   */
+  async ban(userId: number, reason?: string) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { isBanned: true, bannedAt: new Date(), banReason: reason || null },
+      select: { id: true, email: true, nickname: true, isBanned: true, bannedAt: true, banReason: true },
+    });
+  }
+
+  /**
+   * 解封用户
+   */
+  async unban(userId: number) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { isBanned: false, bannedAt: null, banReason: null },
+      select: { id: true, email: true, nickname: true, isBanned: true },
+    });
+  }
+
+  /**
+   * 封禁检查：返回用户封禁状态
+   */
+  async checkBanStatus(userId: number) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { isBanned: true, bannedAt: true, banReason: true },
+    });
+    if (!user) throw new Error('用户不存在');
+    return user;
+  }
 }

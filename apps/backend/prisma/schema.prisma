@@ -22,6 +22,9 @@ model User {
   role           String        @default("USER")
   verified       Boolean       @default(false)
   certLevel      String        @default("NONE")
+  isBanned       Boolean       @default(false)
+  bannedAt       DateTime?
+  banReason      String?
   refreshToken   String?
 
   avatar         String?                       // 用户头像 URL

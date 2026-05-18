@@ -19,6 +19,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { BanGuard } from '../user/ban.guard';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { SubmitResultDto } from './dto/submit-result.dto';
 import { CompleteOrderDto } from './dto/complete-order.dto';
@@ -32,7 +33,7 @@ export class OrderController {
    * 抢单/创建订单（登录即可；服务端会校验是否可接单）
    */
   @Post()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, BanGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '抢单/创建订单' })
   @ApiBody({ type: CreateOrderDto })
@@ -44,7 +45,7 @@ export class OrderController {
    * 服务者开始服务
    */
   @Patch(':id/start')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, BanGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '服务者开始服务' })
   startService(@Param('id', ParseIntPipe) orderId: number, @Req() req: any) {
@@ -55,7 +56,7 @@ export class OrderController {
    * 提交任务成果（登录即可；服务端会校验是否为执行者）
    */
   @Patch(':id/submit')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, BanGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '提交任务成果' })
   @ApiParam({ name: 'id', description: '订单 ID', type: Number })
@@ -72,7 +73,7 @@ export class OrderController {
    * 验收任务成果并结算（登录即可；服务端会校验是否发布者）
    */
   @Patch(':id/complete')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, BanGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '验收任务成果并结算 (由发布者调用)' })
   @ApiParam({ name: 'id', description: '订单 ID', type: Number })
@@ -86,7 +87,7 @@ export class OrderController {
   }
 
   @Patch(':id/cancel')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, BanGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '取消订单 (发布者/接单者均可)' })
   cancel(

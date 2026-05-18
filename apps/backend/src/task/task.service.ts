@@ -235,6 +235,29 @@ export class TaskService {
     return this.prisma.task.delete({ where: { id } });
   }
 
+  async findRelated(id: number) {
+    const task = await this.findOne(id);
+    return this.prisma.task.findMany({
+      where: {
+        id: { not: id },
+        status: { in: ['PENDING', 'ASSIGNED'] },
+        OR: task.category
+          ? [{ category: task.category }, { serviceMode: task.serviceMode }]
+          : [{ serviceMode: task.serviceMode }],
+      },
+      select: {
+        id: true, title: true, description: true, price: true, serviceFee: true,
+        category: true, serviceMode: true, status: true, image: true,
+        createdAt: true,
+        publisher: {
+          select: { id: true, nickname: true, avatar: true, verified: true },
+        },
+      },
+      take: 4,
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   async findCreatedBy(userId: number) {
     return this.prisma.task.findMany({
       where: { publisherId: userId },

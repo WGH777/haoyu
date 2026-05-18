@@ -11,13 +11,14 @@ import {
 } from '@nestjs/common';
 import { DisputeService } from './dispute.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { BanGuard } from '../user/ban.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('争议处理')
 @Controller('dispute')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, BanGuard)
 @ApiBearerAuth()
 export class DisputeController {
   constructor(private readonly disputeService: DisputeService) {}

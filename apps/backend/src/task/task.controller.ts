@@ -22,6 +22,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { BanGuard } from '../user/ban.guard';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { CreateSubTaskDto } from './dto/create-subtask.dto';
@@ -37,7 +38,7 @@ export class TaskController {
   constructor(private readonly taskService: TaskService) {}
 
   @Post()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, BanGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '创建任务' })
   create(@Body() createTaskDto: CreateTaskDto, @Req() req: any) {
@@ -46,18 +47,8 @@ export class TaskController {
 
   @Get('related/:id')
   @ApiOperation({ summary: '推荐相关任务' })
-  async findRelated(@Param('id', ParseIntPipe) id: number) {
-    const task = await this.taskService.findOne(id);
-    return this.prisma.task.findMany({
-      where: {
-        id: { not: id },
-        status: { in: ['PENDING', 'ASSIGNED'] },
-        OR: [{ category: task.category }, { serviceMode: task.serviceMode }],
-      },
-      include: { publisher: { select: { id: true, email: true, nickname: true, verified: true } } },
-      take: 4,
-      orderBy: { createdAt: 'desc' },
-    });
+  findRelated(@Param('id', ParseIntPipe) id: number) {
+    return this.taskService.findRelated(id);
   }
 
   @Get()
@@ -85,7 +76,7 @@ export class TaskController {
    * 更新任务基础信息（资源级权限：发布者/管理员）
    */
   @Patch(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, BanGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '更新任务基础信息（发布者/管理员）' })
   @ApiParam({ name: 'id', description: '任务 ID', type: Number })
@@ -101,7 +92,7 @@ export class TaskController {
    * 删除任务（资源级权限：发布者/管理员）
    */
   @Delete(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, BanGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '删除任务（发布者/管理员）' })
   @ApiParam({ name: 'id', description: '任务 ID', type: Number })
@@ -112,7 +103,7 @@ export class TaskController {
   // =============== 子任务相关 ===============
 
   @Post(':id/subtasks')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, BanGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '为任务新增子任务（仅发布者）' })
   @ApiParam({ name: 'id', description: '任务 ID', type: Number })
@@ -125,7 +116,7 @@ export class TaskController {
   }
 
   @Patch(':taskId/subtasks/:subTaskId')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, BanGuard)
   @ApiBearerAuth()
   @ApiOperation({
     summary:
@@ -143,7 +134,7 @@ export class TaskController {
   }
 
   @Delete(':taskId/subtasks/:subTaskId')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, BanGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '删除子任务（仅发布者）' })
   @ApiParam({ name: 'taskId', description: '任务 ID', type: Number })
@@ -160,7 +151,7 @@ export class TaskController {
 
   // Phase 0-3: 上传安全 — 限制文件大小 5MB，仅允许 jpeg/png/gif/webp
   @Post('upload-image')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, BanGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '上传任务图片' })
   @UseInterceptors(

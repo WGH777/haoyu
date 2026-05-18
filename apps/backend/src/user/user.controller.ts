@@ -162,7 +162,7 @@ export class UserController {
     },
   })
   @ApiOperation({ summary: '（超级管理员）修改用户角色' })
-  changeRole(
+  async changeRole(
     @Req() req: any,
     @Param('id', ParseIntPipe) id: number,
     @Body() body: { role: RoleStr },
@@ -172,7 +172,7 @@ export class UserController {
         `role 非法，可选值：${ROLE_ALLOWLIST.join(', ')}`,
       );
     }
-    await this.audit.log({ adminId: req.user.id, action: 'CHANGE_ROLE', targetType: 'USER', targetId: id, detail: `role=${body.role}` });
+    await this.audit.log({ adminId: req.user.id, action: 'CHANGE_ROLE', targetType: 'USER', targetId: id, detail: `role=${body.role}` }).catch(() => {});
     return this.userService.update(id, { role: body.role } as any);
   }
 
@@ -216,7 +216,7 @@ export class UserController {
   @Patch(':id/verify')
   @ApiBearerAuth()
   @ApiOperation({ summary: '（管理员）审核服务者认证' })
-  verifyUser(
+  async verifyUser(
     @Req() req: any,
     @Param('id', ParseIntPipe) id: number,
     @Body() body: { verified: boolean; certLevel?: string },
@@ -248,5 +248,39 @@ export class UserController {
     this.audit.log({ adminId: req.user.id, action: 'DELETE_USER', targetType: 'USER', targetId: id }).catch(() => {});
     return result;
   }
+
+  /**
+   * （超级管理员）封禁用户
+   */
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  @Patch(':id/ban')
+  @ApiBearerAuth()
+  @ApiParam({ name: 'id', type: Number, description: '用户 ID' })
+  @ApiBody({ schema: { type: 'object', properties: { reason: { type: 'string', example: '违规发布' } } } })
+  @ApiOperation({ summary: '（超级管理员）封禁用户' })
+  async banUser(
+    @Req() req: any,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body?: { reason?: string },
+  ) {
+    const result = await this.userService.ban(id, body?.reason);
+    this.audit.log({ adminId: req.user.id, action: 'BAN_USER', targetType: 'USER', targetId: id, detail: body?.reason }).catch(() => {});
+    return result;
+  }
+
+  /**
+   * （超级管理员）解封用户
+   */
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  @Patch(':id/unban')
+  @ApiBearerAuth()
+  @ApiParam({ name: 'id', type: Number, description: '用户 ID' })
+  @ApiOperation({ summary: '（超级管理员）解封用户' })
+  async unbanUser(@Req() req: any, @Param('id', ParseIntPipe) id: number) {
+    const result = await this.userService.unban(id);
+    this.audit.log({ adminId: req.user.id, action: 'UNBAN_USER', targetType: 'USER', targetId: id }).catch(() => {});
+    return result;
   }
 }
