@@ -298,7 +298,7 @@ export class TaskService {
           include: {
             subTasks: true,
             publisher: {
-              select: { nickname: true, email: true, id: true, avatar: true },
+              select: { id: true, nickname: true, avatar: true },
             },
           },
         },

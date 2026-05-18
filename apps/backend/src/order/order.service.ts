@@ -787,7 +787,6 @@ export class OrderService {
             publisher: {
               select: {
                 id: true,
-                email: true,
                 nickname: true,
                 avatar: true,
               },

@@ -26,6 +26,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Prisma } from '@prisma/client';
 import { AdminAuditService } from './admin-audit.service';
+import { RequireConfirmation } from '../auth/decorators/require-confirmation.decorator';
 
 type TaskStatus =
   | 'PENDING'
@@ -130,18 +131,42 @@ export class AdminController {
 
   /** 管理员给指定用户钱包充值（测试用） */
   @Post('credit')
-  async creditWallet(@Body() body: { userId: number; amount: number; remark?: string }) {
+  @RequireConfirmation()
+  async creditWallet(
+    @Req() req: any,
+    @Body() body: { userId: number; amount: number; remark?: string },
+  ) {
     if (!body.userId || !body.amount || body.amount <= 0) {
       throw new BadRequestException('userId 和 amount(分) 必填，amount 必须大于 0');
     }
-    await this.prisma.wallet.updateMany({
-      where: { userId: body.userId, currency: 'CNY' },
-      data: { available: { increment: body.amount } },
+    await this.prisma.$tx(async (tx) => {
+      const wallet = await tx.wallet.findUnique({
+        where: { userId_currency: { userId: body.userId, currency: 'CNY' } },
+      });
+      if (!wallet) throw new BadRequestException('目标用户钱包不存在');
+
+      await tx.wallet.update({
+        where: { id: wallet.id },
+        data: { available: { increment: body.amount } },
+      });
+
+      await tx.ledgerEntry.create({
+        data: {
+          walletId: wallet.id,
+          userId: body.userId,
+          amount: body.amount,
+          direction: 'IN',
+          type: 'ADMIN_ADJUST',
+          balanceAfter: wallet.available + body.amount,
+          frozenAfter: wallet.frozen,
+          remark: body.remark || `管理员 #${req.user.id} 充值`,
+        },
+      });
     });
     await this.audit.log({
-      adminId: 0, action: 'CREDIT_WALLET', targetType: 'USER', targetId: body.userId,
+      adminId: req.user.id, action: 'CREDIT_WALLET', targetType: 'USER', targetId: body.userId,
       detail: `amount=${body.amount} remark=${body.remark || ''}`,
-    });
+    }).catch(() => {});
     return { message: `已为用户 #${body.userId} 充值 ${body.amount} 分` };
   }
 
@@ -174,6 +199,7 @@ export class AdminController {
   // =========================
 
   @Post('tasks/:taskId/force-cancel')
+  @RequireConfirmation()
   @ApiOperation({ summary: '（管理员）强制取消任务并退款给发布者' })
   @ApiParam({ name: 'taskId', type: Number, description: '任务ID' })
   @ApiBody({
@@ -284,6 +310,7 @@ export class AdminController {
   }
 
   @Post('orders/:orderId/force-complete')
+  @RequireConfirmation()
   @ApiOperation({ summary: '（管理员）强制结算订单（向执行者支付）' })
   @ApiParam({ name: 'orderId', type: Number, description: '订单ID' })
   @ApiBody({
@@ -442,6 +469,7 @@ export class AdminController {
   }
 
   @Post('orders/:orderId/force-reject')
+  @RequireConfirmation()
   @ApiOperation({ summary: '（管理员）强制驳回订单并回退到 ASSIGNED（允许重新提交）' })
   @ApiParam({ name: 'orderId', type: Number, description: '订单ID' })
   @ApiBody({
