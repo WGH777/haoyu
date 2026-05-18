@@ -31,6 +31,18 @@
     </div>
 
     <el-tabs v-model="activeTab">
+      <el-tab-pane label="概览" name="overview">
+        <div v-if="dashboardData" class="overview-grid">
+          <div class="ov-card"><span class="ov-num">{{ dashboardData.totalTasks }}</span><span class="ov-label">总任务</span></div>
+          <div class="ov-card"><span class="ov-num">{{ dashboardData.totalOrders }}</span><span class="ov-label">总订单</span></div>
+          <div class="ov-card"><span class="ov-num">{{ dashboardData.totalUsers }}</span><span class="ov-label">总用户</span></div>
+          <div class="ov-card"><span class="ov-num">¥{{ (dashboardData.totalVolume/100).toFixed(0) }}</span><span class="ov-label">交易总额</span></div>
+        </div>
+        <div v-if="dashboardData?.taskByCategory?.length" style="margin-top:20px">
+          <h4 style="color:#94a3b8;margin-bottom:8px">任务分类分布</h4>
+          <el-tag v-for="c in dashboardData.taskByCategory" :key="c.category" style="margin:4px" type="primary">{{ c.category }}: {{ c._count }}</el-tag>
+        </div>
+      </el-tab-pane>
       <el-tab-pane label="订单管理" name="orders">
         <el-table :data="orders" stripe>
           <el-table-column prop="id" label="订单ID" width="70" />
@@ -137,10 +149,11 @@ import http from '@/api/http'
 import { disputeApi } from '@/api/dispute'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
-const activeTab = ref('orders')
+const activeTab = ref('overview')
 const orders = ref<any[]>([])
 const disputes = ref<any[]>([])
 const auditLogs = ref<any[]>([])
+const dashboardData = ref<any>(null)
 
 const totalVolume = computed(() => {
   const total = orders.value
@@ -170,6 +183,11 @@ const formatTime = (t: string) => new Date(t).toLocaleString('zh-CN')
 const fetchAuditLogs = async () => {
   try { const r: any = await http.get('/admin/audit-logs'); auditLogs.value = r.data || r || [] }
   catch { auditLogs.value = [] }
+}
+
+const fetchDashboard = async () => {
+  try { const r: any = await http.get('/admin/dashboard'); dashboardData.value = r.data || r }
+  catch {}
 }
 
 const forceComplete = (row: any) => {
@@ -230,7 +248,7 @@ const loadDisputes = async () => {
   } catch { disputes.value = [] }
 }
 
-onMounted(() => { loadOrders(); loadDisputes(); fetchAuditLogs() })
+onMounted(() => { loadOrders(); loadDisputes(); fetchAuditLogs(); fetchDashboard() })
 </script>
 
 <style scoped>
@@ -250,4 +268,9 @@ onMounted(() => { loadOrders(); loadDisputes(); fetchAuditLogs() })
 .stat-card.purple { border-color: rgba(99, 102, 241, 0.25); background: rgba(99, 102, 241, 0.06); }
 .stat-num { display: block; font-size: 24px; font-weight: 700; color: #f1f5f9; }
 .stat-label { display: block; font-size: 12px; color: #94a3b8; margin-top: 4px; }
+
+.overview-grid { display: flex; gap: 16px; flex-wrap: wrap; }
+.ov-card { flex:1; min-width:120px; padding:16px; border-radius:10px; background:rgba(17,24,39,0.45); border:1px solid rgba(148,163,184,0.12); text-align:center; }
+.ov-num { display:block; font-size:24px; font-weight:700; color:#f1f5f9; }
+.ov-label { font-size:12px; color:#94a3b8; }
 </style>
