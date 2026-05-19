@@ -179,6 +179,11 @@ const matchRoles = (userRole: string | undefined, required: Role[]) => {
   return required.some((r) => level >= ROLE_LEVEL[r])
 }
 
+// 路由错误监听 — 排查 P0 空白页/404
+router.onError((err) => {
+  console.error('[Router Error]', err)
+})
+
 /**
  * 路由守卫：游客访问控制 + 登录校验 + 角色校验
  */

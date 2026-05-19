@@ -16,6 +16,11 @@ import router from './router'
 
 const app = createApp(App)
 
+// 全局错误捕获 — 排查 P0 空白页/404
+app.config.errorHandler = (err, _instance, info) => {
+  console.error('[Vue Error]', info, err)
+}
+
 for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
   app.component(key, component)
 }
@@ -24,4 +29,11 @@ app.use(createPinia())
 app.use(router)
 app.use(ElementPlus)
 
-app.mount('#app')
+router.isReady().then(() => {
+  app.mount('#app')
+  console.log('[Haoyu] App mounted, route:', router.currentRoute.value.path)
+}).catch((err) => {
+  console.error('[Haoyu] Router init failed:', err)
+  // 兜底：仍然尝试挂载
+  app.mount('#app')
+})
