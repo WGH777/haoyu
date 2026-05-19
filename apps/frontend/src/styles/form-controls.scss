@@ -250,14 +250,14 @@ html {
   padding: 6px 0;
 }
 
-// 下拉选项 — flex 居中，解决文字偏下问题
+// 下拉选项 — flex 居中，解决文字偏下/不垂直居中问题
 .el-select-dropdown__item {
   color: rgba(226, 232, 240, 0.82) !important;
   background: transparent !important;
   border-radius: 10px;
   margin: 3px 8px;
-  padding: 0 14px;
-  height: 40px;
+  padding: 0 14px !important;
+  height: 40px !important;
   line-height: normal;
   display: flex;
   align-items: center;

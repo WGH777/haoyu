@@ -2,7 +2,7 @@
   <div class="notification-page">
     <div class="page-header">
       <h2>通知中心</h2>
-      <el-button v-if="notifications.length" type="primary" link @click="markAll">
+      <el-button v-if="notifications.length" size="small" plain @click="markAll">
         全部已读
       </el-button>
     </div>

@@ -543,9 +543,20 @@ onMounted(() => {
 .search-input { max-width: 380px; }
 .filter-select { width: 170px; }
 .filter-select .el-input__wrapper {
-  background: rgba(255, 255, 255, 0.02) !important;
-  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  background: rgba(255, 255, 255, 0.025) !important;
+  border: 1px solid rgba(255, 255, 255, 0.07) !important;
   box-shadow: none !important;
+  border-radius: 14px !important;
+  transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+.filter-select .el-input__wrapper:hover {
+  background: rgba(255, 255, 255, 0.045) !important;
+  border-color: rgba(255, 255, 255, 0.14) !important;
+}
+.filter-select .el-input__wrapper.is-focus {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(99, 102, 241, 0.45) !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12) !important;
 }
 
 /* === 布局 === */
