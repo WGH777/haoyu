@@ -24,13 +24,27 @@ export type NotificationType =
 export class NotificationService {
   constructor(private prisma: PrismaService) {}
 
-  /** 创建通知 */
+  /** 创建通知（带去重：同用户+同类型+同标题30分钟内不重复） */
   async create(params: {
     userId: number;
     title: string;
     content: string;
     type: NotificationType;
+    dedupWindowMs?: number; // 默认 30 分钟
   }) {
+    const window = params.dedupWindowMs ?? 30 * 60 * 1000;
+    if (window > 0) {
+      const existing = await this.prisma.notification.findFirst({
+        where: {
+          userId: params.userId,
+          type: params.type,
+          title: params.title,
+          createdAt: { gte: new Date(Date.now() - window) },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+      if (existing) return existing; // 去重：复用已有通知
+    }
     return this.prisma.notification.create({
       data: {
         userId: params.userId,
