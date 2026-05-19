@@ -77,7 +77,9 @@ const tagType = (type: string) => {
     SERVICE_COMPLETED: 'success', ORDER_CANCELLED: 'danger', ORDER_DISPUTED: 'warning',
     DISPUTE_RESOLVED: 'success', DEADLINE_WARNING: 'warning', PROVIDER_UNRESPONSIVE: 'danger',
     AUTO_CONFIRMED: 'info', REQUEST_RESPONDED: 'primary', SERVICE_SUBMITTED: 'primary',
-    RISK_ALERT: 'danger', PAYMENT_RECEIVED: 'success',
+    RISK_ALERT: 'danger', PAYMENT_RECEIVED: 'success', SERVICE_STARTED: 'primary',
+    REFUND_CREATED: 'warning', SETTLEMENT_CREATED: 'success', SERVICE_REJECTED: 'danger',
+    MATCHING_ALERT: 'warning', NEWBIE_NUDGE: 'info',
   }
   return map[type] || 'info'
 }
@@ -89,6 +91,7 @@ const typeLabel = (type: string) => {
     SETTLEMENT_CREATED: '结算', RISK_ALERT: '风控', SYSTEM: '系统', PAYMENT_RECEIVED: '支付',
     AUTO_CONFIRMED: '自动确认', ORDER_CANCELLED: '已取消', DISPUTE_RESOLVED: '争议解决',
     DEADLINE_WARNING: '即将超时', PROVIDER_UNRESPONSIVE: '服务者超时',
+    MATCHING_ALERT: '匹配提醒', NEWBIE_NUDGE: '新手引导', SERVICE_REJECTED: '验收驳回',
   }
   return map[type] || type
 }

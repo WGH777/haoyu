@@ -196,7 +196,11 @@ export class TaskService {
         subTasks: true,
         _count: { select: { orders: true } },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: [
+        { price: 'desc' },
+        { riskLevel: 'asc' },
+        { createdAt: 'desc' },
+      ],
     });
   }
 

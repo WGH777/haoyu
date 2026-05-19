@@ -267,12 +267,12 @@
               <el-button
                 v-if="canRobOrder"
                 class="mt-16 w-100"
-                type="primary"
+                :type="isQuickClaim ? 'success' : 'primary'"
                 size="large"
                 :loading="opLoading"
                 @click="handleAssign"
               >
-                🚀 立即接单
+                {{ isQuickClaim ? '⚡ 一键接单（低风险）' : '🚀 立即接单' }}
               </el-button>
             </div>
 
@@ -763,6 +763,11 @@ const canRobOrder = computed(
     task.value.status === 'PENDING' &&
     !isPublisher.value &&
     !isWorker.value,
+)
+
+// 一键接单条件：低风险 + 发布者已认证
+const isQuickClaim = computed(() =>
+  task.value?.riskLevel === 'LOW' && (task.value as any)?.publisher?.verified,
 )
 
 // 当前视角下的订单

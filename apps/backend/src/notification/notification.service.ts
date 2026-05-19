@@ -18,6 +18,8 @@ export type NotificationType =
   | 'DEADLINE_WARNING'
   | 'PROVIDER_UNRESPONSIVE'
   | 'MATCHING_ALERT'
+  | 'NEWBIE_NUDGE'
+  | 'SERVICE_REJECTED'
   | 'NEWBIE_NUDGE';
 
 @Injectable()

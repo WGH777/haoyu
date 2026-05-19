@@ -5,9 +5,14 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import { SanitizeLogInterceptor } from './common/interceptors/sanitize-log.interceptor';
 import { SanitizeInputPipe } from './common/pipes/sanitize-input.pipe';
+import { ProductionLogger } from './common/production-logger';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger: process.env.NODE_ENV === 'production'
+      ? new ProductionLogger()
+      : undefined, // 开发环境使用默认 Logger
+  });
 
   // CORS：从环境变量读取允许域名（逗号分隔，默认开发环境）
   const corsOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173')
