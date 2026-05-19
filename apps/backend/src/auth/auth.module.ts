@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 
@@ -8,6 +8,8 @@ import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
+import { DualSignService } from './dual-sign/dual-sign.service';
+import { DualSignGuard } from './dual-sign/dual-sign.guard';
 
 import { UserModule } from '../user/user.module';
 import { PrismaModule } from '../prisma/prisma.module';
@@ -20,7 +22,7 @@ if (!JWT_SECRET) {
 
 @Module({
   imports: [
-    UserModule,
+    forwardRef(() => UserModule),
     PrismaModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({
@@ -29,7 +31,7 @@ if (!JWT_SECRET) {
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, JwtAuthGuard, RolesGuard],
-  exports: [JwtModule, JwtAuthGuard, RolesGuard],
+  providers: [AuthService, JwtStrategy, JwtAuthGuard, RolesGuard, DualSignService, DualSignGuard],
+  exports: [JwtModule, JwtAuthGuard, RolesGuard, DualSignService, DualSignGuard],
 })
 export class AuthModule {}

@@ -4,6 +4,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import { SanitizeLogInterceptor } from './common/interceptors/sanitize-log.interceptor';
+import { SanitizeInputPipe } from './common/pipes/sanitize-input.pipe';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -27,6 +28,9 @@ async function bootstrap() {
 
   // 全局路由前缀
   app.setGlobalPrefix('api');
+
+  // 全局输入清洗（注入防护：XSS/SQL/Prompt Injection）
+  app.useGlobalPipes(new SanitizeInputPipe());
 
   // 全局参数校验
   app.useGlobalPipes(new ValidationPipe({

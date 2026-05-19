@@ -1,8 +1,9 @@
 // apps/backend/src/admin/admin.module.ts
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { AdminController } from './admin.controller';
 import { PrismaModule } from '../prisma/prisma.module';
 import { AdminAuditService } from './admin-audit.service';
+import { AuthModule } from '../auth/auth.module';
 
 /**
  * 管理员治理模块
@@ -13,6 +14,7 @@ import { AdminAuditService } from './admin-audit.service';
 @Module({
   imports: [
     PrismaModule, // 提供 PrismaService（事务、查询、审计写入）
+    forwardRef(() => AuthModule), // DualSignService
   ],
   controllers: [
     AdminController,

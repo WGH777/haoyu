@@ -20,6 +20,7 @@ import { DisputeModule } from './dispute/dispute.module';
 import { CommentModule } from './comment/comment.module';
 import { SchedulerModule } from './scheduler/scheduler.module';
 import { HealthModule } from './health/health.module';
+import { ReconciliationModule } from './reconciliation/reconciliation.module';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { HealthModule } from './health/health.module';
     // 运维
     // =========================
     HealthModule,
+    ReconciliationModule,
 
     // =========================
     // 平台治理模块（RBAC / 仲裁 / 审计）

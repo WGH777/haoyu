@@ -28,6 +28,8 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { RequireDualSign } from '../auth/dual-sign/dual-sign.decorator';
+import { DualSignGuard } from '../auth/dual-sign/dual-sign.guard';
 import { AdminAuditService } from '../admin/admin-audit.service';
 
 type RoleStr = 'USER' | 'ADMIN' | 'SUPER_ADMIN';
@@ -144,7 +146,7 @@ export class UserController {
   /**
    * ★ 修改用户角色（仅 SUPER_ADMIN）
    */
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard, DualSignGuard)
   @Roles('SUPER_ADMIN')
   @Patch(':id/role')
   @ApiBearerAuth()
@@ -163,6 +165,7 @@ export class UserController {
     },
   })
   @ApiOperation({ summary: '（超级管理员）修改用户角色' })
+  @RequireDualSign()
   async changeRole(
     @Req() req: any,
     @Param('id', ParseIntPipe) id: number,
@@ -180,7 +183,7 @@ export class UserController {
   /**
    * ★ 超级管理员重置指定用户密码（无需旧密码）
    */
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard, DualSignGuard)
   @Roles('SUPER_ADMIN')
   @Patch(':id/reset-password')
   @ApiBearerAuth()
@@ -199,6 +202,7 @@ export class UserController {
     },
   })
   @ApiOperation({ summary: '（超级管理员）重置用户密码' })
+  @RequireDualSign()
   async resetPasswordByAdmin(
     @Req() req: any,
     @Param('id', ParseIntPipe) id: number,
@@ -238,12 +242,13 @@ export class UserController {
   /**
    * （超级管理员）删除用户
    */
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard, DualSignGuard)
   @Roles('SUPER_ADMIN')
   @Delete(':id')
   @ApiBearerAuth()
   @ApiParam({ name: 'id', type: Number, description: '用户 ID' })
   @ApiOperation({ summary: '（超级管理员）删除用户' })
+  @RequireDualSign()
   @RequireConfirmation()
   remove(@Req() req: any, @Param('id', ParseIntPipe) id: number) {
     const result = this.userService.remove(id);
@@ -254,13 +259,14 @@ export class UserController {
   /**
    * （超级管理员）封禁用户
    */
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard, DualSignGuard)
   @Roles('SUPER_ADMIN')
   @Patch(':id/ban')
   @ApiBearerAuth()
   @ApiParam({ name: 'id', type: Number, description: '用户 ID' })
   @ApiBody({ schema: { type: 'object', properties: { reason: { type: 'string', example: '违规发布' } } } })
   @ApiOperation({ summary: '（超级管理员）封禁用户' })
+  @RequireDualSign()
   @RequireConfirmation()
   async banUser(
     @Req() req: any,
@@ -275,12 +281,13 @@ export class UserController {
   /**
    * （超级管理员）解封用户
    */
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard, DualSignGuard)
   @Roles('SUPER_ADMIN')
   @Patch(':id/unban')
   @ApiBearerAuth()
   @ApiParam({ name: 'id', type: Number, description: '用户 ID' })
   @ApiOperation({ summary: '（超级管理员）解封用户' })
+  @RequireDualSign()
   @RequireConfirmation()
   async unbanUser(@Req() req: any, @Param('id', ParseIntPipe) id: number) {
     const result = await this.userService.unban(id);

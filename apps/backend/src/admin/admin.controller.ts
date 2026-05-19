@@ -27,6 +27,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { Prisma } from '@prisma/client';
 import { AdminAuditService } from './admin-audit.service';
 import { RequireConfirmation } from '../auth/decorators/require-confirmation.decorator';
+import { DualSignService } from '../auth/dual-sign/dual-sign.service';
 
 type TaskStatus =
   | 'PENDING'
@@ -46,6 +47,7 @@ export class AdminController {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AdminAuditService,
+    private readonly dualSign: DualSignService,
   ) {}
 
   // =========================
@@ -538,5 +540,29 @@ export class AdminController {
     });
 
     return result;
+  }
+
+  // =============== 双签 ===============
+
+  /** 列出待批准的双签请求 */
+  @Get('dual-sign/pending')
+  @ApiOperation({ summary: '查看待批准的双签请求' })
+  listPendingDualSign() {
+    return this.dualSign.listPending();
+  }
+
+  /** 批准双签请求，返回一次性 token */
+  @Post('dual-sign/approve')
+  @ApiOperation({ summary: '批准双签请求（第二位管理员）' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: { requestId: { type: 'string', example: 'ds-...' } },
+      required: ['requestId'],
+    },
+  })
+  approveDualSign(@Req() req: any, @Body() body: { requestId: string }) {
+    if (!body?.requestId) throw new BadRequestException('缺少 requestId');
+    return this.dualSign.approve(req.user.id, body.requestId);
   }
 }
