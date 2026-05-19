@@ -69,6 +69,7 @@ export class SchedulerService {
       where: {
         status: 'SUBMITTED',
         submittedAt: { lte: firstWarnDeadline, gt: autoConfirmDeadline },
+        warned48h: false,
       },
       include: { task: true },
       take: 20,
@@ -82,6 +83,10 @@ export class SchedulerService {
           content: `订单 #${order.id} 已提交超过48小时，请在24小时内验收，超时将自动确认`,
           type: 'DEADLINE_WARNING',
         }).catch(() => {});
+        await this.prisma.order.update({
+          where: { id: order.id },
+          data: { warned48h: true },
+        });
         this.logger.log(`⚠️ 订单 #${order.id} 超时预警（48h）`);
       } catch {}
     }
@@ -131,7 +136,42 @@ export class SchedulerService {
           ).catch(() => {});
         }
       } catch (e: any) {
-        this.logger.error(`订单 #${order.id} 自动处理失败: ${e?.message}`);
+        // 自动确认失败：递增重试计数，超过上限标记 DISPUTED
+        const retries = (order.confirmRetries || 0) + 1;
+        const isBalanceIssue = e?.message?.includes?.('余额不足') || e?.message?.includes?.('insufficient');
+        const maxRetries = 3;
+
+        if (isBalanceIssue || retries > maxRetries) {
+          await this.prisma.order.update({
+            where: { id: order.id },
+            data: { status: 'DISPUTED', confirmRetries: retries },
+          });
+          // 创建争议记录
+          await this.prisma.dispute.create({
+            data: {
+              orderId: order.id,
+              taskId: order.taskId,
+              openerId: order.task.publisherId,
+              reason: isBalanceIssue
+                ? '自动确认失败：发布者煜米余额不足'
+                : `自动确认失败（已重试${retries}次）：${e?.message || '未知错误'}`,
+              status: 'OPEN',
+            },
+          }).catch(() => {});
+          await this.notification.create({
+            userId: order.task.publisherId,
+            title: '订单需人工处理',
+            content: `订单 #${order.id} 自动确认失败，已转为争议处理，请联系管理员`,
+            type: 'DEADLINE_WARNING',
+          }).catch(() => {});
+          this.logger.warn(`🔴 订单 #${order.id} 自动确认失败已转 DISPUTED（重试${retries}次）`);
+        } else {
+          await this.prisma.order.update({
+            where: { id: order.id },
+            data: { confirmRetries: retries },
+          });
+          this.logger.error(`订单 #${order.id} 自动处理失败（第${retries}次）: ${e?.message}`);
+        }
       }
     }
   }

@@ -20,6 +20,7 @@ import { NotificationModule } from './notification/notification.module';
 import { DisputeModule } from './dispute/dispute.module';
 import { CommentModule } from './comment/comment.module';
 import { SchedulerModule } from './scheduler/scheduler.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -46,6 +47,11 @@ import { SchedulerModule } from './scheduler/scheduler.module';
     DisputeModule,
     SchedulerModule,
     CommentModule,
+
+    // =========================
+    // 运维
+    // =========================
+    HealthModule,
 
     // =========================
     // 平台治理模块（RBAC / 仲裁 / 审计）

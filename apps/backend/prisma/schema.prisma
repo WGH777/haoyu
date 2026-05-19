@@ -141,6 +141,8 @@ model Order {
   submissionContent String?                       // 成果提交：文本/链接
   submissionImage   String?                       // 成果提交：图片 URL
   submittedAt       DateTime?                     // 成果提交时间
+  warned48h         Boolean       @default(false) // 48h 预警是否已发送
+  confirmRetries    Int           @default(0)     // 自动确认重试次数
 
   amount            Int?                          // 订单金额，单位：分
 
