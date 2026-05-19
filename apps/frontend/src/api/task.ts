@@ -24,7 +24,7 @@ export interface SubTask {
  * 任务发布者（用于任务列表/详情展示）
  * - 关键：avatar 必须是 string，避免 HomeView 头像 getFullUrl(...) 触发 TS 严格检查错误
  */
-export type TaskPublisher = Omit<UserItem, 'avatar'> & { avatar: string }
+export type TaskPublisher = Omit<UserItem, 'avatar'> & { avatar: string; verified?: boolean }
 
 /**
  * 任务模型（任务大厅 / 任务详情通用）
@@ -46,6 +46,7 @@ export interface TaskItem {
   status: TaskStatus
   image?: string | null
   category?: string
+  riskLevel?: string
   isPublicWelfare?: boolean
   serviceMode?: 'ONLINE' | 'OFFLINE' | 'BOTH' | string
   createdAt: string

@@ -9,14 +9,35 @@
 
     <el-empty v-if="!notifications.length" description="没有新通知，一切安好" />
 
-    <div v-else class="notification-list">
-      <div
-        v-for="n in notifications"
-        :key="n.id"
-        class="notification-item"
-        :class="{ unread: !n.readAt }"
-        @click="readOne(n)"
-      >
+    <!-- 需行动的通知 — 高亮置顶 -->
+    <div v-if="actionItems.length" class="section-label">⚠️ 需要行动</div>
+    <div
+      v-for="n in actionItems"
+      :key="n.id"
+      class="notification-item action-required"
+      :class="{ unread: !n.readAt }"
+      @click="readOne(n)"
+    >
+      <div class="notify-header">
+        <span class="notify-type">
+          <el-tag :type="tagType(n.type)" size="small">{{ typeLabel(n.type) }}</el-tag>
+          <span v-if="!n.readAt" class="unread-dot"></span>
+        </span>
+        <span class="notify-time">{{ formatTime(n.createdAt) }}</span>
+      </div>
+      <div class="notify-title">{{ n.title }}</div>
+      <div class="notify-content">{{ n.content }}</div>
+    </div>
+
+    <!-- 仅提醒 — 降级展示 -->
+    <div v-if="infoItems.length" class="section-label" style="margin-top:20px">ℹ️ 仅通知</div>
+    <div
+      v-for="n in infoItems"
+      :key="n.id"
+      class="notification-item"
+      :class="{ unread: !n.readAt }"
+      @click="readOne(n)"
+    >
         <div class="notify-header">
           <span class="notify-type">
             <el-tag :type="tagType(n.type)" size="small">{{ typeLabel(n.type) }}</el-tag>
@@ -26,19 +47,30 @@
         </div>
         <div class="notify-title">{{ n.title }}</div>
         <div class="notify-content">{{ n.content }}</div>
-      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { notificationApi } from '@/api/notification'
 import { ElMessage } from 'element-plus'
 
 const router = useRouter()
 const notifications = ref<any[]>([])
+
+// 通知分层
+const actionItems = computed(() => notifications.value.filter(n => isActionRequired(n.type)))
+const infoItems = computed(() => notifications.value.filter(n => !isActionRequired(n.type)))
+
+// 通知分层：需要行动的类型
+const ACTION_TYPES = [
+  'DEADLINE_WARNING', 'ORDER_DISPUTED', 'PROVIDER_UNRESPONSIVE',
+  'MATCHING_ALERT', 'RISK_ALERT', 'SERVICE_SUBMITTED',
+]
+
+const isActionRequired = (type: string) => ACTION_TYPES.includes(type)
 
 const tagType = (type: string) => {
   const map: Record<string, string> = {
@@ -60,8 +92,6 @@ const typeLabel = (type: string) => {
   }
   return map[type] || type
 }
-
-const formatTime = (t: string) => new Date(t).toLocaleString('zh-CN')
 
 const readOne = async (n: any) => {
   if (n.readAt) return
@@ -112,4 +142,18 @@ onMounted(async () => {
 .notify-time { font-size: 12px; color: #64748b; }
 .notify-title { font-weight: 600; font-size: 15px; margin-bottom: 4px; color: #f1f5f9; }
 .notify-content { font-size: 13px; color: #94a3b8; line-height: 1.5; }
+
+.section-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #f59e0b;
+  margin-bottom: 10px;
+  padding-left: 2px;
+}
+.notification-item.action-required {
+  border-left: 3px solid #f59e0b;
+  padding-left: 14px;
+}
 </style>

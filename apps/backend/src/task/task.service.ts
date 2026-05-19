@@ -191,7 +191,7 @@ export class TaskService {
         updatedAt: true,
         publisherId: true,
         publisher: {
-          select: { id: true, nickname: true, avatar: true },
+          select: { id: true, nickname: true, avatar: true, verified: true },
         },
         subTasks: true,
         _count: { select: { orders: true } },
@@ -211,7 +211,7 @@ export class TaskService {
         location: true, views: true, status: true, image: true,
         createdAt: true, updatedAt: true, publisherId: true,
         publisher: {
-          select: { id: true, nickname: true, avatar: true },
+          select: { id: true, nickname: true, avatar: true, verified: true },
         },
         subTasks: { orderBy: { id: 'asc' } },
         _count: { select: { orders: true } },
@@ -219,6 +219,22 @@ export class TaskService {
     });
 
     if (!task) throw new NotFoundException('任务不存在');
+
+    // 发布者信任快照
+    const [pTotal, pCompleted, pResolved, pDisputes] = await Promise.all([
+      this.prisma.order.count({ where: { workerId: task.publisherId } }),
+      this.prisma.order.count({ where: { workerId: task.publisherId, status: 'COMPLETED' } }),
+      this.prisma.dispute.count({ where: { order: { task: { publisherId: task.publisherId } }, status: 'RESOLVED' } }),
+      this.prisma.dispute.count({ where: { order: { task: { publisherId: task.publisherId } } } }),
+    ]);
+    (task as any).publisherStats = {
+      totalOrders: pTotal,
+      completedOrders: pCompleted,
+      completionRate: pTotal > 0 ? Math.round((pCompleted / pTotal) * 100) : 0,
+      totalDisputes: pDisputes,
+      resolvedDisputes: pResolved,
+      disputeRate: pTotal > 0 ? Math.round((pDisputes / pTotal) * 100) : 0,
+    };
 
     // 增加浏览量
     await this.prisma.task.update({
@@ -298,7 +314,7 @@ export class TaskService {
           include: {
             subTasks: true,
             publisher: {
-              select: { id: true, nickname: true, avatar: true },
+              select: { id: true, nickname: true, avatar: true, verified: true },
             },
           },
         },

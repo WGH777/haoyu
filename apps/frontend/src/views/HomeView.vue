@@ -162,13 +162,31 @@
             <el-option label="100 – 500 煜米" value="mid" />
             <el-option label="500 煜米以上" value="high" />
           </el-select>
+          <el-select v-model="modeFilter" size="large" class="filter-select">
+            <el-option label="全部方式" value="all" />
+            <el-option label="💻 线上" value="ONLINE" />
+            <el-option label="📍 线下" value="OFFLINE" />
+            <el-option label="🌐 均可" value="BOTH" />
+          </el-select>
+          <el-select v-model="timeFilter" size="large" class="filter-select">
+            <el-option label="全部时间" value="all" />
+            <el-option label="24小时内" value="day" />
+            <el-option label="7天内" value="week" />
+            <el-option label="30天内" value="month" />
+          </el-select>
+          <el-switch
+            v-model="certOnly"
+            active-text="仅认证"
+            size="large"
+            class="cert-switch"
+          />
           <el-button size="large" @click="fetchData" :icon="Refresh" class="btn-outline">刷新</el-button>
         </div>
 
         <!-- 主内容区（任务网格 + 榜单侧栏） -->
         <div class="market-layout">
           <div class="market-main">
-            <TaskGrid :tasks="tasks" :loading="loading" @select="id => $router.push(`/task/${id}`)" @create="openCreateDialog" />
+            <TaskGrid :tasks="tasks" :loading="loading" :match-reasons="matchReasons" @select="id => $router.push(`/task/${id}`)" @create="openCreateDialog" />
           </div>
           <LeaderboardSidebar :tasks="tasks" @select="id => $router.push(`/task/${id}`)" />
         </div>
@@ -261,6 +279,9 @@ const loading = ref(false)
 const tasks = ref<Task[]>([])
 const searchKeyword = ref('')
 const priceFilter = ref('all')
+const modeFilter = ref('all')
+const timeFilter = ref('all')
+const certOnly = ref(false)
 const showCreateDialog = ref(false)
 const submitting = ref(false)
 const uploadingImg = ref(false)
@@ -277,6 +298,28 @@ const completedCount = computed(() => tasks.value.filter(t => t.status === 'COMP
 const escrowTotal = computed(() => {
   const sum = tasks.value.filter(t => ['PENDING','ASSIGNED','SUBMITTED','IN_PROGRESS'].includes(t.status)).reduce((s, t) => s + (t.price || 0), 0)
   return (sum / 100).toFixed(2)
+})
+
+// 匹配原因（规则版，不上AI）
+const matchReasons = computed(() => {
+  const reasons: Record<number, string> = {}
+  const user = currentUser.value
+  const userId = user?.id
+  if (!userId) return reasons
+  for (const t of tasks.value) {
+    const rs: string[] = []
+    // 托管任务更安全
+    if (t.price > 0) rs.push('资金托管保障')
+    // 低风险
+    if (t.riskLevel === 'LOW') rs.push('低风险任务')
+    // 发布者已认证
+    if (t.publisher?.verified) rs.push('发布者已认证')
+    // 新发布的优先
+    const age = Date.now() - new Date(t.createdAt).getTime()
+    if (age < 60 * 60 * 1000) rs.push('刚刚发布')
+    if (rs.length > 0) reasons[t.id] = rs.slice(0, 2).join(' · ')
+  }
+  return reasons
 })
 
 const getFullUrl = (path: string) =>
@@ -296,6 +339,18 @@ const fetchData = async () => {
     if (priceFilter.value === 'low') list = list.filter((t: any) => t.price <= 9900)
     else if (priceFilter.value === 'mid') list = list.filter((t: any) => t.price >= 10000 && t.price <= 49900)
     else if (priceFilter.value === 'high') list = list.filter((t: any) => t.price >= 50000)
+    if (modeFilter.value !== 'all') list = list.filter((t: any) => t.serviceMode === modeFilter.value || t.serviceMode === 'BOTH')
+    if (timeFilter.value === 'day') {
+      const cutoff = Date.now() - 24 * 60 * 60 * 1000
+      list = list.filter((t: any) => new Date(t.createdAt).getTime() > cutoff)
+    } else if (timeFilter.value === 'week') {
+      const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000
+      list = list.filter((t: any) => new Date(t.createdAt).getTime() > cutoff)
+    } else if (timeFilter.value === 'month') {
+      const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000
+      list = list.filter((t: any) => new Date(t.createdAt).getTime() > cutoff)
+    }
+    if (certOnly.value) list = list.filter((t: any) => t.publisher?.verified === true)
     tasks.value = list
   } catch {
     tasks.value = []
@@ -541,7 +596,7 @@ onMounted(() => {
   display: flex; gap: 12px; align-items: center; margin-bottom: 24px;
 }
 .search-input { max-width: 380px; }
-.filter-select { width: 170px; }
+.filter-select { width: 140px; }
 .filter-select .el-input__wrapper {
   background: rgba(255, 255, 255, 0.025) !important;
   border: 1px solid rgba(255, 255, 255, 0.07) !important;
@@ -557,6 +612,15 @@ onMounted(() => {
   background: rgba(255, 255, 255, 0.05) !important;
   border-color: rgba(99, 102, 241, 0.45) !important;
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12) !important;
+}
+.cert-switch {
+  --el-switch-on-color: #10b981;
+  --el-switch-off-color: rgba(148, 163, 184, 0.2);
+  flex-shrink: 0;
+}
+.cert-switch .el-switch__label {
+  color: #94a3b8 !important;
+  font-size: 12px;
 }
 
 /* === 布局 === */

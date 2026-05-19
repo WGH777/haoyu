@@ -27,7 +27,7 @@
         <div class="task-main">
           <h2 class="task-title">{{ task.title }}</h2>
 
-          <!-- 发布者信息 -->
+          <!-- 发布者信息 + 信任快照 -->
           <div class="publisher-info">
             <el-avatar
               :size="24"
@@ -39,9 +39,26 @@
 
             <span class="value">
               {{ task.publisher?.nickname || task.publisher?.email || '未知用户' }}
+              <el-tag v-if="task.publisher?.verified" size="small" type="success" class="verified-tag">已认证</el-tag>
             </span>
 
             <span class="time">发布于 {{ formatTime(task.createdAt) }}</span>
+          </div>
+
+          <!-- 信任快照 -->
+          <div v-if="(task as any).publisherStats" class="trust-snapshot">
+            <div class="trust-stat">
+              <span class="trust-stat-value">{{ (task as any).publisherStats.completionRate }}%</span>
+              <span class="trust-stat-label">完成率</span>
+            </div>
+            <div class="trust-stat">
+              <span class="trust-stat-value">{{ (task as any).publisherStats.disputeRate }}%</span>
+              <span class="trust-stat-label">争议率</span>
+            </div>
+            <div class="trust-stat">
+              <span class="trust-stat-value">{{ (task as any).publisherStats.totalOrders }}</span>
+              <span class="trust-stat-label">总订单</span>
+            </div>
           </div>
 
           <!-- 任务图片 -->
@@ -1203,6 +1220,34 @@ onMounted(() => {
   margin-left: auto;
   color: #64748b;
   font-size: 12px;
+}
+.verified-tag { margin-left: 6px; vertical-align: middle; }
+
+/* 信任快照 */
+.trust-snapshot {
+  display: flex;
+  gap: 16px;
+  margin: 12px 0;
+  padding: 12px 16px;
+  background: rgba(16, 185, 129, 0.04);
+  border: 1px solid rgba(16, 185, 129, 0.1);
+  border-radius: 10px;
+}
+.trust-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+}
+.trust-stat-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #6ee7b7;
+}
+.trust-stat-label {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 2px;
 }
 
 .task-image .rounded-image {
