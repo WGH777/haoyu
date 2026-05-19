@@ -4,7 +4,6 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfirmationGuard } from './auth/guards/confirmation.guard';
-import { join } from 'path';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -30,7 +29,7 @@ import { HealthModule } from './health/health.module';
     // 基础设施层
     // =========================
     ServeStaticModule.forRoot({
-      rootPath: join(process.cwd(), 'uploads'),
+      rootPath: '/var/www/haoyu/uploads',
       serveRoot: '/uploads',
     }),
     PrismaModule,

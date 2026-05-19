@@ -157,7 +157,7 @@ export class TaskController {
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
-        destination: 'uploads',
+        destination: '/var/www/haoyu/uploads',
         filename: (_req, file, cb) => {
           const uniqueSuffix =
             Date.now() + '-' + Math.round(Math.random() * 1e9);
