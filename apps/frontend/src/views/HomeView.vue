@@ -255,7 +255,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, onBeforeUnmount, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Plus, Refresh, Search, CaretBottom, List, Checked, Wallet, User, Document, Bell, Setting, Lock, Files, Connection } from '@element-plus/icons-vue'
@@ -458,6 +458,10 @@ onMounted(() => {
   fetchWalletBalance()
   fetchData()
   window.addEventListener('notification-read', fetchUnreadCount as any)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('notification-read', fetchUnreadCount as any)
 })
 </script>
 

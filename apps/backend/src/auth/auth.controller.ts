@@ -12,6 +12,7 @@ import {
   ParseIntPipe,
   UseGuards,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { Roles } from './decorators/roles.decorator';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -37,6 +38,7 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('login')
   @ApiOperation({ summary: '用户登录' })
   @ApiBody({ type: LoginDto })
@@ -47,6 +49,7 @@ export class AuthController {
     return this.authService.signIn(dto.email, dto.password);
   }
 
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   @Post('register')
   @ApiOperation({ summary: '用户注册' })
   @ApiBody({ type: RegisterDto })
