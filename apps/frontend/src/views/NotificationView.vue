@@ -159,4 +159,10 @@ onMounted(async () => {
   border-left: 3px solid #f59e0b;
   padding-left: 14px;
 }
+
+@media (max-width: 768px) {
+  .notification-page { padding: 12px !important; }
+  .page-header { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .section-label { font-size: 11px; }
+}
 </style>

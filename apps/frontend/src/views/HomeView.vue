@@ -1,7 +1,7 @@
 <template>
   <div class="app-shell">
     <!-- 侧边栏 -->
-    <aside class="sidebar">
+    <aside class="sidebar" :class="{ collapsed: sidebarCollapsed, 'mobile-open': sidebarMobileOpen }">
       <div class="logo" @click="$router.push('/task')">
         <span class="logo-mark">煜</span>
         <span class="logo-text">浩煜</span>
@@ -36,9 +36,15 @@
     </aside>
 
     <!-- 主区域 -->
-    <main class="main-area">
+    <!-- 移动端侧边栏遮罩 -->
+    <div v-if="sidebarMobileOpen" class="sidebar-overlay" @click="sidebarMobileOpen = false"></div>
+
+    <main class="main-area" :class="{ 'sidebar-collapsed': sidebarCollapsed }">
       <header class="topbar">
         <div class="topbar-left">
+          <button class="hamburger-btn" @click="toggleSidebar" :title="sidebarCollapsed ? '展开菜单' : '收起菜单'">
+            <span></span><span></span><span></span>
+          </button>
           <span class="greeting">👋 {{ isLogin && currentUser ? currentUser.nickname : '可信价值协作平台' }}</span>
         </div>
         <div class="topbar-right">
@@ -283,6 +289,8 @@ const modeFilter = ref('all')
 const timeFilter = ref('all')
 const certOnly = ref(false)
 const showCreateDialog = ref(false)
+const sidebarCollapsed = ref(false)
+const sidebarMobileOpen = ref(false)
 const submitting = ref(false)
 const uploadingImg = ref(false)
 
@@ -362,6 +370,14 @@ const fetchData = async () => {
 const openCreateDialog = () => {
   if (!isLogin.value) { router.push('/login'); return }
   showCreateDialog.value = true
+}
+
+const toggleSidebar = () => {
+  if (window.innerWidth <= 768) {
+    sidebarMobileOpen.value = !sidebarMobileOpen.value
+  } else {
+    sidebarCollapsed.value = !sidebarCollapsed.value
+  }
 }
 
 const submitTask = async () => {
@@ -501,6 +517,36 @@ onBeforeUnmount(() => {
   display: flex; align-items: center; justify-content: center;
 }
 .sidebar-footer { padding: 8px; border-top: 1px solid rgba(148, 163, 184, 0.1); }
+
+/* 侧边栏折叠 */
+.sidebar.collapsed { width: 64px !important; }
+.sidebar.collapsed .logo-text,
+.sidebar.collapsed .nav-item span,
+.sidebar.collapsed .nav-label,
+.sidebar.collapsed .sidebar-section-title,
+.sidebar.collapsed .sidebar-footer { display: none; }
+.sidebar.collapsed .nav-item { justify-content: center; padding: 10px; }
+.sidebar.collapsed .logo { justify-content: center; }
+.sidebar.collapsed .logo-mark { margin-right: 0; }
+.main-area.sidebar-collapsed { margin-left: 64px !important; }
+
+/* 移动端侧边栏覆盖层 */
+.sidebar-overlay {
+  display: none;
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5); z-index: 99;
+}
+
+/* === 汉堡按钮 === */
+.hamburger-btn {
+  display: none;
+  flex-direction: column; gap: 3px;
+  background: none; border: none; cursor: pointer; padding: 6px; margin-right: 10px;
+}
+.hamburger-btn span {
+  display: block; width: 18px; height: 2px;
+  background: #94a3b8; border-radius: 1px; transition: all 0.2s;
+}
 
 /* === 顶栏 === */
 .topbar {
@@ -724,11 +770,20 @@ onBeforeUnmount(() => {
 
 @media (max-width: 768px) {
   .mobile-nav { display: flex !important; }
+  .hamburger-btn { display: flex !important; }
+  .sidebar-overlay { display: block; }
   .app-shell {
     max-width: 100vw;
     overflow-x: hidden;
   }
-  .app-shell > .sidebar { display: none !important; }
+  .app-shell > .sidebar {
+    position: fixed; top: 0; left: 0; bottom: 0; z-index: 100;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+  }
+  .app-shell > .sidebar.mobile-open {
+    transform: translateX(0);
+  }
   .main-area {
     margin-left: 0 !important;
     width: 100% !important;
