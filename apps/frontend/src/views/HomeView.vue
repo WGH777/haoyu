@@ -5,6 +5,9 @@
       <div class="logo" @click="$router.push('/task')">
         <span class="logo-mark">煜</span>
         <span class="logo-text">浩煜</span>
+        <button class="sidebar-close-btn" @click.stop="sidebarMobileOpen = false">
+          <el-icon><Close /></el-icon>
+        </button>
       </div>
       <nav class="nav">
         <router-link to="/task" class="nav-item" :class="{ active: $route.path === '/task' || $route.path === '/' }">
@@ -24,6 +27,9 @@
           <router-link to="/wallet" class="nav-item" :class="{ active: $route.path === '/wallet' }">
             <el-icon><Wallet /></el-icon><span>钱包</span>
           </router-link>
+          <div class="nav-item publish-nav" @click="openCreateDialog">
+            <el-icon><Plus /></el-icon><span>发布需求</span>
+          </div>
         </template>
       </nav>
       <div class="sidebar-footer">
@@ -236,35 +242,14 @@
     />
   </div>
 
-  <!-- 移动端底部导航 -->
-  <nav class="mobile-nav">
-    <router-link to="/task" class="mn-item" :class="{ active: $route.path === '/task' || $route.path === '/' }">
-      <el-icon><List /></el-icon><span>大厅</span>
-    </router-link>
-    <router-link to="/my-task" class="mn-item" :class="{ active: $route.path === '/my-task' }">
-      <el-icon><Files /></el-icon><span>我的</span>
-    </router-link>
-    <router-link to="/my-orders" class="mn-item" :class="{ active: $route.path === '/my-orders' }">
-      <el-icon><Connection /></el-icon><span>订单</span>
-    </router-link>
-    <div class="mn-item" @click="openCreateDialog" v-if="isLogin">
-      <span class="mn-publish">＋</span><span>发布</span>
-    </div>
-    <router-link to="/notifications" class="mn-item" :class="{ active: $route.path === '/notifications' }">
-      <el-icon><Bell /></el-icon><span>通知</span>
-      <span v-if="unreadCount" class="mn-badge">{{ unreadCount }}</span>
-    </router-link>
-    <router-link to="/wallet" class="mn-item" :class="{ active: $route.path === '/wallet' }">
-      <el-icon><Wallet /></el-icon><span>钱包</span>
-    </router-link>
-  </nav>
+
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onBeforeUnmount, computed } from 'vue'
+import { ref, reactive, onMounted, onBeforeUnmount, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Plus, Refresh, Search, CaretBottom, List, Checked, Wallet, User, Document, Bell, Setting, Lock, Files, Connection } from '@element-plus/icons-vue'
+import { Plus, Refresh, Search, CaretBottom, List, Checked, Wallet, User, Document, Bell, Setting, Lock, Files, Connection, Close } from '@element-plus/icons-vue'
 import { getTaskList, createTask, uploadTaskImage, type Task } from '@/api/task'
 import { getProfile, type UserProfile } from '@/api/user'
 import { notificationApi } from '@/api/notification'
@@ -458,6 +443,11 @@ const fetchWalletBalance = async () => {
   } catch {}
 }
 
+// 路由变化时自动关闭移动端抽屉
+watch(() => route.path, () => {
+  sidebarMobileOpen.value = false
+})
+
 const handleCommand = (cmd: string) => {
   if (cmd === 'profile') router.push('/profile')
   if (cmd === 'logout') {
@@ -511,6 +501,18 @@ onBeforeUnmount(() => {
 .nav-item:hover { background: rgba(99, 102, 241, 0.08); color: #f1f5f9; }
 .nav-item.active { background: rgba(99, 102, 241, 0.12); color: #a5b4fc; font-weight: 600; }
 .nav-item.small { font-size: 12px; padding: 6px 12px; }
+
+/* 侧边栏发布入口 */
+.publish-nav {
+  color: #6ee7b7 !important;
+  font-weight: 600;
+  border: 1px dashed rgba(16, 185, 129, 0.3);
+  margin-top: 4px;
+}
+.publish-nav:hover {
+  background: rgba(16, 185, 129, 0.08) !important;
+  color: #6ee7b7 !important;
+}
 .badge {
   position: absolute; right: 10px; background: #ef4444; color: #fff;
   font-size: 11px; min-width: 18px; height: 18px; border-radius: 9px;
@@ -546,6 +548,13 @@ onBeforeUnmount(() => {
 .hamburger-btn span {
   display: block; width: 18px; height: 2px;
   background: #94a3b8; border-radius: 1px; transition: all 0.2s;
+}
+
+/* 侧边栏关闭按钮（移动端） */
+.sidebar-close-btn {
+  display: none;
+  background: none; border: none; color: #94a3b8; cursor: pointer;
+  font-size: 16px; padding: 4px; margin-left: auto;
 }
 
 /* === 顶栏 === */
@@ -706,55 +715,7 @@ onBeforeUnmount(() => {
 .page-footer a { color: #818cf8; }
 .dot { color: #334155; }
 
-/* ==========================================
-   移动端底部导航
-   ========================================== */
-.mobile-nav {
-  display: none;
-  position: fixed; bottom: 0; left: 0; right: 0;
-  height: 64px;
-  padding-bottom: env(safe-area-inset-bottom, 0);
-  background: rgba(10, 14, 23, 0.96);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border-top: 1px solid rgba(148, 163, 184, 0.1);
-  z-index: 200;
-  justify-content: space-around; align-items: center;
-}
-.mn-item {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 2px;
-  min-width: 48px; min-height: 48px;
-  color: #64748b; text-decoration: none; font-size: 11px;
-  position: relative; cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-  touch-action: manipulation;
-  user-select: none;
-  -webkit-user-select: none;
-  transition: color 0.15s ease;
-}
-.mn-item .el-icon { font-size: 20px; }
-.mn-item.active { color: #a5b4fc; }
-.mn-item:active { color: #c7d2fe; }
-.mn-publish {
-  width: 44px; height: 44px; border-radius: 50%;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
-  color: #fff; font-size: 26px;
-  display: flex; align-items: center; justify-content: center;
-  margin-top: -20px;
-  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.35);
-}
-.mn-publish:active {
-  transform: scale(0.92);
-  box-shadow: 0 2px 12px rgba(99, 102, 241, 0.25);
-}
-.mn-badge {
-  position: absolute; top: 0; right: -6px;
-  background: #ef4444; color: #fff;
-  font-size: 10px; min-width: 16px; height: 16px; border-radius: 8px;
-  display: flex; align-items: center; justify-content: center;
-  pointer-events: none;
-}
+
 
 /* ==========================================
    响应式
@@ -769,8 +730,8 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 768px) {
-  .mobile-nav { display: flex !important; }
   .hamburger-btn { display: flex !important; }
+  .sidebar-close-btn { display: flex; align-items: center; }
   .sidebar-overlay { display: block; }
   .app-shell {
     max-width: 100vw;
@@ -788,7 +749,7 @@ onBeforeUnmount(() => {
     margin-left: 0 !important;
     width: 100% !important;
     max-width: 100vw;
-    padding-bottom: 80px !important;
+    padding-bottom: env(safe-area-inset-bottom, 8px) !important;
   }
   .topbar { padding: 0 12px !important; }
   .topbar .greeting { font-size: 13px; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

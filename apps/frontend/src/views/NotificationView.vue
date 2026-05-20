@@ -161,8 +161,12 @@ onMounted(async () => {
 }
 
 @media (max-width: 768px) {
-  .notification-page { padding: 12px !important; }
-  .page-header { flex-direction: column; align-items: flex-start; gap: 8px; }
-  .section-label { font-size: 11px; }
+  .notification-page { padding: 0 !important; max-width: 100% !important; margin: 0 !important; }
+  .page-header { flex-direction: column; align-items: flex-start; gap: 8px; padding: 8px 0; }
+  .page-header h2 { font-size: 18px; }
+  .notification-item { padding: 12px !important; margin-bottom: 6px; }
+  .section-label { font-size: 11px; margin-top: 8px; }
+  .notify-title { font-size: 14px; }
+  .notify-content { font-size: 12px; }
 }
 </style>
