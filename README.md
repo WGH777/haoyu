@@ -1,157 +1,144 @@
-# 浩煜（Haoyu）——宇宙级开放价值市场 · MVP Core v1.0
+# 浩煜（Haoyu）— 可信价值协作平台 · MVP Core v2
 
-## 1. 项目简介
-    HaoYu 是一个面向开放协作场景的价值市场系统，支持：
+> 连接真实需求与真实能力。发布需求，响应服务，资金托管，可信交易。
 
-    任务发布与接单
+## 项目简介
 
-    子任务协作
+HaoYu 是一个面向开放协作场景的价值市场系统，支持任务发布与接单、子任务协作、资金冻结/结算/退款、平台级权限治理与管理员仲裁。
 
-    资金冻结 / 结算 / 退款
+**本项目已具备真实上线条件**，含完整的资金安全、权限体系、审计追溯和运维保障。
 
-    平台级权限治理与管理员仲裁
+## 核心能力
 
-    该项目并非 Demo，而是一个具备真实上线条件的 MVP 核心系统。
-## 2. 核心能力
-    ✅ 任务系统（全闭环）
+### 🧩 任务系统（全闭环）
+发布 → 接单 → 提交 → 验收/驳回 → 结算，严格状态机控制。
 
-    发布 → 接单 → 提交 → 验收 / 驳回 → 结算
+### 💰 钱包 & 资金引擎
+- 发布即冻结（赏金 + 服务费）
+- 结算/退款均走原子事务 + LedgerEntry 双记录
+- 全流程流水可追溯，每日自动对账
 
-    严格状态机控制，禁止非法跳转
+### 🔐 三层权限体系（RBAC）
+- 接口级（RolesGuard）
+- 资源级（发布者/执行者/管理员）
+- 状态机约束（状态 + 身份联合校验）
 
-    💰 钱包 & 资金模型
+### ⚖️ 管理员仲裁（平台治理核心）
+- 强制取消任务（退款给发布者）
+- 强制结算订单（支付给执行者）
+- 强制驳回成果（回退可重提）
+- 双签机制（高风险操作需两位管理员确认）
+- 全操作审计日志落库
 
-    发布即冻结（赏金 + 服务费）
+### ⏱️ 自动化运维
+- 服务者 48h 未开始 → 自动取消+退款
+- 发布者 72h 未验收 → 48h 预警 → 72h 自动确认（低/中风险）
+- 高风险订单转 DISPUTED 人工处理
+- 需求 24h 无人响应 → 通知运营
 
-    结算 / 退款均走事务
+## 系统架构
 
-    全流程流水可追溯
+```
+Frontend (Vue 3 + Vite + Element Plus)
+        │ HTTP / REST
+        ▼
+Backend (NestJS)
+├── Auth / RBAC（JWT + bcrypt + refresh 轮换）
+├── Task / Order（状态机 + 并发保护）
+├── Wallet（原子资金引擎 + LedgerEntry）
+├── Admin（仲裁 + 审计 + 双签）
+├── Scheduler（超时监控 + 自动处理）
+├── Reconciliation（每日资金对账）
+└── Prisma ORM
+        │
+        ▼
+SQLite（dev）/ PostgreSQL（production）
+```
 
-    🧩 子任务协作
+## 快速开始
 
-    发布者：新增 / 编辑 / 删除 / 勾选
+```bash
+# 1. 安装后端依赖
+cd apps/backend
+npm install
 
-    执行者：仅可勾选完成
+# 2. 生成 Prisma 客户端 + 初始化数据库
+npx prisma generate
+npx prisma db push
 
-    状态刷新后保持一致
+# 3. 配置环境变量
+cp .env.example .env
+# 编辑 .env 填入 JWT_SECRET 等必填项
 
-    🔐 RBAC 权限系统（三层）
+# 4. 启动后端
+npm run start:dev
+# → http://localhost:3000/api
+# → Swagger: http://localhost:3000/api/docs
 
-    接口级权限（RolesGuard）
+# 5. 安装前端依赖
+cd ../frontend
+npm install
 
-    资源级权限（发布者 / 执行者 / 管理员）
+# 6. 配置前端环境变量
+cp .env.example .env
 
-    状态机约束（状态 + 身份联合校验）
+# 7. 启动前端
+npm run dev
+# → http://localhost:5173
+```
 
-    ⚖️ 管理员仲裁（平台治理核心）
+## API 文档
 
-    强制取消任务（退款给发布者）
+启动后端后访问 Swagger UI：
+```
+http://localhost:3000/api/docs
+```
 
-    强制结算订单（支付给执行者）
+管理员接口示例：
+- `POST /api/admin/orders/:id/force-complete` — 强制结算
+- `POST /api/admin/tasks/:id/force-cancel` — 强制取消
+- `GET /api/admin/audit-logs` — 审计日志
+- `GET /api/admin/dual-sign/pending` — 双签请求
 
-    强制驳回成果（回退可重提）
+## 生产部署
 
-    所有操作可审计
+详见 **[DEPLOYMENT.md](DEPLOYMENT.md)**，包含：
+- 环境要求与依赖安装
+- 环境变量配置
+- Nginx/Caddy 反代
+- pm2 保活
+- 数据库备份
+- 上线检查清单
 
-## 3. 系统架构
-    Frontend (Vue 3 + Vite)
-            |
-            | HTTP / REST
-            v
-    Backend (NestJS)
-    ├─ Auth / RBAC
-    ├─ Task / Order / Wallet
-    ├─ Admin Arbitration
-    └─ Prisma ORM
-            |
-            v
-    SQLite (dev.db)
+## 状态机
 
-
-## 4. 状态机
 ### Task 状态机
-    PENDING
-    ↓ 接单
-    ASSIGNED
-    ↓ 提交成果
-    SUBMITTED
-    ↓ 验收 / 管理员结算
-    COMPLETED
-
-    （管理员可强制 → CANCELLED）
+```
+PENDING → ASSIGNED → SUBMITTED → COMPLETED
+                     ↓ (管理员)
+                  CANCELLED
+```
 
 ### Order 状态机
-    ASSIGNED
-    ↓ 提交成果
-    SUBMITTED
-    ↓ 验收 / 管理员结算
-    COMPLETED
+```
+ASSIGNED → SUBMITTED → COMPLETED
+    ↓ (管理员)   ↓ (管理员)
+CANCELLED    → ASSIGNED（驳回）
+```
 
-    （管理员可 → CANCELLED / 回退 ASSIGNED）
+## 测试
 
-## 5. 权限矩阵（RBAC）
-    | 角色          | 能力                 |
-    | ----------- | ------------------ |
-    | GUEST       | 浏览任务大厅 / 任务详情      |
-    | USER        | 发布任务 / 接单 / 执行     |
-    | ADMIN       | 平台仲裁（结算 / 取消 / 驳回） |
-    | SUPER_ADMIN | 平台最高权限             |
+```bash
+# 后端单元测试（26 用例）
+cd apps/backend && npm test
 
+# 前端类型检查
+cd apps/frontend && npx vue-tsc --noEmit
+```
 
-## 6. 快速开始（本地运行）
-    ### Backend
-    cd apps/backend
-    npm install
-    npm run start:dev
-    Base URL：
-    http://localhost:3000/api
+## Roadmap
 
-    Swagger 文档：
-    http://localhost:3000/api/docs
-
-    数据库文件：
-    G:\haoyu\apps\backend\prisma\dev.db
-    ### Frontend
-    cd apps/frontend
-    yarn install
-    yarn dev
-
-## 7. API 文档
-    Swagger UI：
-    👉 http://localhost:3000/api/docs
-
-    管理员接口示例：
-
-    POST /admin/orders/:id/force-complete
-
-    POST /admin/tasks/:id/force-cancel
-
-## 8. 系统级测试复盘结论
-    | 编号 | 模块      | 结果   |
-    | -- | ------- | ---- |
-    | A1 | RBAC 基础 | ✅ 通过 |
-    | A2 | 任务闭环    | ✅ 通过 |
-    | A3 | 执行 & 仲裁 | ✅ 通过 |
-    | A4 | 钱包与资金安全 | ✅ 通过 |
-    | A5 | 子任务协作   | ✅ 通过 |
-    | A6 | 审计与可追溯  | ✅ 通过 |
-
-
-## 9. Roadmap
-    v1.1（增强）
-
-    管理后台 UI
-
-    审计日志表落库
-
-    任务状态时间线（Timeline）
-
-    v2.0（愿景级）
-
-    WebSocket 实时状态同步
-
-    信誉系统 / 仲裁评分
-
-    多人协作任务拆分
-
-    平台治理规则引擎
+- **v2.1** — 移动端适配完成（卡片视图 + 折叠操作）
+- **v2.2** — WebSocket 实时状态推送
+- **v2.3** — 信誉系统 / 仲裁评分
+- **v3.0** — 多人协作任务拆分 / 智能匹配引擎
