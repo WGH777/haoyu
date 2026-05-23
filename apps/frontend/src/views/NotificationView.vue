@@ -7,7 +7,29 @@
       </el-button>
     </div>
 
-    <el-empty v-if="!notifications.length" description="没有新通知，一切安好" />
+    <!-- 加载骨架屏 -->
+    <div v-if="loading" class="loading-skeleton">
+      <div v-for="i in 4" :key="i" class="skeleton-item">
+        <div class="skeleton-line skeleton-tag"></div>
+        <div class="skeleton-line skeleton-title"></div>
+        <div class="skeleton-line skeleton-body"></div>
+      </div>
+    </div>
+
+    <!-- 加载失败 -->
+    <el-result
+      v-else-if="loadError"
+      icon="error"
+      title="加载失败"
+      :sub-title="loadError"
+    >
+      <template #extra>
+        <el-button type="primary" @click="reload">重新加载</el-button>
+      </template>
+    </el-result>
+
+    <!-- 空状态 -->
+    <el-empty v-else-if="!notifications.length" description="没有新通知，一切安好" />
 
     <!-- 需行动的通知 — 高亮置顶 -->
     <div v-if="actionItems.length" class="section-label">⚠️ 需要行动</div>
@@ -59,6 +81,14 @@ import { ElMessage } from 'element-plus'
 
 const router = useRouter()
 const notifications = ref<any[]>([])
+const loading = ref(true)
+const loadError = ref('')
+
+const formatTime = (t: string) => {
+  if (!t) return '-'
+  try { return new Date(t).toLocaleString('zh-CN') }
+  catch { return t }
+}
 
 // 通知分层
 const actionItems = computed(() => notifications.value.filter(n => isActionRequired(n.type)))
@@ -115,12 +145,31 @@ const markAll = async () => {
   } catch { ElMessage.error('操作失败') }
 }
 
-onMounted(async () => {
+onMounted(() => { loadNotifications() })
+
+const reload = () => {
+  loadError.value = ''
+  loadNotifications()
+}
+
+const loadNotifications = async () => {
+  loading.value = true
+  loadError.value = ''
   try {
     const res: any = await notificationApi.list()
     notifications.value = Array.isArray(res) ? res : res?.data || []
-  } catch { ElMessage.error('加载通知失败') }
-})
+    if (!notifications.value.length) {
+      console.log('[NotificationView] API returned empty list')
+    }
+  } catch (e: any) {
+    console.error('[NotificationView] 加载通知失败:', e)
+    const msg = e?.response?.data?.message || e?.message || '未知错误'
+    loadError.value = msg
+    ElMessage.error('加载通知失败: ' + msg)
+  } finally {
+    loading.value = false
+  }
+}
 </script>
 
 <style scoped>
@@ -142,12 +191,12 @@ onMounted(async () => {
 .notify-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
 .notify-type { display: flex; align-items: center; gap: 6px; }
 .unread-dot { width: 6px; height: 6px; background: #ef4444; border-radius: 50%; }
-.notify-time { font-size: 12px; color: #64748b; }
+.notify-time { font-size: 13px; color: #94a3b8; }
 .notify-title { font-weight: 600; font-size: 15px; margin-bottom: 4px; color: #f1f5f9; }
-.notify-content { font-size: 13px; color: #94a3b8; line-height: 1.5; }
+.notify-content { font-size: 13px; color: #cbd5e1; line-height: 1.5; }
 
 .section-label {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -160,13 +209,35 @@ onMounted(async () => {
   padding-left: 14px;
 }
 
+/* 骨架屏 */
+.loading-skeleton { display: flex; flex-direction: column; gap: 12px; }
+.skeleton-item {
+  padding: 16px; border-radius: 10px;
+  background: rgba(17, 24, 39, 0.45);
+  border: 1px solid rgba(148, 163, 184, 0.08);
+}
+.skeleton-line {
+  height: 14px; border-radius: 4px;
+  background: linear-gradient(90deg, rgba(148,163,184,0.06) 25%, rgba(148,163,184,0.12) 50%, rgba(148,163,184,0.06) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite;
+  margin-bottom: 8px;
+}
+.skeleton-tag { width: 80px; }
+.skeleton-title { width: 60%; }
+.skeleton-body { width: 90%; margin-bottom: 0; }
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
 @media (max-width: 768px) {
   .notification-page { padding: 0 !important; max-width: 100% !important; margin: 0 !important; }
   .page-header { flex-direction: column; align-items: flex-start; gap: 8px; padding: 8px 0; }
   .page-header h2 { font-size: 18px; }
   .notification-item { padding: 12px !important; margin-bottom: 6px; }
-  .section-label { font-size: 11px; margin-top: 8px; }
+  .section-label { font-size: 13px; margin-top: 8px; }
   .notify-title { font-size: 14px; }
-  .notify-content { font-size: 12px; }
+  .notify-content { font-size: 13px; }
 }
 </style>

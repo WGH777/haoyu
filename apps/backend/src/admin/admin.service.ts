@@ -29,17 +29,20 @@ export class AdminService {
       where: { status: 'COMPLETED' },
     });
 
-    // 3. 统计平台收入
-    const moneyFlow = await this.prisma.transaction.aggregate({
-      where: {
-        type: { in: ['PAYMENT', 'INCOME'] },
-      },
-      _sum: {
-        amount: true,
-      },
-    });
+    // 3. 统计平台收入（从 LedgerEntry：SETTLEMENT + PLATFORM_FEE）
+    const [settlementFlow, feeFlow] = await Promise.all([
+      this.prisma.ledgerEntry.aggregate({
+        where: { type: 'SETTLEMENT', direction: 'IN' },
+        _sum: { amount: true },
+      }),
+      this.prisma.ledgerEntry.aggregate({
+        where: { type: 'PLATFORM_FEE', direction: 'IN' },
+        _sum: { amount: true },
+      }),
+    ]);
 
-    const netProfit = Math.abs(moneyFlow._sum.amount || 0);
+    const revenue = (settlementFlow._sum.amount || 0) + (feeFlow._sum.amount || 0);
+    const netProfit = Math.abs(revenue);
 
     return {
       users: { total: totalUsers },

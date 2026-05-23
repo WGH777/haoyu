@@ -25,6 +25,7 @@ model User {
   isBanned       Boolean       @default(false)
   bannedAt       DateTime?
   banReason      String?
+  isTest         Boolean       @default(false)  // 测试账号标记
   refreshToken   String?
 
   avatar         String?                       // 用户头像 URL

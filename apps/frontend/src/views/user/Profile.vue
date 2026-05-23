@@ -55,7 +55,7 @@
 
               <el-descriptions-item label="余额">
                 <span v-if="profile">
-                  {{ (profile.balance || 0) / 100 }} 煜米
+                  ¥ {{ ((profile.balance || 0) / 100).toFixed(2) }}
                 </span>
                 <span v-else>-</span>
               </el-descriptions-item>

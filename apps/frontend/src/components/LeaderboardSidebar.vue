@@ -8,7 +8,7 @@
           <span class="leaderboard-rank" :class="'top-' + (idx + 1)" v-if="idx < 3">{{ idx + 1 }}</span>
           <span class="leaderboard-rank" v-else>{{ idx + 1 }}</span>
           <span class="leaderboard-name">{{ truncate(t.title, 16) }}</span>
-          <span class="leaderboard-value">{{ (t.price / 100).toFixed(0) }} 煜米</span>
+          <span class="leaderboard-value">¥ {{ (t.price / 100).toFixed(0) }}</span>
         </div>
       </div>
       <div v-else class="empty-hint">暂无需求</div>
@@ -42,6 +42,6 @@ const truncate = (t: string, n: number) => t && t.length > n ? t.slice(0, n) + '
 
 <style scoped>
 .leaderboard-sidebar { width: 220px; flex-shrink: 0; position: sticky; top: 72px; }
-.empty-hint { font-size: 12px; color: #64748b; text-align: center; padding: 20px 0; }
+.empty-hint { font-size: 13px; color: #cbd5e1; text-align: center; padding: 20px 0; }
 @media (max-width: 1024px) { .leaderboard-sidebar { display: none !important; } }
 </style>

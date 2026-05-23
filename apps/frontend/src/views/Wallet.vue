@@ -4,17 +4,17 @@
 
     <div class="balance-cards">
       <div class="bal-card available">
-        <span class="bal-label">可用煜米</span>
-        <span class="bal-amount">{{ ((wallet?.available || 0) / 100).toFixed(2) }} 煜米</span>
+        <span class="bal-label">可用余额</span>
+        <span class="bal-amount">¥ {{ ((wallet?.available || 0) / 100).toFixed(2) }}</span>
       </div>
       <div class="bal-card frozen">
         <span class="bal-label">冻结中</span>
-        <span class="bal-amount">{{ ((wallet?.frozen || 0) / 100).toFixed(2) }} 煜米</span>
+        <span class="bal-amount">¥ {{ ((wallet?.frozen || 0) / 100).toFixed(2) }}</span>
         <span class="bal-hint">托管中的资金</span>
       </div>
       <div class="bal-card total">
         <span class="bal-label">总资产</span>
-        <span class="bal-amount">{{ (((wallet?.available || 0) + (wallet?.frozen || 0)) / 100).toFixed(2) }} 煜米</span>
+        <span class="bal-amount">¥ {{ (((wallet?.available || 0) + (wallet?.frozen || 0)) / 100).toFixed(2) }}</span>
       </div>
     </div>
 
@@ -31,7 +31,7 @@
           </div>
           <div class="ledger-right">
             <span class="ledger-amount" :class="entry.direction">
-              {{ entry.direction === 'IN' ? '+' : '-' }}¥{{ (entry.amount / 100).toFixed(2) }} 煜米
+              {{ entry.direction === 'IN' ? '+' : '-' }}¥ {{ (entry.amount / 100).toFixed(2) }}
             </span>
             <span class="ledger-time">{{ formatTime(entry.createdAt) }}</span>
           </div>
@@ -81,7 +81,7 @@ onMounted(async () => {
 .bal-card.total { background: linear-gradient(135deg, #10b981, #059669); }
 .bal-label { display: block; font-size: 13px; opacity: 0.85; margin-bottom: 6px; }
 .bal-amount { font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; }
-.bal-hint { display: block; font-size: 11px; opacity: 0.7; margin-top: 4px; }
+.bal-hint { display: block; font-size: 13px; opacity: 0.7; margin-top: 4px; }
 
 .ledger-section h3 { font-size: 16px; font-weight: 600; margin-bottom: 12px; }
 .ledger-list { display: flex; flex-direction: column; gap: 2px; }
@@ -98,14 +98,14 @@ onMounted(async () => {
 }
 .ledger-left { display: flex; gap: 10px; align-items: center; }
 .ledger-type {
-  font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 4px;
+  font-size: 13px; font-weight: 600; padding: 2px 8px; border-radius: 4px;
 }
 .ledger-type.IN { background: rgba(16, 185, 129, 0.12); color: #6ee7b7; }
 .ledger-type.OUT { background: rgba(239, 68, 68, 0.12); color: #fca5a5; }
-.ledger-remark { font-size: 13px; color: #94a3b8; }
+.ledger-remark { font-size: 13px; color: #cbd5e1; }
 .ledger-right { text-align: right; }
 .ledger-amount { font-size: 15px; font-weight: 600; display: block; font-variant-numeric: tabular-nums; }
 .ledger-amount.IN { color: #6ee7b7; }
 .ledger-amount.OUT { color: #fca5a5; }
-.ledger-time { font-size: 11px; color: #64748b; }
+.ledger-time { font-size: 13px; color: #94a3b8; }
 </style>

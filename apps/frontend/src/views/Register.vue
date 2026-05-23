@@ -199,7 +199,7 @@ const handleRegister = async () => {
 }
 
 .register-header p {
-  color: #64748b;
+  color: #94a3b8;
   font-size: 13px;
   margin: 0;
   line-height: 1.5;
@@ -228,7 +228,7 @@ const handleRegister = async () => {
   margin-top: 24px;
   text-align: center;
   font-size: 13px;
-  color: #94a3b8;
+  color: #cbd5e1;
   display: flex;
   gap: 6px;
   justify-content: center;
@@ -251,8 +251,8 @@ const handleRegister = async () => {
   position: relative;
   z-index: 1;
   margin-top: 28px;
-  font-size: 12px;
-  color: #475569;
+  font-size: 13px;
+  color: #64748b;
   letter-spacing: 0.5px;
   text-align: center;
 }

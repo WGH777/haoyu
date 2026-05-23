@@ -39,12 +39,12 @@ body {
 
 a {
   font-weight: 500;
-  color: #818cf8;
+  color: #a5b4fc;
   text-decoration: none;
   transition: color 0.2s;
 }
 a:hover {
-  color: #a5b4fc;
+  color: #c7d2fe;
 }
 
 /* 滚动条 — 全局柔和深色 */

@@ -35,11 +35,11 @@ export interface TaskItem {
   title: string
   description: string
   /**
-   * 金额：单位「0.01煜米」（内部×100存储）
-   * （显示时前端除以 100 转为煜米）
+   * 金额：单位「分」（内部×100存储）
+   * （显示时前端除以 100 转为元）
    */
   price: number
-  /** 服务费：单位「0.01煜米」 */
+  /** 服务费：单位「分」 */
   serviceFee?: number
   /** 热度：浏览量 */
   views?: number
@@ -68,7 +68,7 @@ export interface CreateTaskDto {
   title: string
   description?: string
   /**
-   * 金额：单位「0.01煜米」（内部×100存储）
+   * 金额：单位「分」（内部×100存储）
    */
   price: number
   image?: string | null

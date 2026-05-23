@@ -1,6 +1,6 @@
 <template>
   <div class="admin-page">
-    <h2>管理后台</h2>
+    <h2 class="admin-title">管理后台</h2>
 
     <!-- 统计面板 -->
     <div class="stats-row" v-if="orders.length">
@@ -22,7 +22,7 @@
       </div>
       <div class="stat-card purple">
         <span class="stat-num">{{ totalVolume }}</span>
-        <span class="stat-label">交易总额（煜米）</span>
+        <span class="stat-label">交易总额</span>
       </div>
     </div>
 
@@ -36,7 +36,7 @@
           <div class="ov-card"><span class="ov-num">{{ dashboardData.totalTasks }}</span><span class="ov-label">总任务</span></div>
           <div class="ov-card"><span class="ov-num">{{ dashboardData.totalOrders }}</span><span class="ov-label">总订单</span></div>
           <div class="ov-card"><span class="ov-num">{{ dashboardData.totalUsers }}</span><span class="ov-label">总用户</span></div>
-          <div class="ov-card"><span class="ov-num">{{ (dashboardData.totalVolume/100).toFixed(0) }} 煜米</span><span class="ov-label">交易总额（煜米）</span></div>
+          <div class="ov-card"><span class="ov-num">{{ (dashboardData.totalVolume/100).toFixed(0) }}</span><span class="ov-label">交易总额</span></div>
         </div>
         <div v-if="dashboardData?.taskByCategory?.length" style="margin-top:20px">
           <h4 style="color:#94a3b8;margin-bottom:8px">任务分类分布</h4>
@@ -52,9 +52,9 @@
               <el-tag :type="orderTag(row.status)" size="small">{{ row.status }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="煜米" width="100">
+          <el-table-column label="金额" width="100">
             <template #default="{ row }">
-              {{ ((row.task?.price || 0) / 100).toFixed(2) }} 煜米
+              {{ ((row.task?.price || 0) / 100).toFixed(2) }}
             </template>
           </el-table-column>
           <el-table-column label="操作" width="200">
@@ -130,7 +130,7 @@
         <el-form-item label="用户ID">
           <el-input-number v-model="creditForm.userId" :min="1" style="width:100%" />
         </el-form-item>
-        <el-form-item label="充值金额（煜米）">
+        <el-form-item label="充值金额（元）">
           <el-input-number v-model="creditForm.amount" :min="1" :step="10" :precision="2" style="width:100%" />
         </el-form-item>
       </el-form>
@@ -253,9 +253,9 @@ onMounted(() => { loadOrders(); loadDisputes(); fetchAuditLogs(); fetchDashboard
 
 <style scoped>
 .admin-page { max-width: 1100px; margin: 0 auto; padding: 20px; }
-.admin-page h2 { margin-bottom: 16px; }
+.admin-title { margin-bottom: 16px; white-space: nowrap; }
 
-.stats-row { display: flex; gap: 16px; margin-bottom: 24px; }
+.stats-row { display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
 .stat-card {
   flex: 1; padding: 16px; border-radius: 10px;
   background: rgba(17, 24, 39, 0.45);
@@ -267,10 +267,78 @@ onMounted(() => { loadOrders(); loadDisputes(); fetchAuditLogs(); fetchDashboard
 .stat-card.red { border-color: rgba(239, 68, 68, 0.25); background: rgba(239, 68, 68, 0.06); }
 .stat-card.purple { border-color: rgba(99, 102, 241, 0.25); background: rgba(99, 102, 241, 0.06); }
 .stat-num { display: block; font-size: 24px; font-weight: 700; color: #f1f5f9; }
-.stat-label { display: block; font-size: 12px; color: #94a3b8; margin-top: 4px; }
+.stat-label { display: block; font-size: 13px; color: #cbd5e1; margin-top: 4px; }
 
 .overview-grid { display: flex; gap: 16px; flex-wrap: wrap; }
 .ov-card { flex:1; min-width:120px; padding:16px; border-radius:10px; background:rgba(17,24,39,0.45); border:1px solid rgba(148,163,184,0.12); text-align:center; }
 .ov-num { display:block; font-size:24px; font-weight:700; color:#f1f5f9; }
 .ov-label { font-size:12px; color:#94a3b8; }
+
+/* ---- Tabs: 移动端允许原生横向滚动 ---- */
+:deep(.el-tabs__nav) {
+  white-space: nowrap;
+  flex-wrap: nowrap;
+}
+:deep(.el-tabs__item) {
+  flex: 0 0 auto;
+  min-width: auto;
+}
+
+/* ---- 表格横向滚动包裹 ---- */
+.table-scroll-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ==================== 移动端适配 ==================== */
+@media (max-width: 768px) {
+  .admin-page {
+    padding: 0;
+  }
+
+  /* el-card 内部缩到最小 */
+  :deep(.el-card__body) {
+    padding: 10px 8px !important;
+  }
+
+  .admin-title {
+    font-size: 18px;
+    margin-bottom: 12px;
+  }
+
+  .stats-row {
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .stat-card {
+    flex: 1 1 calc(50% - 4px);
+    min-width: 0;
+    padding: 12px 8px;
+  }
+  .stat-num {
+    font-size: 20px;
+  }
+  .stat-label {
+    font-size: 11px;
+  }
+
+  .overview-grid {
+    gap: 8px;
+  }
+  .ov-card {
+    flex: 1 1 calc(50% - 4px);
+    min-width: 0;
+    padding: 12px 8px;
+  }
+  .ov-num {
+    font-size: 20px;
+  }
+
+  /* 弹窗全宽 */
+  :deep(.el-dialog) {
+    width: 92% !important;
+    max-width: 400px;
+  }
+}
 </style>

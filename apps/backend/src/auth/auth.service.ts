@@ -161,6 +161,14 @@ export class AuthService {
     });
   }
 
+  /** 根据 ID 查找用户（用于权限检查） */
+  async findById(userId: number) {
+    return this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, role: true },
+    });
+  }
+
   private async generateTokens(userId: number, email: string) {
     const accessPayload: JwtPayload = { sub: userId, email };
     const refreshPayload: JwtPayload = { sub: userId, email, jti: randomUUID() };

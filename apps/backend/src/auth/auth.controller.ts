@@ -82,16 +82,24 @@ export class AuthController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('SUPER_ADMIN')
+  @Roles('ADMIN', 'SUPER_ADMIN')
   @Patch('admin/reset-password/:userId')
   @ApiBearerAuth()
-  @ApiOperation({ summary: '超级管理员重置用户密码' })
+  @ApiOperation({ summary: '（管理员/超管）重置用户密码' })
   @ApiParam({ name: 'userId', type: Number })
   @ApiBody({ type: AdminResetPasswordDto })
   async adminResetPassword(
+    @Req() req: any,
     @Param('userId', ParseIntPipe) userId: number,
     @Body() dto: AdminResetPasswordDto,
   ) {
+    // ADMIN 只能重置 USER，不能重置 SUPER_ADMIN
+    if (req.user.role === 'ADMIN') {
+      const target = await this.authService.findById(userId);
+      if (target?.role === 'SUPER_ADMIN') {
+        throw new BadRequestException('管理员无权重置超级管理员的密码');
+      }
+    }
     await this.authService.resetPasswordByAdmin(userId, dto.newPassword);
     return { message: '密码已重置' };
   }

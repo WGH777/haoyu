@@ -643,6 +643,7 @@ export class OrderService {
         where: { id: publisherWallet.id },
         data: { frozen: { decrement: totalCost } },
       });
+      const pubAfterSettle = await tx.wallet.findUnique({ where: { id: publisherWallet.id } });
 
       const workerWallet = await tx.wallet.findUnique({
         where: { userId_currency: { userId: order.workerId, currency: 'CNY' } },
@@ -653,22 +654,29 @@ export class OrderService {
           data: { available: { increment: netReward } },
         });
       }
+      const workAfterSettle = workerWallet
+        ? await tx.wallet.findUnique({ where: { id: workerWallet.id } })
+        : null;
 
       const platformWallet = await tx.wallet.findUnique({
         where: { code: 'SYSTEM_PLATFORM_FEE' },
       });
+      let platAfterFee = null;
       if (platformWallet && serviceFee > 0) {
         await tx.wallet.update({
           where: { id: platformWallet.id },
           data: { available: { increment: serviceFee } },
         });
+        platAfterFee = await tx.wallet.findUnique({ where: { id: platformWallet.id } });
       }
 
-      // 账本记录
-      await tx.ledgerEntry.create({ data: { walletId: publisherWallet.id, userId: order.task.publisherId, orderId, amount: totalCost, direction: 'OUT', type: 'SETTLEMENT', remark: `订单#${orderId} 自动确认结算` } });
-      await tx.ledgerEntry.create({ data: { walletId: workerWallet!.id, userId: order.workerId, orderId, amount: netReward, direction: 'IN', type: 'SETTLEMENT', remark: `订单#${orderId} 自动确认收入` } });
-      if (serviceFee > 0 && platformWallet) {
-        await tx.ledgerEntry.create({ data: { walletId: platformWallet.id, orderId, amount: serviceFee, direction: 'IN', type: 'PLATFORM_FEE', remark: `订单#${orderId} 服务费` } });
+      // 账本记录（完整 balanceAfter / frozenAfter）
+      await tx.ledgerEntry.create({ data: { walletId: publisherWallet.id, userId: order.task.publisherId, orderId, amount: totalCost, direction: 'OUT', type: 'SETTLEMENT', balanceAfter: pubAfterSettle?.available, frozenAfter: pubAfterSettle?.frozen, remark: `订单#${orderId} 自动确认结算` } });
+      if (workerWallet) {
+        await tx.ledgerEntry.create({ data: { walletId: workerWallet.id, userId: order.workerId, orderId, amount: netReward, direction: 'IN', type: 'SETTLEMENT', balanceAfter: workAfterSettle?.available, frozenAfter: workAfterSettle?.frozen, remark: `订单#${orderId} 自动确认收入` } });
+      }
+      if (serviceFee > 0 && platformWallet && platAfterFee) {
+        await tx.ledgerEntry.create({ data: { walletId: platformWallet.id, orderId, amount: serviceFee, direction: 'IN', type: 'PLATFORM_FEE', balanceAfter: platAfterFee?.available, frozenAfter: platAfterFee?.frozen, remark: `订单#${orderId} 服务费` } });
       }
 
       return tx.order.findUnique({ where: { id: orderId } });
@@ -713,6 +721,7 @@ export class OrderService {
             available: { increment: totalCost },
           },
         });
+        const pubAfterRefund = await tx.wallet.findUnique({ where: { id: publisherWallet.id } });
         await tx.ledgerEntry.create({
           data: {
             walletId: publisherWallet.id,
@@ -721,6 +730,8 @@ export class OrderService {
             amount: totalCost,
             direction: 'IN',
             type: 'REFUND',
+            balanceAfter: pubAfterRefund?.available,
+            frozenAfter: pubAfterRefund?.frozen,
             remark: reason,
           },
         });

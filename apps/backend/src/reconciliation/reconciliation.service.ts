@@ -9,8 +9,8 @@ export interface ReconciliationReport {
   globalBalance: {
     totalAvailable: number;
     totalFrozen: number;
-    totalLedgerCredit: number;
-    totalLedgerDebit: number;
+    totalLedgerIN: number;
+    totalLedgerOUT: number;
     drift: number;
     ok: boolean;
   };
@@ -55,34 +55,57 @@ export class ReconciliationService {
     const wallets = await this.prisma.wallet.findMany({
       include: {
         ledgerEntries: {
-          select: { amount: true, direction: true },
+          select: { amount: true, direction: true, type: true },
         },
       },
     });
 
     let totalAvailable = 0;
     let totalFrozen = 0;
-    let totalLedgerCredit = 0;
-    let totalLedgerDebit = 0;
+    let totalLedgerVolume = 0;
+    let totalLedgerIN = 0;
+    let totalLedgerOUT = 0;
 
     for (const wallet of wallets) {
-      // 从 Ledger 计算应有余额
+      // 从 Ledger 按类型重放计算应有余额
       let computedAvailable = 0;
       let computedFrozen = 0;
 
       for (const entry of wallet.ledgerEntries) {
-        if (entry.direction === 'IN') {
-          totalLedgerCredit += entry.amount;
-          // IN 通常影响 available（除非是 FREEZE 类型需特殊处理）
+        if (entry.type === 'DEPOSIT' || entry.type === 'ADMIN_ADJUST') {
+          // 充值/管理员调账: available 增加
           computedAvailable += entry.amount;
-        } else {
-          totalLedgerDebit += entry.amount;
+        } else if (entry.type === 'FREEZE') {
+          // 冻结: available 减少, frozen 增加
           computedAvailable -= entry.amount;
+          computedFrozen += entry.amount;
+        } else if (entry.type === 'UNFREEZE' || entry.type === 'REFUND') {
+          // 解冻/退款: available 增加, frozen 减少
+          computedAvailable += entry.amount;
+          computedFrozen -= entry.amount;
+        } else if (entry.type === 'SETTLEMENT' || entry.type === 'PLATFORM_FEE') {
+          // 结算/平台费: frozen 减少（资金真正转出，不回流 available）
+          computedFrozen -= entry.amount;
+        } else if (entry.type === 'WITHDRAW') {
+          // 提现: available 减少
+          computedAvailable -= entry.amount;
+        } else {
+          // 未知类型：保守处理按 IN/OUT 方向
+          if (entry.direction === 'IN') {
+            computedAvailable += entry.amount;
+          } else {
+            computedAvailable -= entry.amount;
+          }
+        }
+        totalLedgerVolume += entry.amount;
+        if (entry.direction === 'IN') {
+          totalLedgerIN += entry.amount;
+        } else {
+          totalLedgerOUT += entry.amount;
         }
       }
 
-      // 简化校验：available 应该 >= 0 且与 ledger 推算一致
-      // 注意：冻结合并计在 available 调整中（实际业务中 FREEZE/UNFREEZE 也走 ledger）
+      // 校验：computed 与实际余额比对
       if (computedAvailable !== wallet.available || computedFrozen !== wallet.frozen) {
         mismatches.push({
           walletId: wallet.id,
@@ -99,7 +122,7 @@ export class ReconciliationService {
       totalFrozen += wallet.frozen;
     }
 
-    const globalDrift = totalLedgerCredit - totalLedgerDebit - totalAvailable - totalFrozen;
+    const globalDrift = totalLedgerIN - totalLedgerOUT - (totalAvailable + totalFrozen);
 
     return {
       checkedAt,
@@ -108,8 +131,8 @@ export class ReconciliationService {
       globalBalance: {
         totalAvailable,
         totalFrozen,
-        totalLedgerCredit,
-        totalLedgerDebit,
+        totalLedgerIN,
+        totalLedgerOUT,
         drift: globalDrift,
         ok: mismatches.length === 0 && globalDrift === 0,
       },

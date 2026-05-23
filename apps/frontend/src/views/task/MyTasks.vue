@@ -52,9 +52,9 @@
                 </template>
               </el-table-column>
 
-              <el-table-column label="煜米" width="100">
+              <el-table-column label="金额" width="100">
                 <template #default="scope">
-                  {{ (scope.row.task.price / 100).toFixed(2) }} 煜米
+                  {{ (scope.row.task.price / 100).toFixed(2) }}
                 </template>
               </el-table-column>
 
@@ -165,9 +165,9 @@
                 </template>
               </el-table-column>
 
-              <el-table-column label="煜米" width="100">
+              <el-table-column label="金额" width="100">
                 <template #default="scope">
-                  {{ (scope.row.price / 100).toFixed(2) }} 煜米
+                  {{ (scope.row.price / 100).toFixed(2) }}
                 </template>
               </el-table-column>
 
@@ -415,7 +415,7 @@ onMounted(() => {
 
 .filter-label {
   margin-right: 8px;
-  color: #94a3b8;
+  color: #cbd5e1;
   font-size: 13px;
 }
 
@@ -427,13 +427,13 @@ onMounted(() => {
 }
 
 .progress-text {
-  font-size: 12px;
-  color: #94a3b8;
+  font-size: 13px;
+  color: #cbd5e1;
   min-width: 40px;
 }
 
 .progress-none {
-  font-size: 12px;
-  color: #64748b;
+  font-size: 13px;
+  color: #94a3b8;
 }
 </style>

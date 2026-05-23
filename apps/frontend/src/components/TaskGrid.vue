@@ -14,9 +14,9 @@
         <!-- 1. 标题 — 首要信息 -->
         <h3 class="premium-card-title">{{ task.title }}</h3>
 
-        <!-- 2. 煜米预算 — 核心决策信息 -->
+        <!-- 2. 预算 — 核心决策信息 -->
         <div class="premium-card-price-row">
-          <span class="premium-card-price glow-amber">{{ (task.price / 100).toFixed(2) }} 煜米</span>
+          <span class="premium-card-price glow-amber">¥ {{ (task.price / 100).toFixed(2) }}</span>
           <span v-if="task.status !== 'PENDING'" :class="['status-dot', statusClass(task.status)]">
             {{ statusLabel(task.status) }}
           </span>

@@ -3,7 +3,7 @@
     <!-- 侧边栏 -->
     <aside class="sidebar" :class="{ collapsed: sidebarCollapsed, 'mobile-open': sidebarMobileOpen }">
       <div class="logo" @click="$router.push('/task')">
-        <span class="logo-mark">煜</span>
+        <span class="logo-mark">浩</span>
         <span class="logo-text">浩煜</span>
         <button class="sidebar-close-btn" @click.stop="sidebarMobileOpen = false">
           <el-icon><Close /></el-icon>
@@ -37,6 +37,7 @@
         <router-link to="/help" class="nav-item small">帮助中心</router-link>
         <template v-if="isLogin && canSeeUserManage">
           <router-link to="/admin" class="nav-item small">管理后台</router-link>
+          <router-link to="/user" class="nav-item small">用户管理</router-link>
         </template>
       </div>
     </aside>
@@ -54,7 +55,7 @@
           <span class="greeting">👋 {{ isLogin && currentUser ? currentUser.nickname : '可信价值协作平台' }}</span>
         </div>
         <div class="topbar-right">
-          <span v-if="isLogin && currentUser" class="balance-badge">💰 {{ (walletBalance / 100).toFixed(2) }}</span>
+          <span v-if="isLogin && currentUser" class="balance-badge">💰 ¥ {{ formatCurrency(walletBalance / 100) }}</span>
           <template v-if="isLogin">
             <el-avatar
               :size="34"
@@ -87,7 +88,7 @@
           <div class="hero-content">
             <span class="hero-tag">🔒 资金托管 · 信用沉淀 · 智能仲裁</span>
             <h1>浩煜<span class="glow-text"> Haoyu</span></h1>
-            <p class="hero-subtitle">可信价值协作平台 — 连接真实需求，激活真实能力，保障可信交付</p>
+            <p class="hero-subtitle">可信价值协作平台——连接真实需求，保障可靠交付</p>
             <div class="hero-actions">
               <el-button type="primary" size="large" round @click="openCreateDialog" v-if="isLogin" class="btn-glow">✨ 发布需求</el-button>
               <el-button size="large" round @click="$router.push('/register')" v-else class="btn-glow">创建协作身份</el-button>
@@ -109,7 +110,7 @@
           </div>
           <div class="stat-divider"></div>
           <div class="stat-item">
-            <span class="stat-number">{{ escrowTotal }} 煜米</span>
+            <span class="stat-number">¥ {{ formatCurrency(escrowTotal) }}</span>
             <span class="stat-label">托管中</span>
           </div>
           <div class="stat-divider"></div>
@@ -170,9 +171,9 @@
           />
           <el-select v-model="priceFilter" size="large" class="filter-select">
             <el-option label="全部预算" value="all" />
-            <el-option label="100 煜米以下" value="low" />
-            <el-option label="100 – 500 煜米" value="mid" />
-            <el-option label="500 煜米以上" value="high" />
+            <el-option label="¥100 以下" value="low" />
+            <el-option label="¥100 – ¥500" value="mid" />
+            <el-option label="¥500 以上" value="high" />
           </el-select>
           <el-select v-model="modeFilter" size="large" class="filter-select">
             <el-option label="全部方式" value="all" />
@@ -188,11 +189,10 @@
           </el-select>
           <el-switch
             v-model="certOnly"
-            active-text="仅认证"
+            active-text="仅看可接单"
             size="large"
             class="cert-switch"
           />
-          <el-button size="large" @click="fetchData" :icon="Refresh" class="btn-outline">刷新</el-button>
         </div>
 
         <!-- 主内容区（任务网格 + 榜单侧栏） -->
@@ -290,7 +290,7 @@ const canSeeUserManage = computed(() =>
 const completedCount = computed(() => tasks.value.filter(t => t.status === 'COMPLETED').length)
 const escrowTotal = computed(() => {
   const sum = tasks.value.filter(t => ['PENDING','ASSIGNED','SUBMITTED','IN_PROGRESS'].includes(t.status)).reduce((s, t) => s + (t.price || 0), 0)
-  return (sum / 100).toFixed(2)
+  return sum / 100
 })
 
 // 匹配原因（规则版，不上AI）
@@ -314,6 +314,10 @@ const matchReasons = computed(() => {
   }
   return reasons
 })
+
+const formatCurrency = (value: number) => {
+  return value.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
 
 const getFullUrl = (path: string) =>
   path ? (path.startsWith('http') ? path : `http://localhost:3000${path}`) : ''
@@ -360,8 +364,12 @@ const openCreateDialog = () => {
 const toggleSidebar = () => {
   if (window.innerWidth <= 768) {
     sidebarMobileOpen.value = !sidebarMobileOpen.value
+    // 移动端打开抽屉时，确保 collapsed 不干扰（否则 64px 宽看不到内容）
+    if (sidebarMobileOpen.value) sidebarCollapsed.value = false
   } else {
     sidebarCollapsed.value = !sidebarCollapsed.value
+    // 桌面端切换折叠时，确保移动抽屉关闭
+    if (sidebarCollapsed.value) sidebarMobileOpen.value = false
   }
 }
 
@@ -464,10 +472,26 @@ onMounted(() => {
   fetchWalletBalance()
   fetchData()
   window.addEventListener('notification-read', fetchUnreadCount as any)
+
+  // 窗口尺寸变化时重置移动/桌面状态
+  const handleResize = () => {
+    if (window.innerWidth > 768) {
+      sidebarMobileOpen.value = false
+    } else {
+      sidebarCollapsed.value = false
+    }
+  }
+  window.addEventListener('resize', handleResize)
+  // 保存引用以便清理
+  ;(window as any).__haoyuResizeHandler = handleResize
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('notification-read', fetchUnreadCount as any)
+  if ((window as any).__haoyuResizeHandler) {
+    window.removeEventListener('resize', (window as any).__haoyuResizeHandler)
+    delete (window as any).__haoyuResizeHandler
+  }
 })
 </script>
 
@@ -495,12 +519,12 @@ onBeforeUnmount(() => {
 .nav { flex: 1; padding: 8px; display: flex; flex-direction: column; gap: 2px; }
 .nav-item {
   display: flex; align-items: center; gap: 10px; padding: 10px 12px;
-  border-radius: 8px; color: #94a3b8; text-decoration: none; font-size: 14px;
+  border-radius: 8px; color: #cbd5e1; text-decoration: none; font-size: 14px;
   transition: all 0.2s; position: relative;
 }
 .nav-item:hover { background: rgba(99, 102, 241, 0.08); color: #f1f5f9; }
 .nav-item.active { background: rgba(99, 102, 241, 0.12); color: #a5b4fc; font-weight: 600; }
-.nav-item.small { font-size: 12px; padding: 6px 12px; }
+.nav-item.small { font-size: 13px; padding: 6px 12px; }
 
 /* 侧边栏发布入口 */
 .publish-nav {
@@ -515,7 +539,7 @@ onBeforeUnmount(() => {
 }
 .badge {
   position: absolute; right: 10px; background: #ef4444; color: #fff;
-  font-size: 11px; min-width: 18px; height: 18px; border-radius: 9px;
+  font-size: 13px; min-width: 18px; height: 18px; border-radius: 9px;
   display: flex; align-items: center; justify-content: center;
 }
 .sidebar-footer { padding: 8px; border-top: 1px solid rgba(148, 163, 184, 0.1); }
@@ -553,7 +577,7 @@ onBeforeUnmount(() => {
 /* 侧边栏关闭按钮（移动端） */
 .sidebar-close-btn {
   display: none;
-  background: none; border: none; color: #94a3b8; cursor: pointer;
+  background: none; border: none; color: #cbd5e1; cursor: pointer;
   font-size: 16px; padding: 4px; margin-left: auto;
 }
 
@@ -565,8 +589,9 @@ onBeforeUnmount(() => {
   display: flex; align-items: center; justify-content: space-between;
   padding: 0 24px; position: sticky; top: 0; z-index: 50;
 }
-.greeting { font-size: 14px; color: #94a3b8; }
-.topbar-right { display: flex; align-items: center; gap: 12px; }
+.topbar-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.greeting { font-size: 14px; color: #cbd5e1; }
+.topbar-right { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
 .balance-badge {
   background: rgba(16, 185, 129, 0.1);
   border: 1px solid rgba(16, 185, 129, 0.25);
@@ -596,14 +621,14 @@ onBeforeUnmount(() => {
 .hero-tag {
   display: inline-block; padding: 4px 16px; border-radius: 20px;
   background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.2);
-  color: #a5b4fc; font-size: 12px; font-weight: 600;
+  color: #a5b4fc; font-size: 14px; font-weight: 600;
   margin-bottom: 16px; letter-spacing: 0.5px;
 }
 .hero h1 {
   font-size: 40px; font-weight: 800; color: #f1f5f9;
   margin: 0 0 12px; letter-spacing: -1px;
 }
-.hero-subtitle { font-size: 16px; color: #94a3b8; margin: 0 0 28px; }
+.hero-subtitle { font-size: 17px; color: #cbd5e1; margin: 0 0 28px; }
 .hero-actions { display: flex; gap: 12px; justify-content: center; }
 .btn-glow {
   background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
@@ -619,7 +644,7 @@ onBeforeUnmount(() => {
 .btn-outline {
   background: transparent !important;
   border: 1px solid rgba(148,163,184,0.2) !important;
-  color: #94a3b8 !important;
+  color: #cbd5e1 !important;
 }
 .btn-outline:hover {
   border-color: #6366f1 !important;
@@ -637,6 +662,8 @@ onBeforeUnmount(() => {
   -webkit-backdrop-filter: blur(12px);
 }
 .stat-item { flex: 1; text-align: center; padding: 0 16px; }
+.stat-number { display: block; font-size: 26px; font-weight: 700; color: #f1f5f9; margin-bottom: 4px; font-variant-numeric: tabular-nums; }
+.stat-label { font-size: 14px; color: #cbd5e1; }
 .stat-divider { width: 1px; background: rgba(148,163,184,0.12); }
 
 /* === 价值流转图（增强版） === */
@@ -647,8 +674,15 @@ onBeforeUnmount(() => {
   border: 1px solid rgba(148,163,184,0.08);
   border-radius: 14px;
   overflow-x: auto;
+  font-size: 13px; color: #cbd5e1;
 }
 .value-flow-enhanced .flow-icon { font-size: 18px; margin-bottom: 4px; }
+.flow-step-dot { display: flex; flex-direction: column; align-items: center; gap: 4px; flex-shrink: 0; }
+.flow-step-dot .dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(148,163,184,0.3); }
+.flow-step-dot.done .dot { background: #10b981; }
+.flow-step-dot.active .dot { background: #6366f1; box-shadow: 0 0 8px rgba(99,102,241,0.5); }
+.flow-step-connector { width: 32px; height: 2px; background: rgba(148,163,184,0.15); align-self: center; margin: 0 4px; flex-shrink: 0; }
+.flow-step-connector.done { background: rgba(16,185,129,0.3); }
 
 /* === 筛选行 === */
 .filter-row {
@@ -678,8 +712,8 @@ onBeforeUnmount(() => {
   flex-shrink: 0;
 }
 .cert-switch .el-switch__label {
-  color: #94a3b8 !important;
-  font-size: 12px;
+  color: #cbd5e1 !important;
+  font-size: 13px;
 }
 
 /* === 布局 === */
@@ -698,7 +732,7 @@ onBeforeUnmount(() => {
   display: flex; justify-content: center; gap: 24px; flex-wrap: wrap;
 }
 .trust-item {
-  font-size: 14px; color: #94a3b8;
+  font-size: 14px; color: #cbd5e1;
   display: flex; align-items: center; gap: 6px;
   padding: 8px 16px;
   background: rgba(17,24,39,0.5);
@@ -710,7 +744,7 @@ onBeforeUnmount(() => {
 /* === 页脚 === */
 .page-footer {
   text-align: center; padding: 24px 0; font-size: 13px;
-  color: #475569; display: flex; gap: 8px; justify-content: center;
+  color: #94a3b8; display: flex; gap: 8px; justify-content: center;
 }
 .page-footer a { color: #818cf8; }
 .dot { color: #334155; }
@@ -751,8 +785,12 @@ onBeforeUnmount(() => {
     max-width: 100vw;
     padding-bottom: env(safe-area-inset-bottom, 8px) !important;
   }
-  .topbar { padding: 0 12px !important; }
-  .topbar .greeting { font-size: 13px; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .topbar { padding: 0 10px !important; height: 48px; }
+  .topbar-left { gap: 4px; flex: 1; min-width: 0; }
+  .topbar .greeting { font-size: 13px; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .topbar-right { gap: 8px; }
+  .dropdown-trigger { font-size: 13px; max-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .topbar-right .el-avatar { width: 28px !important; height: 28px !important; font-size: 12px !important; }
   .content { padding: 0 12px 32px !important; max-width: 100vw; }
   .hero { padding: 32px 0 24px !important; }
   .hero h1 { font-size: 24px !important; }
@@ -771,7 +809,7 @@ onBeforeUnmount(() => {
   .search-input { max-width: 100% !important; flex: 1; }
   .filter-select { width: 130px !important; flex-shrink: 0; }
   .trust-grid { gap: 8px; }
-  .trust-item { font-size: 12px; padding: 6px 10px; }
+  .trust-item { font-size: 13px; padding: 6px 10px; }
   .balance-badge { display: none; }
 }
 </style>

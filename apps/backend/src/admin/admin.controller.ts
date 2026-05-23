@@ -85,13 +85,10 @@ export class AdminController {
     }
     if (type && type !== 'all') where.type = type;
 
-    return this.prisma.transaction.findMany({
+    return this.prisma.ledgerEntry.findMany({
       where,
       orderBy: { createdAt: 'desc' },
       take: 100,
-      include: {
-        user: { select: { id: true, email: true, nickname: true } },
-      },
     });
   }
 

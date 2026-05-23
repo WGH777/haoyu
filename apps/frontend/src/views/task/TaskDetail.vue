@@ -16,7 +16,7 @@
 
           <div class="right">
             <el-tag type="danger" effect="plain" size="large" class="price-tag">
-              💰  {{ ((task.price || 0) / 100).toFixed(2) }} 煜米
+              💰 ¥ {{ ((task.price || 0) / 100).toFixed(2) }}
             </el-tag>
           </div>
         </div>
@@ -379,7 +379,7 @@
                 <!-- 状态：已完成（COMPLETED） -->
                 <template v-else-if="isOrderCompleted">
                   <el-alert
-                    title="任务已完成，煜米已结算到您的账户。"
+                    title="任务已完成，资金已结算到您的账户。"
                     type="success"
                     :closable="false"
                     show-icon
@@ -561,7 +561,7 @@
       <div class="related-grid">
         <div v-for="rt in relatedTasks" :key="rt.id" class="related-item" @click="$router.push(`/task/${rt.id}`)">
           <span class="related-title">{{ rt.title }}</span>
-          <span class="related-price">{{ ((rt.price||0)/100).toFixed(0) }} 煜米</span>
+          <span class="related-price">¥ {{ ((rt.price||0)/100).toFixed(0) }}</span>
         </div>
       </div>
     </el-card>
@@ -1043,7 +1043,7 @@ const handleAccept = async () => {
   if (!publisherOrder.value) return
   try {
     await ElMessageBox.confirm(
-      '确认验收通过并结算煜米给执行者？',
+      '确认验收通过并结算给执行者？',
       '提示',
       { type: 'warning' },
     )
@@ -1054,7 +1054,7 @@ const handleAccept = async () => {
   opLoading.value = true
   try {
     await completeOrder(publisherOrder.value.id, { isAccepted: true, comment: '' })
-    ElMessage.success('验收成功，煜米已结算')
+    ElMessage.success('验收成功，资金已结算')
     await loadTask()
     await loadOrders()
   } catch (error) {
@@ -1165,7 +1165,7 @@ onMounted(() => {
 
 .task-card-header .task-id {
   font-size: 13px;
-  color: #64748b;
+  color: #94a3b8;
 }
 
 .price-tag {
@@ -1209,7 +1209,7 @@ onMounted(() => {
   align-items: center;
   gap: 10px;
   margin-bottom: 16px;
-  color: #94a3b8;
+  color: #cbd5e1;
   font-size: 14px;
   background: rgba(17, 24, 39, 0.35);
   border: 1px solid rgba(148, 163, 184, 0.08);
@@ -1223,8 +1223,8 @@ onMounted(() => {
 
 .publisher-info .time {
   margin-left: auto;
-  color: #64748b;
-  font-size: 12px;
+  color: #94a3b8;
+  font-size: 13px;
 }
 .verified-tag { margin-left: 6px; vertical-align: middle; }
 
@@ -1250,8 +1250,8 @@ onMounted(() => {
   color: #6ee7b7;
 }
 .trust-stat-label {
-  font-size: 11px;
-  color: #64748b;
+  font-size: 13px;
+  color: #94a3b8;
   margin-top: 2px;
 }
 
@@ -1331,7 +1331,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #94a3b8;
+  color: #cbd5e1;
 }
 
 .ok-icon {
@@ -1339,7 +1339,7 @@ onMounted(() => {
 }
 
 .wait-icon {
-  color: #64748b;
+  color: #94a3b8;
 }
 
 .item-done {
@@ -1348,7 +1348,7 @@ onMounted(() => {
 
 .subtask-done-text {
   text-decoration: line-through;
-  color: #64748b;
+  color: #94a3b8;
 }
 
 .subtask-actions {
@@ -1368,7 +1368,7 @@ onMounted(() => {
 }
 
 .placeholder-text {
-  color: #64748b;
+  color: #94a3b8;
   font-size: 13px;
 }
 
@@ -1388,7 +1388,7 @@ onMounted(() => {
 }
 
 .status-box .label {
-  color: #94a3b8;
+  color: #cbd5e1;
 }
 
 .status-box .value {

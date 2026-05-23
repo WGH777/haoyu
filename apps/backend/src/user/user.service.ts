@@ -14,6 +14,9 @@ const safeUserSelect = {
   bio: true,
   role: true,
   avatar: true,
+  isBanned: true,
+  banReason: true,
+  isTest: true,
   createdAt: true,
   updatedAt: true,
 } as const;
@@ -131,38 +134,83 @@ export class UserService {
   async remove(id: number) {
     // 使用事务，确保要么全删，要么都不删
     return this.prisma.$transaction(async (tx) => {
-      // 1. 删除该用户的资金流水 (Transactions)
+      // 0. 先查用户钱包（用于清理账本）
+      const userWallets = await tx.wallet.findMany({
+        where: { userId: id },
+        select: { id: true },
+      });
+      const walletIds = userWallets.map(w => w.id);
+
+      // 0.1 删除账本记录（FK 引用 walletId / userId）
+      if (walletIds.length > 0) {
+        await tx.ledgerEntry.deleteMany({
+          where: {
+            OR: [
+              { walletId: { in: walletIds } },
+              { userId: id },
+            ],
+          },
+        });
+      }
+
+      // 1. 删除该用户的资金流水 (Legacy Transactions)
       await tx.transaction.deleteMany({ where: { userId: id } });
 
-      // 2. 删除该用户作为【执行者】接的单 (Orders as worker)
-      await tx.order.deleteMany({ where: { workerId: id } });
+      // 2. 删除通知
+      await tx.notification.deleteMany({ where: { userId: id } });
 
-      // 3. 处理该用户作为【发布者】发布的任务
-      // 先找到他发布的所有任务ID
+      // 3. 删除钱包
+      if (walletIds.length > 0) {
+        await tx.wallet.deleteMany({ where: { userId: id } });
+      }
+
+      // 4. 处理该用户作为【发布者】发布的任务
       const myTasks = await tx.task.findMany({
         where: { publisherId: id },
         select: { id: true }
       });
       const myTaskIds = myTasks.map(t => t.id);
 
+      // 4.1 找出所有需要删除的订单（workerId + taskId）
+      const ordersToDelete = await tx.order.findMany({
+        where: {
+          OR: [
+            { workerId: id },
+            ...(myTaskIds.length > 0 ? [{ taskId: { in: myTaskIds } }] : []),
+          ],
+        },
+        select: { id: true },
+      });
+      const orderIds = ordersToDelete.map(o => o.id);
+
+      // 4.2 先删除订单的下游关联（FK: OrderComment, Dispute, LedgerEntry.orderId）
+      if (orderIds.length > 0) {
+        await tx.orderComment.deleteMany({ where: { orderId: { in: orderIds } } });
+        await tx.dispute.deleteMany({ where: { orderId: { in: orderIds } } });
+        await tx.ledgerEntry.deleteMany({ where: { orderId: { in: orderIds } } });
+      }
+
+      // 4.3 删除该用户作为【执行者】接的单
+      await tx.order.deleteMany({ where: { workerId: id } });
+
       if (myTaskIds.length > 0) {
-        // 3.1 删除这些任务下的所有子任务
+        // 5.1 删除这些任务下的子任务
         await tx.subTask.deleteMany({
           where: { taskId: { in: myTaskIds } }
         });
 
-        // 3.2 删除这些任务下的所有订单 (哪怕是别人接的，任务都没了，订单也得删)
+        // 5.2 删除这些任务下的所有订单
         await tx.order.deleteMany({
           where: { taskId: { in: myTaskIds } }
         });
 
-        // 3.3 删除任务本身
+        // 5.3 删除任务本身
         await tx.task.deleteMany({
           where: { id: { in: myTaskIds } }
         });
       }
 
-      // 4. 一切清理干净后，最后删除用户本体
+      // 6. 一切清理干净后，最后删除用户本体
       return tx.user.delete({
         where: { id },
       });
@@ -236,5 +284,188 @@ export class UserService {
     });
     if (!user) throw new Error('用户不存在');
     return user;
+  }
+
+  /**
+   * 查找当前超级管理员（用于唯一性校验）
+   */
+  async findSuperAdmin() {
+    return this.prisma.user.findFirst({
+      where: { role: 'SUPER_ADMIN' },
+      select: { id: true, email: true, nickname: true, role: true },
+    });
+  }
+
+  /**
+   * （超管）修改任意用户的昵称
+   */
+  async updateNickname(userId: number, nickname: string) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { nickname },
+      select: { id: true, email: true, nickname: true, role: true },
+    });
+  }
+
+  /**
+   * 批量删除用户（超管专用，级联删除关联数据）
+   */
+  async removeBatch(ids: number[]) {
+    if (!ids || ids.length === 0) return { deleted: 0 };
+
+    // 找到这些用户发布的任务
+    const tasks = await this.prisma.task.findMany({
+      where: { publisherId: { in: ids } },
+      select: { id: true },
+    });
+    const taskIds = tasks.map(t => t.id);
+
+    // 找到这些用户的钱包（先查，用于清理账本）
+    const wallets = await this.prisma.wallet.findMany({
+      where: { userId: { in: ids } },
+      select: { id: true },
+    });
+    const walletIds = wallets.map(w => w.id);
+
+    // 找到所有需要删除的订单（用于清理 FK 关联）
+    const ordersToDelete = await this.prisma.order.findMany({
+      where: {
+        OR: [
+          { workerId: { in: ids } },
+          ...(taskIds.length > 0 ? [{ taskId: { in: taskIds } }] : []),
+        ],
+      },
+      select: { id: true },
+    });
+    const orderIds = ordersToDelete.map(o => o.id);
+
+    await this.prisma.$transaction(async (tx) => {
+      // 0. 先删除账本记录（FK 引用 walletId / userId / orderId）
+      await tx.ledgerEntry.deleteMany({
+        where: {
+          OR: [
+            { walletId: { in: walletIds } },
+            { userId: { in: ids } },
+            ...(orderIds.length > 0 ? [{ orderId: { in: orderIds } }] : []),
+          ],
+        },
+      });
+      // 1. 删除关联的流水（Legacy）
+      await tx.transaction.deleteMany({ where: { userId: { in: ids } } });
+      // 2. 删除通知
+      await tx.notification.deleteMany({ where: { userId: { in: ids } } });
+      // 3. 删除钱包
+      if (walletIds.length > 0) {
+        await tx.wallet.deleteMany({ where: { userId: { in: ids } } });
+      }
+      // 3.5 删除订单的下游关联（FK: OrderComment, Dispute）
+      if (orderIds.length > 0) {
+        await tx.orderComment.deleteMany({ where: { orderId: { in: orderIds } } });
+        await tx.dispute.deleteMany({ where: { orderId: { in: orderIds } } });
+      }
+      // 4. 删除相关订单
+      await tx.order.deleteMany({
+        where: {
+          OR: [
+            { workerId: { in: ids } },
+            ...(taskIds.length > 0 ? [{ taskId: { in: taskIds } }] : []),
+          ],
+        },
+      });
+      // 5. 删除子任务
+      if (taskIds.length > 0) {
+        await tx.subTask.deleteMany({ where: { taskId: { in: taskIds } } });
+      }
+      // 6. 删除任务
+      await tx.task.deleteMany({ where: { publisherId: { in: ids } } });
+      // 7. 删除用户
+      await tx.user.deleteMany({ where: { id: { in: ids } } });
+    });
+
+    return { deleted: ids.length };
+  }
+
+  /**
+   * 一键清理所有测试账号（级联删除关联数据）
+   */
+  async deleteTestUsers() {
+    const testUsers = await this.prisma.user.findMany({
+      where: { isTest: true },
+      select: { id: true },
+    });
+    if (testUsers.length === 0) return { deleted: 0 };
+
+    const ids = testUsers.map(u => u.id);
+
+    // 找到这些用户发布的任务
+    const tasks = await this.prisma.task.findMany({
+      where: { publisherId: { in: ids } },
+      select: { id: true },
+    });
+    const taskIds = tasks.map(t => t.id);
+
+    // 找到这些用户的钱包
+    const wallets = await this.prisma.wallet.findMany({
+      where: { userId: { in: ids } },
+      select: { id: true },
+    });
+    const walletIds = wallets.map(w => w.id);
+
+    // 找到所有需要删除的订单（用于清理 FK 关联）
+    const ordersToDelete = await this.prisma.order.findMany({
+      where: {
+        OR: [
+          { workerId: { in: ids } },
+          ...(taskIds.length > 0 ? [{ taskId: { in: taskIds } }] : []),
+        ],
+      },
+      select: { id: true },
+    });
+    const orderIds = ordersToDelete.map(o => o.id);
+
+    await this.prisma.$transaction(async (tx) => {
+      // 0. 先删除账本记录（FK 引用 walletId / userId / orderId）
+      await tx.ledgerEntry.deleteMany({
+        where: {
+          OR: [
+            { walletId: { in: walletIds } },
+            { userId: { in: ids } },
+            ...(orderIds.length > 0 ? [{ orderId: { in: orderIds } }] : []),
+          ],
+        },
+      });
+      // 1. 删除关联的流水（Legacy）
+      await tx.transaction.deleteMany({ where: { userId: { in: ids } } });
+      // 2. 删除通知
+      await tx.notification.deleteMany({ where: { userId: { in: ids } } });
+      // 3. 删除钱包
+      if (walletIds.length > 0) {
+        await tx.wallet.deleteMany({ where: { userId: { in: ids } } });
+      }
+      // 3.5 删除订单的下游关联（FK: OrderComment, Dispute）
+      if (orderIds.length > 0) {
+        await tx.orderComment.deleteMany({ where: { orderId: { in: orderIds } } });
+        await tx.dispute.deleteMany({ where: { orderId: { in: orderIds } } });
+      }
+      // 4. 删除相关订单（测试用户接的 + 测试用户任务下的）
+      await tx.order.deleteMany({
+        where: {
+          OR: [
+            { workerId: { in: ids } },
+            ...(taskIds.length > 0 ? [{ taskId: { in: taskIds } }] : []),
+          ],
+        },
+      });
+      // 5. 删除子任务
+      if (taskIds.length > 0) {
+        await tx.subTask.deleteMany({ where: { taskId: { in: taskIds } } });
+      }
+      // 6. 删除任务
+      await tx.task.deleteMany({ where: { publisherId: { in: ids } } });
+      // 7. 删除用户
+      await tx.user.deleteMany({ where: { id: { in: ids } } });
+    });
+
+    return { deleted: testUsers.length };
   }
 }

@@ -14,5 +14,5 @@
 .nf-card { text-align: center; }
 .nf-icon { font-size: 64px; display: block; margin-bottom: 16px; }
 .nf-card h1 { font-size: 72px; font-weight: 800; color: #6366f1; margin: 0 0 8px; }
-.nf-card p { font-size: 16px; color: #94a3b8; margin: 0 0 24px; }
+.nf-card p { font-size: 16px; color: #cbd5e1; margin: 0 0 24px; }
 </style>
