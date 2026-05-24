@@ -75,7 +75,7 @@ export class DisputeService {
         where: { id: disputeId },
         data: { status: 'RESOLVED', result, handledById: adminId, resolvedAt: new Date() },
       });
-      const newStatus = (result === 'REFUND_BUYER' || result === 'CANCEL_ORDER') ? 'CANCELLED' : 'SUBMITTED';
+      const newStatus = (result === 'REFUND_BUYER' || result === 'CANCEL_ORDER' || result === 'PARTIAL_REFUND') ? 'CANCELLED' : 'COMPLETED';
       await tx.order.update({ where: { id: dispute.orderId }, data: { status: newStatus } });
       await tx.task.update({ where: { id: dispute.order.taskId }, data: { status: newStatus } });
 

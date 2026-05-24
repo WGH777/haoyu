@@ -19,8 +19,7 @@ export type NotificationType =
   | 'PROVIDER_UNRESPONSIVE'
   | 'MATCHING_ALERT'
   | 'NEWBIE_NUDGE'
-  | 'SERVICE_REJECTED'
-  | 'NEWBIE_NUDGE';
+  | 'SERVICE_REJECTED';
 
 @Injectable()
 export class NotificationService {

@@ -44,7 +44,7 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 export function validateFileMagic(filePath: string, originalName: string, fileSize: number): void {
   // 大小检查
   if (fileSize > MAX_FILE_SIZE) {
-    throw new BadRequestException(`文件大小不能超过 10MB，当前: ${(fileSize / 1024 / 1024).toFixed(1)}MB`);
+    throw new BadRequestException(`文件大小不能超过 5MB，当前: ${(fileSize / 1024 / 1024).toFixed(1)}MB`);
   }
 
   if (fileSize === 0) {

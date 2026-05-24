@@ -114,16 +114,16 @@ http://localhost:3000/api/docs
 
 ### Task 状态机
 ```
-PENDING → ASSIGNED → SUBMITTED → COMPLETED
-                     ↓ (管理员)
-                  CANCELLED
+PENDING → ASSIGNED → IN_PROGRESS → SUBMITTED → COMPLETED
+              ↓ (管理员)              ↓ (争议)
+           CANCELLED              DISPUTED
 ```
 
 ### Order 状态机
 ```
-ASSIGNED → SUBMITTED → COMPLETED
-    ↓ (管理员)   ↓ (管理员)
-CANCELLED    → ASSIGNED（驳回）
+ASSIGNED → IN_PROGRESS → SUBMITTED → COMPLETED
+    ↓ (管理员)    ↓ (争议)    ↓ (管理员)
+CANCELLED     DISPUTED    → ASSIGNED（驳回）
 ```
 
 ## 测试
