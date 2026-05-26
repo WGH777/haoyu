@@ -41,12 +41,23 @@ export class NotificationService {
 
   /** 批量创建通知（同一类型发给多人） */
   async createBatch(
-    recipients: { userId: number; title: string; content: string }[],
+    recipients: { userId: number; title: string; content: string; orderId?: number }[],
     type: NotificationType,
   ) {
     if (recipients.length === 0) return [];
+    
+    // 幂等：跳过已存在的同类型通知
+    const uniq: { userId: number; title: string; content: string }[] = [];
+    for (const r of recipients) {
+      const exists = await this.prisma.notification.findFirst({
+        where: { userId: r.userId, type, content: r.content },
+      });
+      if (!exists) uniq.push(r);
+    }
+    if (uniq.length === 0) return [];
+    
     return this.prisma.notification.createMany({
-      data: recipients.map((r) => ({
+      data: uniq.map((r) => ({
         userId: r.userId,
         title: r.title,
         content: r.content,

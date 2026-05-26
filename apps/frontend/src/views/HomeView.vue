@@ -29,6 +29,7 @@
       <div class="sidebar-footer">
         <router-link to="/trust" class="nav-item small">信任中心</router-link>
         <template v-if="isLogin && canSeeUserManage">
+          <router-link to="/user" class="nav-item small">用户管理</router-link>
           <router-link to="/admin" class="nav-item small">管理后台</router-link>
         </template>
       </div>
@@ -361,6 +362,9 @@
     </router-link>
     <router-link to="/wallet" class="mn-item" :class="{ active: $route.path === '/wallet' }">
       <el-icon><Wallet /></el-icon><span>钱包</span>
+    </router-link>
+    <router-link to="/user" class="mn-item" :class="{ active: $route.path === '/user' }" v-if="isLogin && canSeeUserManage">
+      <el-icon><User /></el-icon><span>管理</span>
     </router-link>
   </nav>
 </template>

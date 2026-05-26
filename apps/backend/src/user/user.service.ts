@@ -50,23 +50,31 @@ export class UserService {
    * 根据 ID 查询用户
    */
   async findById(id: number) {
-    return this.prisma.user.findUnique({
-      where: { id },
-      select: {
-        ...safeUserSelect,
-        transactions: {
-          orderBy: { createdAt: 'desc' },
-          take: 20,
-          select: {
-            id: true,
-            amount: true,
-            type: true,
-            status: true,
-            createdAt: true,
+    const [user, wallet] = await Promise.all([
+      this.prisma.user.findUnique({
+        where: { id },
+        select: {
+          ...safeUserSelect,
+          createdAt: true,
+          transactions: {
+            orderBy: { createdAt: 'desc' },
+            take: 20,
+            select: {
+              id: true,
+              amount: true,
+              type: true,
+              status: true,
+              createdAt: true,
+            },
           },
         },
-      },
-    });
+      }),
+      this.prisma.wallet.findFirst({
+        where: { userId: id, currency: 'CNY' },
+        select: { available: true, frozen: true },
+      }),
+    ]);
+    return { ...user, wallet };
   }
 
   /**

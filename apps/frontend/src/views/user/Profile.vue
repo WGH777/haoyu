@@ -55,7 +55,7 @@
 
               <el-descriptions-item label="余额">
                 <span v-if="profile">
-                  {{ (profile.balance || 0) / 100 }} 元
+                  ¥{{ ((profile.wallet?.available ?? 0) / 100).toFixed(2) }}
                 </span>
                 <span v-else>-</span>
               </el-descriptions-item>
@@ -71,8 +71,13 @@
                     :src="profile.avatar"
                     fit="cover"
                     class="avatar-img"
-                  />
-                  <span v-else>-</span>
+                    @error="onAvatarError"
+                  >
+                    <template #error>
+                      <div class="avatar-fallback">{{ profile?.nickname?.[0] || '煜' }}</div>
+                    </template>
+                  </el-image>
+                  <div v-else class="avatar-fallback">{{ profile?.nickname?.[0] || '煜' }}</div>
                 </div>
               </el-descriptions-item>
 
@@ -469,6 +474,20 @@ onMounted(() => {
   height: 44px;
   border-radius: 50%;
   overflow: hidden;
+}
+
+.avatar-fallback {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1, #818cf8);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 600;
+  user-select: none;
 }
 
 @media (max-width: 992px) {

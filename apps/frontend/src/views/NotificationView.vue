@@ -2,16 +2,21 @@
   <div class="notification-page">
     <div class="page-header">
       <h2>通知中心</h2>
-      <el-button v-if="notifications.length" type="primary" link @click="markAll">
-        全部已读
-      </el-button>
+      <div class="header-actions">
+        <el-button v-if="notifications.length && unreadCount" type="primary" size="small" round @click="markAll">
+          全部已读 ({{ unreadCount }})
+        </el-button>
+        <el-button size="small" :type="showAll ? 'default' : 'primary'" round @click="showAll = !showAll">
+          {{ showAll ? '仅未读' : '全部' }}
+        </el-button>
+      </div>
     </div>
 
-    <el-empty v-if="!notifications.length" description="没有新通知，一切安好" />
+    <el-empty v-if="!filteredNotifications.length" description="没有新通知，一切安好" />
 
     <div v-else class="notification-list">
       <div
-        v-for="n in notifications"
+        v-for="n in filteredNotifications"
         :key="n.id"
         class="notification-item"
         :class="{ unread: !n.readAt }"
@@ -32,13 +37,24 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { notificationApi } from '@/api/notification'
 import { ElMessage } from 'element-plus'
 
 const router = useRouter()
 const notifications = ref<any[]>([])
+const showAll = ref(false)
+
+// 显示列表（根据筛选模式）
+const filteredNotifications = computed(() => {
+  if (showAll.value) return notifications.value
+  return notifications.value.filter((n: any) => !n.readAt)
+})
+
+const unreadCount = computed(() =>
+  notifications.value.filter((n: any) => !n.readAt).length
+)
 
 const tagType = (type: string) => {
   const map: Record<string, string> = {
