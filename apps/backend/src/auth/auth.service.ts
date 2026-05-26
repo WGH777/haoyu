@@ -165,8 +165,9 @@ export class AuthService {
     const accessPayload: JwtPayload = { sub: userId, email };
     const refreshPayload: JwtPayload = { sub: userId, email, jti: randomUUID() };
 
-    const accessToken = await this.jwt.signAsync(accessPayload, { expiresIn: '15m' });
-    const refreshToken = await this.jwt.signAsync(refreshPayload, { expiresIn: '7d' });
+    const ttl = process.env.JWT_EXPIRES_IN || '7d';
+    const accessToken = await this.jwt.signAsync(accessPayload, { expiresIn: ttl as any });
+    const refreshToken = await this.jwt.signAsync(refreshPayload, { expiresIn: ttl as any });
 
     return { accessToken, refreshToken };
   }

@@ -25,7 +25,7 @@ if (!JWT_SECRET) {
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({
       secret: JWT_SECRET,
-      signOptions: { expiresIn: '15m' },
+      signOptions: { expiresIn: (process.env.JWT_EXPIRES_IN || '7d') as any },
     }),
   ],
   controllers: [AuthController],
