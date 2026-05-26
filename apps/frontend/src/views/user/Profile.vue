@@ -55,7 +55,7 @@
 
               <el-descriptions-item label="余额">
                 <span v-if="profile">
-                  ¥{{ ((profile.wallet?.available ?? 0) / 100).toFixed(2) }}
+                  {{ formatYumiFromCent(profile?.wallet?.available ?? 0) }}
                 </span>
                 <span v-else>-</span>
               </el-descriptions-item>
@@ -208,6 +208,7 @@
 
 <script setup lang="ts">
 import { onMounted, reactive, ref, computed } from 'vue'
+import { formatYumiFromCent } from '@/utils/money'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
 import http from '@/api/http'

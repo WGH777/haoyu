@@ -42,7 +42,7 @@
           <span class="greeting">👋 {{ isLogin && currentUser ? currentUser.nickname : '可信价值协作平台' }}</span>
         </div>
         <div class="topbar-right">
-          <span v-if="isLogin && currentUser" class="balance-badge">💰 ¥{{ (walletBalance / 100).toFixed(2) }}</span>
+          <span v-if="isLogin && currentUser" class="balance-badge">💰 {{ formatYumiCompactFromCent(walletBalance) }}</span>
           <template v-if="isLogin">
             <el-avatar
               :size="34"
@@ -158,9 +158,9 @@
           />
           <el-select v-model="priceFilter" size="large" class="filter-select">
             <el-option label="全部赏金" value="all" />
-            <el-option label="¥100 以下" value="low" />
-            <el-option label="¥100 – 500" value="mid" />
-            <el-option label="¥500 以上" value="high" />
+            <el-option label="100煜米以下" value="low" />
+            <el-option label="100 – 500煜米" value="mid" />
+            <el-option label="500煜米以上" value="high" />
           </el-select>
           <el-button size="large" @click="fetchData" :icon="Refresh" class="btn-outline">刷新</el-button>
         </div>
@@ -199,7 +199,7 @@
                 </div>
 
                 <div class="premium-card-bottom">
-                  <span class="premium-card-price glow-amber">¥{{ (task.price / 100).toFixed(2) }}</span>
+                  <span class="premium-card-price glow-amber">{{ formatYumiCompactFromCent(task.price) }}</span>
                   <span class="premium-card-meta">
                     <span>{{ task.serviceMode === 'OFFLINE' ? '📍 线下' : task.serviceMode === 'BOTH' ? '🌐 均可' : '💻 线上' }}</span>
                     <span>👁 {{ task.views || 0 }}</span>
@@ -227,7 +227,7 @@
                   <span class="leaderboard-rank" :class="'top-' + (idx + 1)" v-if="idx < 3">{{ idx + 1 }}</span>
                   <span class="leaderboard-rank" v-else>{{ idx + 1 }}</span>
                   <span class="leaderboard-name">{{ truncate(t.title, 16) }}</span>
-                  <span class="leaderboard-value">¥{{ (t.price / 100).toFixed(0) }}</span>
+                  <span class="leaderboard-value">{{ formatYumiCompactFromCent(t.price) }}</span>
                 </div>
               </div>
               <div v-else style="font-size: 12px; color: #64748b; text-align: center; padding: 12px 0;">
@@ -296,16 +296,17 @@
     </main>
 
     <!-- 发布弹窗 -->
-    <el-dialog v-model="showCreateDialog" title="发布新需求" width="560px" destroy-on-close>
-      <el-form :model="createForm" label-position="top">
+    <el-dialog v-model="showCreateDialog" title="发布新需求" width="560px" destroy-on-close class="publish-dialog">
+      <el-form :model="createForm" label-position="top" class="publish-form">
         <el-form-item label="给这次协作起个清楚的名字" required>
           <el-input v-model="createForm.title" placeholder="让人一眼知道你需要什么" maxlength="60" show-word-limit />
         </el-form-item>
         <el-form-item label="说说背景、目标和期望">
           <el-input v-model="createForm.desc" type="textarea" :rows="3" placeholder="越具体，匹配到合适的人越快" />
         </el-form-item>
-        <el-form-item label="你愿意为这个需求支付多少？（¥）">
-          <el-input-number v-model="createForm.price" :min="1" :step="10" :precision="2" style="width:200px" />
+        <el-form-item label="你愿意为这个需求支付多少？（煜米）">
+          <el-input-number v-model="createForm.price" :min="1" :step="1" :precision="0" style="width:200px" />
+          <span style="font-size:12px;color:rgba(203,213,225,0.48);margin-left:8px;">1 煜米 = 1 RMB</span>
         </el-form-item>
         <el-form-item label="配图（可选）">
           <el-upload :http-request="handleUpload" :show-file-list="false" accept="image/*">
@@ -314,7 +315,11 @@
             </el-button>
           </el-upload>
           <p class="upload-hint" style="font-size:12px;color:rgba(203,213,225,0.48);margin-top:6px;">截图、样例图或补充说明都可以</p>
-          <el-image v-if="createForm.image" :src="getFullUrl(createForm.image)" style="width:100px;height:100px;border-radius:8px;margin-top:8px" fit="cover" />
+          <el-image v-if="createForm.image" :src="getFullUrl(createForm.image)" style="width:100px;height:100px;border-radius:8px;margin-top:8px" fit="cover">
+            <template #error>
+              <div style="width:100px;height:100px;border-radius:8px;background:rgba(99,102,241,0.12);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.35);">加载失败</div>
+            </template>
+          </el-image>
         </el-form-item>
         <el-form-item label="分类">
           <el-select v-model="createForm.category" style="width:100%">
@@ -396,7 +401,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, computed, watch } from 'vue'
+import { formatYumiFromCent, formatYumiCompactFromCent, yumiToCent } from '@/utils/money'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Plus, Refresh, Search, CaretBottom, List, Checked, Wallet, User, Document, Bell, Setting, Lock, Files, Connection } from '@element-plus/icons-vue'
@@ -774,6 +780,25 @@ onMounted(() => {
   background: linear-gradient(135deg, rgba(99, 102, 241, 0.86), rgba(139, 92, 246, 0.86)) !important;
   border: 1px solid rgba(129, 140, 248, 0.30) !important;
   box-shadow: 0 8px 20px rgba(99, 102, 241, 0.20) !important;
+}
+
+/* 发布弹窗字体可读性 */
+.publish-dialog .el-dialog__title {
+  color: rgba(255,255,255,0.94) !important;
+  font-weight: 700 !important;
+  font-size: 18px !important;
+}
+.publish-form .el-form-item__label {
+  color: rgba(255,255,255,0.82) !important;
+  font-weight: 600 !important;
+}
+.publish-form .el-input__inner,
+.publish-form .el-textarea__inner {
+  color: rgba(255,255,255,0.92) !important;
+}
+.publish-form .el-input__inner::placeholder,
+.publish-form .el-textarea__inner::placeholder {
+  color: rgba(180,190,210,0.5) !important;
 }
 
 /* ==========================================
