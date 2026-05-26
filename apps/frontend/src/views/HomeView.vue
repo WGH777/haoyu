@@ -342,31 +342,54 @@
     </el-dialog>
   </div>
 
-  <!-- 移动端底部导航 -->
-  <nav class="mobile-nav">
-    <router-link to="/task" class="mn-item" :class="{ active: $route.path === '/task' || $route.path === '/' }">
-      <el-icon><List /></el-icon><span>大厅</span>
-    </router-link>
-    <router-link to="/my-task" class="mn-item" :class="{ active: $route.path === '/my-task' }">
-      <el-icon><Files /></el-icon><span>我的</span>
-    </router-link>
-    <router-link to="/my-orders" class="mn-item" :class="{ active: $route.path === '/my-orders' }">
-      <el-icon><Connection /></el-icon><span>订单</span>
-    </router-link>
-    <div class="mn-item" @click="openCreateDialog" v-if="isLogin">
-      <span class="mn-publish">＋</span><span>发布</span>
+  <!-- 移动端顶部 header -->
+  <header class="mobile-topbar">
+    <button class="mobile-menu-btn" @click="mobileDrawerOpen = true" aria-label="打开菜单">
+      <span></span><span></span><span></span>
+    </button>
+    <span class="mobile-topbar-title">浩煜</span>
+    <span v-if="isLogin && currentUser" class="balance-badge mobile-balance">💰 ¥{{ (walletBalance / 100).toFixed(2) }}</span>
+    <span v-else></span>
+  </header>
+
+  <!-- 移动端遮罩 -->
+  <div v-if="mobileDrawerOpen" class="mobile-drawer-mask" @click="mobileDrawerOpen = false"></div>
+
+  <!-- 移动端抽屉菜单 -->
+  <aside class="mobile-drawer" :class="{ open: mobileDrawerOpen }">
+    <div class="mobile-drawer-header">
+      <div class="brand" @click="goHome()">
+        <span class="brand-logo">煜</span>
+        <span class="brand-name">浩煜</span>
+      </div>
+      <button class="drawer-close" @click="mobileDrawerOpen = false">✕</button>
     </div>
-    <router-link to="/notifications" class="mn-item" :class="{ active: $route.path === '/notifications' }">
-      <el-icon><Bell /></el-icon><span>通知</span>
-      <span v-if="unreadCount" class="mn-badge">{{ unreadCount }}</span>
-    </router-link>
-    <router-link to="/wallet" class="mn-item" :class="{ active: $route.path === '/wallet' }">
-      <el-icon><Wallet /></el-icon><span>钱包</span>
-    </router-link>
-    <router-link to="/user" class="mn-item" :class="{ active: $route.path === '/user' }" v-if="isLogin && canSeeUserManage">
-      <el-icon><User /></el-icon><span>管理</span>
-    </router-link>
-  </nav>
+    <nav class="mobile-drawer-menu">
+      <a v-for="item in mobileMenuItems" :key="item.path"
+         class="mdm-item" :class="{ active: $route.path === item.path }"
+         :href="item.path"
+         @click.prevent="goMenu(item.path)"
+      >
+        <el-icon v-if="item.icon" style="font-size:18px;margin-right:10px;"><component :is="item.icon" /></el-icon>
+        <span>{{ item.label }}</span>
+        <span v-if="item.badge" class="mn-badge mdm-badge">{{ item.badge }}</span>
+      </a>
+    </nav>
+    <div class="mobile-drawer-footer">
+      <template v-if="isLogin && currentUser">
+        <div class="mdm-user">
+          <el-avatar :size="28" :style="{ backgroundColor: '#6366f1', color: '#fff', fontSize: '12px' }">{{ currentUser?.email?.[0]?.toUpperCase() || '?' }}</el-avatar>
+          <span class="mdm-nickname">{{ currentUser?.nickname }}</span>
+        </div>
+        <el-button size="small" plain @click="goMenu('/profile')">个人资料</el-button>
+        <el-button size="small" type="danger" plain @click="logout()">退出登录</el-button>
+      </template>
+      <template v-else>
+        <el-button size="small" @click="goMenu('/login')">登录</el-button>
+        <el-button size="small" type="primary" @click="goMenu('/register')">注册</el-button>
+      </template>
+    </div>
+  </aside>
 </template>
 
 <script setup lang="ts">
@@ -386,6 +409,52 @@ const isLogin = computed(() => !!localStorage.getItem('token'))
 const currentUser = ref<UserProfile | null>(null)
 const walletBalance = ref(0)
 const unreadCount = ref(0)
+const mobileDrawerOpen = ref(false)
+
+const mobileMenuItems = computed(() => {
+  const items: any[] = [
+    { label: '任务大厅', path: '/task', icon: 'List' },
+  ]
+  if (isLogin.value) {
+    items.push(
+      { label: '我的任务', path: '/my-task', icon: 'Files' },
+      { label: '我接的订单', path: '/my-orders', icon: 'Connection' },
+      { label: '通知', path: '/notifications', icon: 'Bell', badge: unreadCount.value },
+      { label: '钱包', path: '/wallet', icon: 'Wallet' },
+    )
+  }
+  items.push({ label: '信任中心', path: '/trust', icon: 'Lock' })
+  if (isLogin.value && canSeeUserManage.value) {
+    items.push({ label: '用户管理', path: '/user', icon: 'User' })
+    items.push({ label: '管理后台', path: '/admin', icon: 'Setting' })
+  }
+  return items
+})
+
+const goMenu = (path: string) => {
+  mobileDrawerOpen.value = false
+  document.body.classList.remove('drawer-open')
+  router.push(path)
+}
+const goHome = () => {
+  mobileDrawerOpen.value = false
+  document.body.classList.remove('drawer-open')
+  router.push('/task')
+}
+const logout = () => {
+  localStorage.removeItem('token')
+  localStorage.removeItem('currentUser')
+  mobileDrawerOpen.value = false
+  document.body.classList.remove('drawer-open')
+  window.location.reload()
+}
+
+// watch drawer open state to toggle body scroll
+import { watch } from 'vue'
+watch(mobileDrawerOpen, (val) => {
+  if (val) document.body.classList.add('drawer-open')
+  else document.body.classList.remove('drawer-open')
+})
 
 const loading = ref(false)
 const tasks = ref<Task[]>([])
@@ -767,20 +836,101 @@ onMounted(() => {
 .dot { color: #334155; }
 
 /* ==========================================
-   移动端底部导航
+   移动端抽屉菜单
    ========================================== */
-.mobile-nav {
+.mobile-topbar {
   display: none;
-  position: fixed; bottom: 0; left: 0; right: 0;
-  height: 64px;
-  padding-bottom: env(safe-area-inset-bottom, 0);
-  background: rgba(10, 14, 23, 0.96);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border-top: 1px solid rgba(148, 163, 184, 0.1);
-  z-index: 200;
-  justify-content: space-around; align-items: center;
 }
+.mobile-menu-btn {
+  width: 40px; height: 40px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06);
+  display: none;
+  align-items: center; justify-content: center;
+  flex-direction: column; gap: 4px;
+  cursor: pointer;
+  padding: 0;
+}
+.mobile-menu-btn span {
+  width: 18px; height: 2px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.88);
+  transition: transform 0.2s ease;
+}
+.mobile-topbar-title {
+  font-size: 16px; font-weight: 600; color: #f1f5f9; letter-spacing: 0.5px;
+}
+.mobile-balance { font-size: 13px; }
+
+.mobile-drawer-mask {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.52);
+  z-index: 998;
+  display: none;
+}
+.mobile-drawer {
+  position: fixed; top: 0; left: 0;
+  width: min(82vw, 320px); height: 100vh;
+  z-index: 999;
+  background: rgba(12, 17, 31, 0.98);
+  border-right: 1px solid rgba(255,255,255,0.08);
+  transform: translateX(-100%);
+  transition: transform 0.22s ease;
+  box-shadow: 24px 0 60px rgba(0,0,0,0.35);
+  padding: 16px;
+  display: none;
+  flex-direction: column;
+  overflow-y: auto;
+}
+.mobile-drawer.open { transform: translateX(0); }
+.mobile-drawer-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.08);
+  margin-bottom: 8px;
+}
+.brand {
+  display: flex; align-items: center; gap: 8px; cursor: pointer;
+}
+.brand-logo {
+  width: 34px; height: 34px; border-radius: 10px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff; font-size: 18px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+.brand-name { font-size: 18px; font-weight: 700; color: #f1f5f9; }
+.drawer-close {
+  width: 32px; height: 32px; border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06);
+  color: #94a3b8; font-size: 16px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+}
+.mobile-drawer-menu {
+  flex: 1; display: flex; flex-direction: column; gap: 2px;
+  padding: 8px 0;
+}
+.mdm-item {
+  display: flex; align-items: center;
+  padding: 10px 12px; border-radius: 10px;
+  color: #cbd5e1; text-decoration: none; font-size: 15px;
+  transition: background 0.15s ease;
+  cursor: pointer; position: relative;
+}
+.mdm-item:hover, .mdm-item:active { background: rgba(99,102,241,0.12); color: #e2e8f0; }
+.mdm-item.active { background: rgba(99,102,241,0.18); color: #a5b4fc; font-weight: 500; }
+.mdm-badge { position: static; margin-left: auto; }
+
+.mobile-drawer-footer {
+  border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.mdm-user { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
+.mdm-nickname { color: #e2e8f0; font-size: 14px; }
+
+/* 原有移动端底部导航样式保留但隐藏 */
+.mobile-nav { display: none !important; }
 .mn-item {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 2px;
@@ -829,7 +979,21 @@ onMounted(() => {
 }
 
 @media (max-width: 768px) {
-  .mobile-nav { display: flex !important; }
+  .mobile-topbar {
+    display: flex !important;
+    position: sticky; top: 0; z-index: 90;
+    height: 52px;
+    align-items: center; justify-content: space-between;
+    padding: 0 14px;
+    background: rgba(8, 13, 26, 0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .mobile-menu-btn { display: flex !important; }
+  .mobile-drawer-mask { display: block !important; }
+  .mobile-drawer { display: flex !important; }
+  body.drawer-open { overflow: hidden; }
   .app-shell {
     max-width: 100vw;
     overflow-x: hidden;
@@ -839,7 +1003,6 @@ onMounted(() => {
     margin-left: 0 !important;
     width: 100% !important;
     max-width: 100vw;
-    padding-bottom: 80px !important;
   }
   .topbar { padding: 0 12px !important; }
   .topbar .greeting { font-size: 13px; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
