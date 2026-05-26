@@ -347,9 +347,17 @@
     <button class="mobile-menu-btn" @click="mobileDrawerOpen = true" aria-label="打开菜单">
       <span></span><span></span><span></span>
     </button>
-    <span class="mobile-topbar-title">浩煜</span>
-    <span v-if="isLogin && currentUser" class="balance-badge mobile-balance">💰 ¥{{ (walletBalance / 100).toFixed(2) }}</span>
-    <span v-else></span>
+    <div class="mobile-topbar-right">
+      <template v-if="isLogin && currentUser">
+        <button class="mobile-user-chip" @click="goMenu('/profile')">
+          <span class="mobile-avatar">{{ currentUser?.nickname?.[0] || currentUser?.email?.[0]?.toUpperCase() || '?' }}</span>
+          <span class="mobile-user-name">{{ currentUser?.nickname }}</span>
+        </button>
+      </template>
+      <template v-else>
+        <el-button size="small" @click="$router.push('/login')">登录</el-button>
+      </template>
+    </div>
   </header>
 
   <!-- 移动端遮罩 -->
@@ -377,12 +385,7 @@
     </nav>
     <div class="mobile-drawer-footer">
       <template v-if="isLogin && currentUser">
-        <div class="mdm-user">
-          <el-avatar :size="28" :style="{ backgroundColor: '#6366f1', color: '#fff', fontSize: '12px' }">{{ currentUser?.email?.[0]?.toUpperCase() || '?' }}</el-avatar>
-          <span class="mdm-nickname">{{ currentUser?.nickname }}</span>
-        </div>
-        <el-button size="small" plain @click="goMenu('/profile')">个人资料</el-button>
-        <el-button size="small" type="danger" plain @click="logout()">退出登录</el-button>
+        <el-button size="small" plain @click="logout()" style="width:100%">退出登录</el-button>
       </template>
       <template v-else>
         <el-button size="small" @click="goMenu('/login')">登录</el-button>
@@ -858,10 +861,29 @@ onMounted(() => {
   background: rgba(255,255,255,0.88);
   transition: transform 0.2s ease;
 }
-.mobile-topbar-title {
-  font-size: 16px; font-weight: 600; color: #f1f5f9; letter-spacing: 0.5px;
+.mobile-topbar-right {
+  display: flex; align-items: center; gap: 8px;
 }
-.mobile-balance { font-size: 13px; }
+.mobile-user-chip {
+  height: 36px;
+  display: inline-flex; align-items: center; gap: 8px;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.9);
+  padding: 0 10px 0 4px;
+  cursor: pointer;
+  font-size: 13px;
+}
+.mobile-avatar {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  font-weight: 700; font-size: 13px;
+}
+.mobile-user-name { max-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .mobile-drawer-mask {
   position: fixed; inset: 0;
@@ -882,6 +904,9 @@ onMounted(() => {
   display: none;
   flex-direction: column;
   overflow-y: auto;
+}
+.mobile-drawer-footer {
+  border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px;
 }
 .mobile-drawer.open { transform: translateX(0); }
 .mobile-drawer-header {
@@ -921,13 +946,6 @@ onMounted(() => {
 .mdm-item:hover, .mdm-item:active { background: rgba(99,102,241,0.12); color: #e2e8f0; }
 .mdm-item.active { background: rgba(99,102,241,0.18); color: #a5b4fc; font-weight: 500; }
 .mdm-badge { position: static; margin-left: auto; }
-
-.mobile-drawer-footer {
-  border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px;
-  display: flex; flex-direction: column; gap: 8px;
-}
-.mdm-user { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
-.mdm-nickname { color: #e2e8f0; font-size: 14px; }
 
 /* 原有移动端底部导航样式保留但隐藏 */
 .mobile-nav { display: none !important; }

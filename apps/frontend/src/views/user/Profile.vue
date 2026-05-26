@@ -1,8 +1,8 @@
 <template>
   <div class="profile-page">
-    <el-row :gutter="20">
+    <el-row :gutter="20" class="profile-layout">
       <!-- 左边：账号信息 + 编辑资料 -->
-      <el-col :span="10">
+      <el-col :xs="24" :sm="10">
         <el-card shadow="hover" v-loading="loadingProfile">
           <template #header>
             <div class="card-header header-with-action">
@@ -141,7 +141,7 @@
       </el-col>
 
       <!-- 右边：修改密码 -->
-      <el-col :span="14">
+      <el-col :xs="24" :sm="14">
         <el-card shadow="hover">
           <template #header>
             <div class="card-header">
@@ -493,6 +493,47 @@ onMounted(() => {
 @media (max-width: 992px) {
   .profile-page {
     padding: 8px;
+  }
+}
+
+/* 移动端全宽修复 */
+@media (max-width: 768px) {
+  .profile-page {
+    padding: 0 !important;
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+  .profile-layout .el-col {
+    margin-bottom: 12px;
+  }
+  .profile-page .el-descriptions {
+    width: 100% !important;
+  }
+  .profile-page .el-descriptions__label {
+    width: 80px !important;
+    min-width: 80px !important;
+    white-space: nowrap !important;
+  }
+  .profile-page .el-form-item__label {
+    display: block !important;
+    width: 100% !important;
+    text-align: left !important;
+    margin-bottom: 6px !important;
+    float: none !important;
+  }
+  .profile-page .el-form-item__content {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+  .profile-page .el-input {
+    width: 100% !important;
+  }
+  .profile-page .el-button--primary {
+    width: 100% !important;
+    margin-bottom: 8px;
+  }
+  .profile-page .el-card {
+    max-width: 100% !important;
   }
 }
 </style>
