@@ -15,4 +15,14 @@ build/
 # 5. 系统和编辑器文件
 .DS_Store
 .vscode/
-*.log*.db
+
+# 6. 日志文件
+*.log
+
+# 7. SQLite / 本地数据库文件
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.sqlite-journal
+*.sqlite3-journal

@@ -99,43 +99,115 @@ export class UserService {
 
   /**
    * 🔥 核心修复：级联删除用户
-   * 在删除用户前，必须先删除他产生的所有关联数据（流水、订单、任务、子任务）
+   * 
+   * 删除顺序必须严格按照外键依赖层次，从最外层子表逐步向内层父表删除：
+   * 
+   * 第1层（直接依赖 User）：
+   *   Transaction(userId), Notification(userId), OrderComment(userId),
+   *   AdminActionLog(adminId), Wallet(userId)
+   * 
+   * 第2层（间接依赖 — 先清子再删父）：
+   *   SubTask → Task, OrderComment → Order, Order → Task/User,
+   *   Dispute → Order/Task/User
+   * 
+   * 第3层（父表）：
+   *   先 Order(workerId/taskId), 再 Task(publisherId), 最后 User
    */
   async remove(id: number) {
-    // 使用事务，确保要么全删，要么都不删
     return this.prisma.$transaction(async (tx) => {
-      // 1. 删除该用户的资金流水 (Transactions)
+      // ─── 层1：直接关联 User 的叶子表 ───
+
+      // 1. 资金流水
       await tx.transaction.deleteMany({ where: { userId: id } });
 
-      // 2. 删除该用户作为【执行者】接的单 (Orders as worker)
-      await tx.order.deleteMany({ where: { workerId: id } });
+      // 2. 通知
+      await tx.notification.deleteMany({ where: { userId: id } });
 
-      // 3. 处理该用户作为【发布者】发布的任务
-      // 先找到他发布的所有任务ID
+      // 3. 订单留言（用户直接留言）
+      await tx.orderComment.deleteMany({ where: { userId: id } });
+
+      // 4. 管理员审计日志
+      await tx.adminActionLog.deleteMany({ where: { adminId: id } });
+
+      // 5. 钱包（如果 Wallet 表存在）
+      try { await tx.wallet.deleteMany({ where: { userId: id } }); } catch {}
+
+      // ─── 层2：收集用户作为发布者的任务 ID ───
       const myTasks = await tx.task.findMany({
         where: { publisherId: id },
-        select: { id: true }
+        select: { id: true },
       });
       const myTaskIds = myTasks.map(t => t.id);
 
-      if (myTaskIds.length > 0) {
-        // 3.1 删除这些任务下的所有子任务
-        await tx.subTask.deleteMany({
-          where: { taskId: { in: myTaskIds } }
-        });
+      // ─── 层3：清理用户作为执行者接的单（先清关联子表）───
+      const workerOrders = await tx.order.findMany({
+        where: { workerId: id },
+        select: { id: true },
+      });
+      const workerOrderIds = workerOrders.map(o => o.id);
 
-        // 3.2 删除这些任务下的所有订单 (哪怕是别人接的，任务都没了，订单也得删)
+      if (workerOrderIds.length > 0) {
+        // 清除订单下的留言和争议
+        await tx.orderComment.deleteMany({
+          where: { orderId: { in: workerOrderIds } },
+        });
+        await tx.dispute.deleteMany({
+          where: { orderId: { in: workerOrderIds } },
+        });
+        // 删除订单
         await tx.order.deleteMany({
-          where: { taskId: { in: myTaskIds } }
-        });
-
-        // 3.3 删除任务本身
-        await tx.task.deleteMany({
-          where: { id: { in: myTaskIds } }
+          where: { id: { in: workerOrderIds } },
         });
       }
 
-      // 4. 一切清理干净后，最后删除用户本体
+      // ─── 层4：清理用户发布的任务（先清子再删父）───
+      if (myTaskIds.length > 0) {
+        // 4.1 查找任务下所有订单
+        const taskOrders = await tx.order.findMany({
+          where: { taskId: { in: myTaskIds } },
+          select: { id: true },
+        });
+        const taskOrderIds = taskOrders.map(o => o.id);
+
+        // 4.2 清除子任务
+        await tx.subTask.deleteMany({
+          where: { taskId: { in: myTaskIds } },
+        });
+
+        // 4.3 清除留言 (order level)
+        if (taskOrderIds.length > 0) {
+          await tx.orderComment.deleteMany({
+            where: { orderId: { in: taskOrderIds } },
+          });
+        }
+
+        // 4.4 清除争议 (task level + order level)
+        await tx.dispute.deleteMany({
+          where: { taskId: { in: myTaskIds } },
+        });
+        if (taskOrderIds.length > 0) {
+          await tx.dispute.deleteMany({
+            where: { orderId: { in: taskOrderIds } },
+          });
+        }
+
+        // 4.5 删除子订单
+        if (taskOrderIds.length > 0) {
+          await tx.order.deleteMany({
+            where: { id: { in: taskOrderIds } },
+          });
+        }
+
+        // 4.6 删除任务
+        await tx.task.deleteMany({
+          where: { id: { in: myTaskIds } },
+        });
+      }
+
+      // ─── 层5：清理用户直接参与的争议（作为 opener）───
+      await tx.dispute.deleteMany({ where: { openerId: id } });
+
+      // ─── 最后：删除用户 ───
       return tx.user.delete({
         where: { id },
       });
