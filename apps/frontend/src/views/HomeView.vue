@@ -981,11 +981,11 @@ onMounted(() => {
 @media (max-width: 768px) {
   .mobile-topbar {
     display: flex !important;
-    position: sticky; top: 0; z-index: 90;
+    position: fixed; top: 0; left: 0; right: 0; z-index: 900;
     height: 52px;
     align-items: center; justify-content: space-between;
     padding: 0 14px;
-    background: rgba(8, 13, 26, 0.92);
+    background: rgba(8, 13, 26, 0.95);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border-bottom: 1px solid rgba(255,255,255,0.08);
@@ -1002,6 +1002,7 @@ onMounted(() => {
   .main-area {
     margin-left: 0 !important;
     width: 100% !important;
+    padding-top: 52px !important;
     max-width: 100vw;
   }
   .topbar { padding: 0 12px !important; }
