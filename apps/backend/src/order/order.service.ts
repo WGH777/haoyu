@@ -2,6 +2,7 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
   ForbiddenException,
   ConflictException,
@@ -23,6 +24,8 @@ type RoleStr = 'USER' | 'ADMIN' | 'SUPER_ADMIN' | string;
 
 @Injectable()
 export class OrderService {
+  private readonly logger = new Logger(OrderService.name);
+
   constructor(
     private prisma: PrismaService,
     private notification: NotificationService,
@@ -138,6 +141,27 @@ export class OrderService {
     if (completedCount <= 50) return 0.02;
     if (completedCount <= 100) return 0.05;
     return 0.1;
+  }
+
+  /**
+   * 检查是否为迁移前的旧异常订单
+   * 返回 null = 正常可结算；返回 string = 跳过原因
+   */
+  private checkLegacyOrder(order: any): string | null {
+    // 1) 订单缺少 amount（旧 Schema 无此字段）
+    if (!order.amount || order.amount <= 0) {
+      return 'amount is missing (legacy order)';
+    }
+    // 2) 订单关联的任务价格异常
+    if (!order.task?.price || order.task.price <= 0) {
+      return 'task price is invalid';
+    }
+    // 3) 订单创建于 Wallet 迁移之前（2026-05-26）
+    const migrationDate = new Date('2026-05-26T00:00:00Z');
+    if (order.createdAt && new Date(order.createdAt) < migrationDate) {
+      return 'order created before wallet migration';
+    }
+    return null;
   }
 
   /**
@@ -614,6 +638,15 @@ export class OrderService {
     }
 
     return this.withTxRetry(async (tx: Prisma.TransactionClient) => {
+      // ═══ 低风险保护：跳过迁移前的旧异常订单 ═══
+      // 旧订单来自 User.balance 架构，无 Wallet 冻结记录
+      // 直接走结算流程会因 frozen < totalCost 失败
+      const legacyIssue = this.checkLegacyOrder(order);
+      if (legacyIssue) {
+        this.logger.warn(`Skip legacy order #${order.id}: ${legacyIssue}`);
+        return order;
+      }
+
       const updated = await tx.order.updateMany({
         where: { id: orderId, status: 'SUBMITTED' },
         data: { status: 'COMPLETED' },
