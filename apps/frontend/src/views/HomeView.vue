@@ -309,17 +309,18 @@
           <span style="font-size:12px;color:rgba(203,213,225,0.48);margin-left:8px;">1 煜米 = 1 RMB</span>
         </el-form-item>
         <el-form-item label="配图（可选）">
-          <el-upload :http-request="handleUpload" :show-file-list="false" accept="image/*">
+          <el-upload :auto-upload="false" :show-file-list="false" accept="image/*" :on-change="handleImageChange">
             <el-button type="primary" :loading="uploadingImg" class="upload-btn">
-              {{ createForm.image ? '已选图片' : '添加参考图' }}
+              {{ previewImageUrl ? '已选图片' : '添加参考图' }}
             </el-button>
           </el-upload>
           <p class="upload-hint" style="font-size:12px;color:rgba(203,213,225,0.48);margin-top:6px;">截图、样例图或补充说明都可以</p>
-          <el-image v-if="createForm.image" :src="getFullUrl(createForm.image)" style="width:100px;height:100px;border-radius:8px;margin-top:8px" fit="cover">
-            <template #error>
-              <div style="width:100px;height:100px;border-radius:8px;background:rgba(99,102,241,0.12);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.35);">加载失败</div>
-            </template>
-          </el-image>
+          <div v-if="previewImageUrl" class="reference-preview">
+            <img :src="previewImageUrl" class="reference-preview-img" alt="参考图预览" />
+          </div>
+          <div v-else class="reference-preview-placeholder">
+            <span style="color:rgba(255,255,255,0.25);font-size:12px;">上传后将在此预览</span>
+          </div>
         </el-form-item>
         <el-form-item label="分类">
           <el-select v-model="createForm.category" style="width:100%">
@@ -491,6 +492,8 @@ const priceFilter = ref('all')
 const showCreateDialog = ref(false)
 const submitting = ref(false)
 const uploadingImg = ref(false)
+const selectedImageFile = ref<File | null>(null)
+const previewImageUrl = ref('')
 
 const createForm = reactive({
   title: '', desc: '', price: 100, category: 'SKILL_SERVICE', serviceMode: 'ONLINE', image: ''
@@ -571,23 +574,43 @@ const submitTask = async () => {
   if (!createForm.title.trim()) { ElMessage.warning('请输入标题'); return }
   submitting.value = true
   try {
+    let imageUrl = createForm.image || ''
+    // 如果有本地选中文件，先上传获取 URL
+    if (selectedImageFile.value) {
+      uploadingImg.value = true
+      try {
+        const fd = new FormData(); fd.append('file', selectedImageFile.value)
+        const res: any = await uploadTaskImage(fd)
+        imageUrl = res?.url || ''
+      } catch { /* 上传失败但不阻止发布 */ }
+      finally { uploadingImg.value = false }
+    }
     await createTask({
       title: createForm.title,
       description: createForm.desc,
       price: Math.round(createForm.price * 100),
       category: createForm.category,
       serviceMode: createForm.serviceMode,
-      image: createForm.image || undefined
+      image: imageUrl || undefined
     } as any)
     ElMessage.success('需求已发布，等待合适的人来接单')
     showCreateDialog.value = false
     createForm.title = ''; createForm.desc = ''; createForm.price = 100; createForm.image = ''
+    previewImageUrl.value = ''; selectedImageFile.value = null
     fetchData()
   } catch (e: any) {
     ElMessage.error(e?.response?.data?.message || '发布失败，请稍后重试')
   } finally {
     submitting.value = false
   }
+}
+
+const handleImageChange = (uploadFile: any) => {
+  const raw = uploadFile?.raw || uploadFile
+  if (!(raw instanceof File)) return
+  selectedImageFile.value = raw
+  if (previewImageUrl.value) URL.revokeObjectURL(previewImageUrl.value)
+  previewImageUrl.value = URL.createObjectURL(raw)
 }
 
 const handleUpload = async (options: any) => {
@@ -801,11 +824,35 @@ onMounted(() => {
   box-shadow: 0 8px 20px rgba(99, 102, 241, 0.20) !important;
 }
 
+/* 图片预览 */
+.reference-preview {
+  width: 120px; height: 120px;
+  border-radius: 10px; overflow: hidden;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  display: flex; align-items: center; justify-content: center;
+  margin-top: 8px;
+}
+.reference-preview-img {
+  width: 100%; height: 100%;
+  object-fit: cover; display: block;
+}
+.reference-preview-placeholder {
+  width: 120px; height: 120px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.04);
+  border: 1px dashed rgba(255,255,255,0.12);
+  display: flex; align-items: center; justify-content: center;
+  margin-top: 8px;
+}
+
 /* 发布弹窗字体可读性 */
 .publish-dialog .el-dialog__title {
-  color: rgba(255,255,255,0.94) !important;
-  font-weight: 700 !important;
-  font-size: 18px !important;
+  color: rgba(255,255,255,0.98) !important;
+  font-weight: 800 !important;
+  font-size: 20px !important;
+  letter-spacing: 0.02em;
+  text-shadow: 0 0 14px rgba(124,92,255,0.18);
 }
 .publish-form .el-form-item__label {
   color: rgba(255,255,255,0.82) !important;
