@@ -1,5 +1,5 @@
 <template>
-  <div class="app-shell">
+  <div class="app-shell" :class="{ 'is-drawer-open': mobileDrawerOpen }">
     <!-- 侧边栏 -->
     <aside class="sidebar">
       <div class="logo" @click="$router.push('/task')">
@@ -378,16 +378,6 @@
       </div>
       <button class="drawer-close" @click="mobileDrawerOpen = false">✕</button>
     </div>
-    <div class="mobile-drawer-user" v-if="isLogin && currentUser">
-      <span class="drawer-avatar">{{ currentUser?.nickname?.[0] || currentUser?.email?.[0]?.toUpperCase() || '?' }}</span>
-      <div class="drawer-user-info">
-        <span class="drawer-nickname">{{ currentUser?.nickname }}</span>
-        <span class="drawer-email">{{ currentUser?.email }}</span>
-      </div>
-    </div>
-    <div v-else class="mobile-drawer-user">
-      <span style="font-size:14px;color:rgba(255,255,255,0.5);">可信价值协作平台</span>
-    </div>
     <nav class="mobile-drawer-menu">
       <a v-for="item in mobileMenuItems" :key="item.path"
          class="mdm-item" :class="{ active: $route.path === item.path }"
@@ -400,6 +390,16 @@
       </a>
     </nav>
     <div class="mobile-drawer-footer">
+      <div class="mobile-drawer-user" v-if="isLogin && currentUser">
+        <span class="drawer-avatar">{{ currentUser?.nickname?.[0] || currentUser?.email?.[0]?.toUpperCase() || '?' }}</span>
+        <div class="drawer-user-info">
+          <span class="drawer-nickname">{{ currentUser?.nickname }}</span>
+          <span class="drawer-email">{{ currentUser?.email }}</span>
+        </div>
+      </div>
+      <div v-else class="mobile-drawer-user">
+        <span style="font-size:14px;color:rgba(255,255,255,0.5);">可信价值协作平台</span>
+      </div>
       <template v-if="isLogin && currentUser">
         <el-button size="small" plain @click="logout()" style="width:100%">退出登录</el-button>
       </template>
@@ -1116,6 +1116,7 @@ onMounted(() => {
     border-bottom: 1px solid rgba(255,255,255,0.08);
   }
   .mobile-menu-btn { display: flex !important; }
+  .app-shell.is-drawer-open .mobile-topbar-right { opacity: 0; pointer-events: none; transition: opacity 0.15s ease; }
   .mobile-drawer-mask { display: block !important; }
   .mobile-drawer { display: flex !important; }
   body.drawer-open { overflow: hidden; }
@@ -1131,7 +1132,7 @@ onMounted(() => {
     max-width: 100vw;
   }
   .topbar { padding: 0 12px !important; }
-  .topbar .greeting { font-size: 13px; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .topbar .greeting { display: none !important; }
   .content { padding: 0 12px 32px !important; max-width: 100vw; }
   .hero { padding: 32px 0 24px !important; }
   .hero h1 { font-size: 24px !important; }
