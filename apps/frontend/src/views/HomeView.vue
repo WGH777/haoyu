@@ -296,7 +296,10 @@
     </main>
 
     <!-- 发布弹窗 -->
-    <el-dialog v-model="showCreateDialog" title="发布新需求" width="560px" destroy-on-close class="publish-dialog">
+    <el-dialog v-model="showCreateDialog" width="560px" destroy-on-close class="publish-dialog">
+      <template #header>
+        <div class="publish-dialog-title">发布新需求</div>
+      </template>
       <el-form :model="createForm" label-position="top" class="publish-form">
         <el-form-item label="给这次协作起个清楚的名字" required>
           <el-input v-model="createForm.title" placeholder="让人一眼知道你需要什么" maxlength="60" show-word-limit />
@@ -846,16 +849,18 @@ onMounted(() => {
   margin-top: 8px;
 }
 
-/* 发布弹窗字体可读性 */
-.publish-dialog .el-dialog__header {
+/* 发布弹窗标题 — 用 #header slot 接管，避免被全局 el-dialog__header 覆盖 */
+.publish-dialog-title {
+  margin: 0;
   color: #ffffff !important;
-}
-.publish-dialog .el-dialog__title {
-  color: #ffffff !important;
-  font-weight: 800 !important;
-  font-size: 20px !important;
+  font-size: 22px;
+  line-height: 1.3;
+  font-weight: 800;
   letter-spacing: 0.02em;
-  text-shadow: 0 0 14px rgba(124,92,255,0.18);
+  text-shadow: 0 0 18px rgba(124, 92, 255, 0.28);
+}
+:deep(.publish-dialog .el-dialog__header) {
+  color: #ffffff !important;
 }
 .publish-form .el-form-item__label {
   color: rgba(255,255,255,0.82) !important;
