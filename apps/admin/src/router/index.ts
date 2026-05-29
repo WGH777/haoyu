@@ -160,8 +160,8 @@ router.beforeEach((to: ToRouteType, _from) => {
     if (to.meta?.roles && !isOneOfArray(to.meta?.roles, userInfo?.roles)) {
       return { path: "/error/403" };
     }
-    // 已登录访问登录页 → 跳后台首页
-    if (to.path === "/login") {
+    // 已登录访问登录页或错误页 → 跳后台首页
+    if (to.path === "/login" || to.path.startsWith("/error/")) {
       return "/admin/dashboard";
     }
     if (externalLink) {

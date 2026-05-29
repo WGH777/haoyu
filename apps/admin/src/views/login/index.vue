@@ -41,7 +41,10 @@ const onLogin = async () => {
       password: loginForm.password
     });
     message("登录成功", { type: "success" });
-    const redirect = (route.query.redirect as string) || "/admin/dashboard";
+    const rawRedirect = route.query.redirect as string;
+    const redirect = (rawRedirect && !rawRedirect.startsWith('/error/') && !rawRedirect.startsWith('http'))
+      ? rawRedirect
+      : '/admin/dashboard';
     router.push(redirect);
   } catch (e: any) {
     const msg = e?.response?.data?.message || e?.message || "登录失败";
