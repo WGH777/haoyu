@@ -26,8 +26,9 @@ export const useUserStore = defineStore("admin-user", {
     /** 登录 — 对接真实后端 */
     async loginByUsername(data: { email: string; password: string }) {
       const res = await loginApi(data);
-      // HaoYu 后端返回: { access_token, user: { id, email, nickname, role, avatar } }
-      const token = res.access_token || res.token || res.data?.access_token;
+      // HaoYu 后端返回: { user, accessToken, refreshToken }
+      const token = res.accessToken || res.access_token || res.token
+        || res.data?.accessToken || res.data?.access_token || res.data?.token;
       const user = res.user || res.data?.user || res.data;
       if (!token) throw new Error("登录失败：未获取到 token");
 
