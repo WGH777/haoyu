@@ -847,8 +847,11 @@ onMounted(() => {
 }
 
 /* 发布弹窗字体可读性 */
+.publish-dialog .el-dialog__header {
+  color: #ffffff !important;
+}
 .publish-dialog .el-dialog__title {
-  color: rgba(255,255,255,0.98) !important;
+  color: #ffffff !important;
   font-weight: 800 !important;
   font-size: 20px !important;
   letter-spacing: 0.02em;
