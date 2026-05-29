@@ -45,7 +45,7 @@ const onLogin = async () => {
     const redirect = (rawRedirect && !rawRedirect.startsWith('/error/') && !rawRedirect.startsWith('http'))
       ? rawRedirect
       : '/admin/dashboard';
-    router.push(redirect);
+    router.replace(redirect);
   } catch (e: any) {
     const msg = e?.response?.data?.message || e?.message || "登录失败";
     message(msg, { type: "error" });

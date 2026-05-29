@@ -16,7 +16,7 @@
 
           <div class="right">
             <el-tag type="danger" effect="plain" size="large" class="price-tag">
-              💰 赏金：¥ {{ ((task.price || 0) / 100).toFixed(2) }}
+              💰 赏金：{{ formatYumi(task.price) }} 煜米
             </el-tag>
           </div>
         </div>
@@ -52,7 +52,20 @@
               :preview-src-list="[getFullUrl(task.image)]"
               preview-teleported
               class="rounded-image"
-            />
+            >
+              <template #error>
+                <div class="image-fallback">
+                  <span class="fallback-icon">🖼️</span>
+                  <span class="fallback-text">参考图暂不可用</span>
+                </div>
+              </template>
+            </el-image>
+          </div>
+          <div v-else class="task-image no-image">
+            <div class="image-fallback">
+              <span class="fallback-icon">📋</span>
+              <span class="fallback-text">暂无参考图</span>
+            </div>
           </div>
 
           <!-- 任务描述 -->
@@ -590,7 +603,9 @@ type ViewMode = 'guest' | 'worker' | 'publisher'
 // ========== 工具函数 ==========
 const getFullUrl = (path?: string | null): string => {
   if (!path) return ''
-  return path.startsWith('http') ? path : `http://localhost:3000${path}`
+  if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('blob:')) return path
+  if (path.startsWith('/')) return path
+  return '/' + path
 }
 
 const formatTime = (iso: string) => {
@@ -612,6 +627,12 @@ const getStatusText = (status: string) => {
     CANCELLED: '已取消',
   }
   return map[status] || status || '-'
+}
+
+const formatYumi = (fen: number | null | undefined): string => {
+  if (fen === null || fen === undefined) return '0'
+  const yumi = fen / 100
+  return Number.isInteger(yumi) ? yumi.toString() : yumi.toFixed(2)
 }
 
 const getStatusTag = (status: string) => {
@@ -1192,6 +1213,32 @@ onMounted(() => {
   border-radius: 10px;
   overflow: hidden;
   margin-bottom: 14px;
+}
+
+.no-image {
+  margin-bottom: 14px;
+}
+
+.image-fallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 160px;
+  background: rgba(30, 41, 59, 0.4);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  border-radius: 10px;
+  color: #64748b;
+}
+
+.fallback-icon {
+  font-size: 36px;
+  margin-bottom: 8px;
+  opacity: 0.6;
+}
+
+.fallback-text {
+  font-size: 13px;
 }
 
 .desc-card {
