@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 
 import { PrismaService } from '../prisma/prisma.service';
@@ -87,6 +87,28 @@ export class UserService {
   }
 
   /**
+   * 修改用户角色（含安全规则）
+   */
+  async changeRole(id: number, newRole: string) {
+    // 规则 2: 禁止降级最后一个 SUPER_ADMIN
+    const targetUser = await this.prisma.user.findUnique({
+      where: { id },
+      select: { role: true },
+    });
+
+    if (targetUser?.role === 'SUPER_ADMIN' && newRole !== 'SUPER_ADMIN') {
+      const superAdminCount = await this.prisma.user.count({
+        where: { role: 'SUPER_ADMIN' },
+      });
+      if (superAdminCount <= 1) {
+        throw new BadRequestException('不能降级最后一个超级管理员');
+      }
+    }
+
+    return this.update(id, { role: newRole } as any);
+  }
+
+  /**
    * 更新用户信息 (通用)
    */
   async update(id: number, updateUserDto: UpdateUserDto) {
@@ -122,6 +144,20 @@ export class UserService {
    *   先 Order(workerId/taskId), 再 Task(publisherId), 最后 User
    */
   async remove(id: number) {
+    // 规则 4: 禁止删除最后一个 SUPER_ADMIN
+    const targetUser = await this.prisma.user.findUnique({
+      where: { id },
+      select: { role: true },
+    });
+    if (targetUser?.role === 'SUPER_ADMIN') {
+      const superAdminCount = await this.prisma.user.count({
+        where: { role: 'SUPER_ADMIN' },
+      });
+      if (superAdminCount <= 1) {
+        throw new BadRequestException('不能删除最后一个超级管理员');
+      }
+    }
+
     return this.prisma.$transaction(async (tx) => {
       // ─── 层1：直接关联 User 的叶子表 ───
 

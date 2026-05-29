@@ -10,6 +10,7 @@ import {
   Req,
   ParseIntPipe,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -155,6 +156,7 @@ export class UserController {
   })
   @ApiOperation({ summary: '（超级管理员）修改用户角色' })
   changeRole(
+    @Req() req: any,
     @Param('id', ParseIntPipe) id: number,
     @Body() body: { role: RoleStr },
   ) {
@@ -163,7 +165,11 @@ export class UserController {
         `role 非法，可选值：${ROLE_ALLOWLIST.join(', ')}`,
       );
     }
-    return this.userService.update(id, { role: body.role } as any);
+    // 规则 1: 禁止修改自己的角色
+    if (req.user.id === id) {
+      throw new ForbiddenException('不能修改自己的角色');
+    }
+    return this.userService.changeRole(id, body.role);
   }
 
   /**
@@ -205,7 +211,11 @@ export class UserController {
   @ApiBearerAuth()
   @ApiParam({ name: 'id', type: Number, description: '用户 ID' })
   @ApiOperation({ summary: '（超级管理员）删除用户' })
-  remove(@Param('id', ParseIntPipe) id: number) {
+  remove(@Req() req: any, @Param('id', ParseIntPipe) id: number) {
+    // 规则 3: 禁止删除自己
+    if (req.user.id === id) {
+      throw new ForbiddenException('不能删除自己');
+    }
     return this.userService.remove(id);
   }
 }

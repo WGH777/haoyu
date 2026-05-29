@@ -33,3 +33,13 @@ export const getAdminTasksApi = (params?: any) => {
 export const getAdminOrdersApi = (params?: any) => {
   return http.request<any>("get", "/api/admin/orders", { params });
 };
+
+/** 用户详情 (含 wallet) */
+export const getUserDetailApi = (id: number) => {
+  return http.request<any>("get", `/api/user/${id}`);
+};
+
+/** 修改用户角色 */
+export const changeUserRoleApi = (id: number, role: string) => {
+  return http.request<any>("patch", `/api/user/${id}/role`, { data: { role } });
+};
