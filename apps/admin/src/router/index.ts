@@ -130,6 +130,18 @@ export function resetRouter() {
 /** 路由白名单 */
 const whiteList = ["/login"];
 
+/** 确保 redirect 路径不是 error 或外部链接，回退到后台首页 */
+function ensureAdminHome(fallbackPath?: string, redirectQuery?: string): string {
+  const path = (redirectQuery || fallbackPath || "").trim();
+  const ADMIN_HOME = "/admin/dashboard";
+
+  if (!path || path === "/" || path === "/login") return ADMIN_HOME;
+  if (path.startsWith("/error") || path.includes("/error/")) return ADMIN_HOME;
+  if (path.startsWith("http://") || path.startsWith("https://")) return ADMIN_HOME;
+
+  return path;
+}
+
 router.beforeEach((to: ToRouteType, _from) => {
   to.meta.loaded = loadedPaths.has(to.path);
 
@@ -195,7 +207,9 @@ router.beforeEach((to: ToRouteType, _from) => {
       return true;
     }
     removeToken();
-    return { path: "/login", query: { redirect: to.fullPath } };
+    // 过滤 redirect 参数，防止跳回 error/404 等页面
+    const redirectPath = ensureAdminHome(to.fullPath, to.query?.redirect as string);
+    return { path: "/login", query: { redirect: redirectPath } };
   }
   return true;
 });
