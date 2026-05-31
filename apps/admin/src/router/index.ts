@@ -156,14 +156,13 @@ router.beforeEach((to: ToRouteType, _from) => {
   const userInfo = storageLocal().getItem<DataInfo<number>>(userKey);
   const externalLink = isUrl(to?.name as string);
   if (!externalLink) {
-    to.matched.some(item => {
-      if (!item.meta.title) return "";
+    // 使用 matched 的第一个有效 title
+    const matched = to.matched.find(item => item.meta?.title);
+    if (matched?.meta?.title) {
       const Title = getConfig().Title;
-      if (Title) {
-        const title = typeof item.meta.title === 'string' ? item.meta.title : '';
-        document.title = `${title} | ${Title}`;
-      }
-    });
+      const titleStr = typeof matched.meta.title === 'string' ? matched.meta.title : '';
+      document.title = `${titleStr} | ${Title}`;
+    }
   }
 
   // 已登录

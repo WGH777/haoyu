@@ -42,10 +42,10 @@ const onLogin = async () => {
     });
     message("登录成功", { type: "success" });
     const rawRedirect = route.query.redirect as string;
-    const redirect = (rawRedirect && !rawRedirect.startsWith('/error/') && !rawRedirect.startsWith('http'))
+    const redirect = (rawRedirect && !rawRedirect.startsWith('/error/') && !rawRedirect.startsWith('http') && rawRedirect !== '/login' && rawRedirect !== '/')
       ? rawRedirect
       : '/admin/dashboard';
-    router.replace(redirect);
+    await router.replace(redirect);
   } catch (e: any) {
     const msg = e?.response?.data?.message || e?.message || "登录失败";
     message(msg, { type: "error" });
