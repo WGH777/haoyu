@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { getUserListApi, getUserDetailApi, changeUserRoleApi, resetUserPasswordApi, createUserApi } from "@/api/user";
+import { getUserListApi, getUserDetailApi, changeUserRoleApi, resetUserPasswordApi, createUserApi, banUserApi, unbanUserApi } from "@/api/user";
 import { getUserInfo } from "@/utils/auth";
 
 defineOptions({ name: "Users" });
@@ -300,6 +300,69 @@ function copyCreatePassword() {
   });
 }
 
+// ── 封号/解封 ──
+const banUnbanVisible = ref(false);
+const banUnbanLoading = ref(false);
+const banUnbanMode = ref<'ban' | 'unban'>('ban');
+const banUnbanReason = ref('');
+
+function openBanUnban(mode: 'ban' | 'unban') {
+  const user = detailUser.value;
+  if (!user) return;
+  if (user.id === currentUser?.id) {
+    ElMessage.warning(mode === 'ban' ? '不能封禁自己的账号' : '不能操作自己的账号');
+    return;
+  }
+  banUnbanMode.value = mode;
+  banUnbanReason.value = '';
+  banUnbanVisible.value = true;
+}
+
+async function confirmBanUnban() {
+  const user = detailUser.value;
+  if (!user) return;
+  const reason = banUnbanReason.value.trim();
+  if (!reason) {
+    ElMessage.warning('请填写操作原因');
+    return;
+  }
+
+  const isBan = banUnbanMode.value === 'ban';
+  const actionLabel = isBan ? '封禁' : '解封';
+
+  try {
+    await ElMessageBox.confirm(
+      `确定要${actionLabel} ${user.nickname || user.email} 吗？` +
+        (user.role === 'SUPER_ADMIN' ? '\n⚠️ 该用户是超级管理员，请慎重操作！' : '') +
+        `\n\n操作原因：${reason}` +
+        (isBan ? '\n\n⚠️ 封号后该用户将无法登录。' : '') +
+        '\n\n⚠️ 此操作将被记录在审计日志中。',
+      `确认${actionLabel}用户`,
+      { confirmButtonText: `确认${actionLabel}`, cancelButtonText: '取消', type: 'warning' }
+    );
+  } catch {
+    return;
+  }
+
+  banUnbanLoading.value = true;
+  try {
+    if (isBan) {
+      await banUserApi(user.id, reason);
+      ElMessage.success('该用户已被封禁');
+    } else {
+      await unbanUserApi(user.id, reason);
+      ElMessage.success('该用户已被解封');
+    }
+    banUnbanVisible.value = false;
+    await openDetail(user);
+    await fetchUsers();
+  } catch (e: any) {
+    ElMessage.error(e?.response?.data?.message || e?.message || '操作失败');
+  } finally {
+    banUnbanLoading.value = false;
+  }
+}
+
 // ── 时间格式化 ──
 function formatTime(iso: string): string {
   if (!iso) return "-";
@@ -400,6 +463,13 @@ onMounted(() => {
           </el-tag>
         </template>
       </el-table-column>
+      <el-table-column label="状态" width="90">
+        <template #default="{ row }">
+          <el-tag :type="row.status === 'ACTIVE' ? 'success' : 'danger'" size="small">
+            {{ row.status === 'ACTIVE' ? '正常' : '封禁' }}
+          </el-tag>
+        </template>
+      </el-table-column>
       <el-table-column prop="createdAt" label="注册时间" width="180">
         <template #default="{ row }">
           {{ formatTime(row.createdAt) }}
@@ -469,6 +539,33 @@ onMounted(() => {
                 @click="openResetPassword"
               >
                 重置密码
+              </el-button>
+            </template>
+          </el-descriptions-item>
+          <el-descriptions-item label="状态">
+            <el-tag :type="detailUser.status === 'ACTIVE' ? 'success' : 'danger'" size="small">
+              {{ detailUser.status === 'ACTIVE' ? '正常' : '已封禁' }}
+            </el-tag>
+            <template v-if="isSuperAdmin && detailUser.id !== currentUser?.id">
+              <el-button
+                v-if="detailUser.status === 'ACTIVE'"
+                type="danger"
+                link
+                size="small"
+                style="margin-left: 8px"
+                @click="openBanUnban('ban')"
+              >
+                封禁账号
+              </el-button>
+              <el-button
+                v-else
+                type="success"
+                link
+                size="small"
+                style="margin-left: 8px"
+                @click="openBanUnban('unban')"
+              >
+                解封账号
               </el-button>
             </template>
           </el-descriptions-item>
@@ -730,6 +827,61 @@ onMounted(() => {
       <template #footer>
         <el-button type="primary" @click="createResultVisible = false; createResultData = null">
           确认并关闭
+        </el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 封号/解封确认弹窗 -->
+    <el-dialog
+      v-model="banUnbanVisible"
+      :title="banUnbanMode === 'ban' ? '封禁用户' : '解封用户'"
+      width="420px"
+      destroy-on-close
+    >
+      <el-alert
+        :title="banUnbanMode === 'ban' ? '⚠️ 危险操作提醒' : '恢复操作提醒'"
+        :type="banUnbanMode === 'ban' ? 'error' : 'warning'"
+        :closable="false"
+        show-icon
+        style="margin-bottom: 16px"
+      >
+        <template #default>
+          <p style="margin: 0; line-height: 1.6">
+            <template v-if="banUnbanMode === 'ban'">
+              将封禁 <strong>{{ detailUser?.nickname || detailUser?.email }}</strong> 的账号，封号后该用户将无法登录。
+            </template>
+            <template v-else>
+              将解封 <strong>{{ detailUser?.nickname || detailUser?.email }}</strong> 的账号，恢复其登录权限。
+            </template>
+          </p>
+        </template>
+      </el-alert>
+      <el-form label-width="80px">
+        <el-form-item label="目标用户">
+          <el-input :model-value="detailUser?.email || ''" disabled />
+        </el-form-item>
+        <el-form-item label="当前状态">
+          <el-tag :type="detailUser?.status === 'ACTIVE' ? 'success' : 'danger'" size="small">
+            {{ detailUser?.status === 'ACTIVE' ? '正常' : '已封禁' }}
+          </el-tag>
+        </el-form-item>
+        <el-form-item label="操作原因" required>
+          <el-input
+            v-model="banUnbanReason"
+            type="textarea"
+            :rows="3"
+            :placeholder="banUnbanMode === 'ban' ? '例如：违规多次，已确认' : '例如：用户已解决争议，恢复账号'"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="banUnbanVisible = false">取消</el-button>
+        <el-button
+          :type="banUnbanMode === 'ban' ? 'danger' : 'success'"
+          :loading="banUnbanLoading"
+          @click="confirmBanUnban"
+        >
+          {{ banUnbanMode === 'ban' ? '确认封禁' : '确认解封' }}
         </el-button>
       </template>
     </el-dialog>

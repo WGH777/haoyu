@@ -65,6 +65,10 @@ export class AuthService {
     const isMatch = await bcrypt.compare(pass, user.password);
     if (!isMatch) throw new UnauthorizedException('账号或密码错误');
 
+    if (user.status === 'SUSPENDED') {
+      throw new UnauthorizedException('账号已被封禁，请联系平台管理员');
+    }
+
     const tokens = await this.generateTokens(user.id, user.email);
     await this.updateRefreshToken(user.id, tokens.refreshToken);
 
@@ -90,6 +94,10 @@ export class AuthService {
     // 2) 查用户 + compare（必须匹配 DB hash）
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new UnauthorizedException('用户不存在');
+
+    if (user.status === 'SUSPENDED') {
+      throw new UnauthorizedException('账号已被封禁，请联系平台管理员');
+    }
 
     if (!user.refreshToken) {
       throw new UnauthorizedException('refreshToken 已失效，请重新登录');

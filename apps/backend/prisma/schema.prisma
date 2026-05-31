@@ -20,6 +20,7 @@ model User {
   nickname       String
   bio            String?
   role           String        @default("USER")
+  status         String        @default("ACTIVE")  // ACTIVE | SUSPENDED
   refreshToken   String?
 
   avatar         String?                       // 用户头像 URL

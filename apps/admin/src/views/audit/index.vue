@@ -30,6 +30,10 @@ const actionOptions = [
   { label: "强制取消任务", value: "FORCE_CANCEL_TASK" },
   { label: "强制结算订单", value: "FORCE_COMPLETE_ORDER" },
   { label: "强制驳回订单", value: "FORCE_REJECT_ORDER" },
+  { label: "重置密码", value: "RESET_PASSWORD" },
+  { label: "创建用户", value: "CREATE_USER" },
+  { label: "封号", value: "BAN_USER" },
+  { label: "解封", value: "UNBAN_USER" },
 ];
 
 const targetTypeOptions = [
@@ -62,6 +66,10 @@ const actionLabelMap: Record<string, string> = {
   FORCE_CANCEL_TASK: "强制取消任务",
   FORCE_COMPLETE_ORDER: "强制结算订单",
   FORCE_REJECT_ORDER: "强制驳回订单",
+  RESET_PASSWORD: "重置密码",
+  CREATE_USER: "创建用户",
+  BAN_USER: "封号",
+  UNBAN_USER: "解封",
 };
 const actionLabel = (action: string) => actionLabelMap[action] || action;
 
@@ -69,6 +77,10 @@ const actionTypeMap: Record<string, string> = {
   FORCE_CANCEL_TASK: "danger",
   FORCE_COMPLETE_ORDER: "success",
   FORCE_REJECT_ORDER: "warning",
+  RESET_PASSWORD: "info",
+  CREATE_USER: "success",
+  BAN_USER: "danger",
+  UNBAN_USER: "success",
 };
 const actionTagType = (action: string) => actionTypeMap[action] || "info";
 

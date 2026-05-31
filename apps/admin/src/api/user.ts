@@ -64,3 +64,13 @@ export const createUserApi = (data: {
 }) => {
   return http.request<any>("post", "/api/admin/users", { data });
 };
+
+/** 封号（仅 SUPER_ADMIN） */
+export const banUserApi = (userId: number, reason: string) => {
+  return http.request<any>("post", `/api/admin/users/${userId}/ban`, { data: { reason } });
+};
+
+/** 解封（仅 SUPER_ADMIN） */
+export const unbanUserApi = (userId: number, reason: string) => {
+  return http.request<any>("post", `/api/admin/users/${userId}/unban`, { data: { reason } });
+};

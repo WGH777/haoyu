@@ -273,6 +273,140 @@ export class AdminController {
   }
 
   // =========================
+  // 危险操作：封号/解封（仅 SUPER_ADMIN）
+  // =========================
+
+  @Post('users/:userId/ban')
+  @Roles('SUPER_ADMIN')
+  @ApiOperation({ summary: '（SUPER_ADMIN）封禁用户账号' })
+  @ApiParam({ name: 'userId', type: Number, description: '目标用户 ID' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['reason'],
+      properties: {
+        reason: { type: 'string', example: '违规多次，已确认' },
+      },
+    },
+  })
+  async banUser(
+    @Param('userId', ParseIntPipe) userId: number,
+    @Body() body: { reason: string },
+    @Req() req: any,
+  ) {
+    const adminId = Number(req?.user?.id);
+
+    if (!body?.reason || !body.reason.trim()) {
+      throw new BadRequestException('封号原因不能为空');
+    }
+
+    if (adminId === userId) {
+      throw new ForbiddenException('不能封禁自己的账号');
+    }
+
+    const target = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true, role: true, status: true },
+    });
+
+    if (!target) throw new NotFoundException('用户不存在');
+
+    if (target.status === 'SUSPENDED') {
+      throw new BadRequestException('该用户已被封禁');
+    }
+
+    // 保护最后一个 ACTIVE SUPER_ADMIN
+    if (target.role === 'SUPER_ADMIN') {
+      const activeSACount = await this.prisma.user.count({
+        where: { role: 'SUPER_ADMIN', status: 'ACTIVE' },
+      });
+      if (activeSACount <= 1) {
+        throw new BadRequestException('不能封禁最后一个活跃超级管理员');
+      }
+    }
+
+    // 执行封号
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { status: 'SUSPENDED', refreshToken: null },
+    });
+
+    // 审计
+    await this.audit.log({
+      adminId,
+      action: 'BAN_USER',
+      targetType: 'USER',
+      targetId: userId,
+      reason: body.reason.trim(),
+      detail: {
+        targetEmail: target.email,
+        targetRole: target.role,
+        fromStatus: 'ACTIVE',
+        toStatus: 'SUSPENDED',
+      },
+    });
+
+    return { message: '用户已被封禁', userId, newStatus: 'SUSPENDED' };
+  }
+
+  @Post('users/:userId/unban')
+  @Roles('SUPER_ADMIN')
+  @ApiOperation({ summary: '（SUPER_ADMIN）解封用户账号' })
+  @ApiParam({ name: 'userId', type: Number, description: '目标用户 ID' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['reason'],
+      properties: {
+        reason: { type: 'string', example: '用户已解决争议，恢复账号' },
+      },
+    },
+  })
+  async unbanUser(
+    @Param('userId', ParseIntPipe) userId: number,
+    @Body() body: { reason: string },
+    @Req() req: any,
+  ) {
+    const adminId = Number(req?.user?.id);
+
+    if (!body?.reason || !body.reason.trim()) {
+      throw new BadRequestException('解封原因不能为空');
+    }
+
+    const target = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true, role: true, status: true },
+    });
+
+    if (!target) throw new NotFoundException('用户不存在');
+
+    if (target.status !== 'SUSPENDED') {
+      throw new BadRequestException('该用户未被封禁');
+    }
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { status: 'ACTIVE', refreshToken: null },
+    });
+
+    await this.audit.log({
+      adminId,
+      action: 'UNBAN_USER',
+      targetType: 'USER',
+      targetId: userId,
+      reason: body.reason.trim(),
+      detail: {
+        targetEmail: target.email,
+        targetRole: target.role,
+        fromStatus: 'SUSPENDED',
+        toStatus: 'ACTIVE',
+      },
+    });
+
+    return { message: '用户已被解封', userId, newStatus: 'ACTIVE' };
+  }
+
+  // =========================
   // 只读：审计日志（仅 SUPER_ADMIN）
   // =========================
 
