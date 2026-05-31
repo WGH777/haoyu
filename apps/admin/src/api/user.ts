@@ -48,3 +48,8 @@ export const changeUserRoleApi = (id: number, role: string) => {
 export const getAuditLogsApi = (params?: any) => {
   return http.request<any>("get", "/api/admin/audit-logs", { params });
 };
+
+/** 重置用户密码（仅 SUPER_ADMIN） */
+export const resetUserPasswordApi = (userId: number, reason: string) => {
+  return http.request<any>("post", `/api/admin/users/${userId}/reset-password`, { data: { reason } });
+};

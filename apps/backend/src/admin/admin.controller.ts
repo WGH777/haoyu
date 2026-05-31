@@ -9,9 +9,11 @@ import {
   Query,
   UseGuards,
   BadRequestException,
+  ForbiddenException,
   NotFoundException,
   Req,
 } from '@nestjs/common';
+import * as bcrypt from 'bcryptjs';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -46,6 +48,117 @@ export class AdminController {
     private readonly prisma: PrismaService,
     private readonly audit: AdminAuditService,
   ) {}
+
+  // =========================
+  // 危险操作：重置密码（仅 SUPER_ADMIN）
+  // =========================
+
+  @Post('users/:userId/reset-password')
+  @Roles('SUPER_ADMIN')
+  @ApiOperation({ summary: '（SUPER_ADMIN）重置用户密码（自动生成强密码，只显示一次）' })
+  @ApiParam({ name: 'userId', type: Number, description: '目标用户 ID' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['reason'],
+      properties: {
+        reason: { type: 'string', example: '用户反馈忘记密码，已核实身份' },
+      },
+    },
+  })
+  async resetUserPassword(
+    @Param('userId', ParseIntPipe) userId: number,
+    @Body() body: { reason: string },
+    @Req() req: any,
+  ) {
+    const adminId = Number(req?.user?.id);
+
+    // ── 业务校验 ──
+    if (!body?.reason || !body.reason.trim()) {
+      throw new BadRequestException('操作原因不能为空');
+    }
+
+    if (adminId === userId) {
+      throw new ForbiddenException('不能重置自己的密码');
+    }
+
+    const targetUser = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true, role: true },
+    });
+
+    if (!targetUser) {
+      throw new NotFoundException('用户不存在');
+    }
+
+    // 保护最后一个 SUPER_ADMIN
+    if (targetUser.role === 'SUPER_ADMIN') {
+      const superAdminCount = await this.prisma.user.count({
+        where: { role: 'SUPER_ADMIN' },
+      });
+      if (superAdminCount <= 1) {
+        throw new BadRequestException('不能操作最后一个超级管理员');
+      }
+    }
+
+    // ── 生成随机强密码 ──
+    const generatedPassword = this.generateSecurePassword();
+    const hashedPassword = await bcrypt.hash(generatedPassword, 10);
+
+    // ── 更新密码 ──
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword },
+    });
+
+    // ── 审计日志 ──
+    await this.audit.log({
+      adminId,
+      action: 'RESET_PASSWORD',
+      targetType: 'USER',
+      targetId: userId,
+      reason: body.reason.trim(),
+      detail: {
+        targetEmail: targetUser.email,
+        targetRole: targetUser.role,
+        passwordLength: generatedPassword.length,
+      },
+    });
+
+    return {
+      message: '密码已重置，请妥善记录下方临时密码（仅显示一次）',
+      temporaryPassword: generatedPassword,
+      targetEmail: targetUser.email,
+    };
+  }
+
+  /** 生成满足安全要求的随机密码 */
+  private generateSecurePassword(): string {
+    const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+    const lower = 'abcdefghjkmnpqrstuvwxyz';
+    const digits = '23456789';
+    const all = upper + lower + digits;
+
+    // 确保至少含有一个大写字母、一个小写字母和一个数字
+    const chars = [
+      upper[Math.floor(Math.random() * upper.length)],
+      lower[Math.floor(Math.random() * lower.length)],
+      digits[Math.floor(Math.random() * digits.length)],
+    ];
+
+    // 填充到 12 个字符
+    for (let i = 3; i < 12; i++) {
+      chars.push(all[Math.floor(Math.random() * all.length)]);
+    }
+
+    // 打乱顺序
+    for (let i = chars.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [chars[i], chars[j]] = [chars[j], chars[i]];
+    }
+
+    return chars.join('');
+  }
 
   // =========================
   // 只读：审计日志（仅 SUPER_ADMIN）

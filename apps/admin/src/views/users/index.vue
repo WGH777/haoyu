@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { getUserListApi, getUserDetailApi, changeUserRoleApi } from "@/api/user";
+import { getUserListApi, getUserDetailApi, changeUserRoleApi, resetUserPasswordApi } from "@/api/user";
 import { getUserInfo } from "@/utils/auth";
 
 defineOptions({ name: "Users" });
@@ -139,6 +139,75 @@ async function confirmRoleChange() {
       e?.response?.data?.message || e?.message || "角色修改失败"
     );
   }
+}
+
+// ── 重置密码 ──
+const resetPwdVisible = ref(false);
+const resetReason = ref("");
+const resetPwdLoading = ref(false);
+const resetResultVisible = ref(false);
+const resetResultData = ref<{ password: string; email: string } | null>(null);
+
+function openResetPassword() {
+  const user = detailUser.value;
+  if (!user) return;
+  if (user.id === currentUser?.id) {
+    ElMessage.warning("不能重置自己的密码");
+    return;
+  }
+  resetReason.value = "";
+  resetPwdVisible.value = true;
+}
+
+async function confirmResetPassword() {
+  const user = detailUser.value;
+  if (!user) return;
+  const reason = resetReason.value.trim();
+  if (!reason) {
+    ElMessage.warning("请填写操作原因");
+    return;
+  }
+
+  try {
+    await ElMessageBox.confirm(
+      `确定要重置 ${user.nickname || user.email} 的密码吗？` +
+        (user.role === "SUPER_ADMIN" ? "\n⚠️ 该用户是超级管理员，请慎重操作！" : "") +
+        "\n\n操作原因：" + reason +
+        "\n\n⚠️ 重置后系统将生成临时强密码，请妥善记录。",
+      "确认重置密码",
+      {
+        confirmButtonText: "确认重置",
+        cancelButtonText: "取消",
+        type: "warning",
+      }
+    );
+  } catch {
+    return;
+  }
+
+  resetPwdLoading.value = true;
+  try {
+    const res: any = await resetUserPasswordApi(user.id, reason);
+    resetPwdVisible.value = false;
+    resetResultData.value = {
+      password: res.temporaryPassword,
+      email: res.targetEmail || user.email,
+    };
+    resetResultVisible.value = true;
+  } catch (e: any) {
+    ElMessage.error(e?.response?.data?.message || e?.message || "重置密码失败");
+  } finally {
+    resetPwdLoading.value = false;
+  }
+}
+
+function copyPassword() {
+  if (!resetResultData.value?.password) return;
+  navigator.clipboard.writeText(resetResultData.value.password).then(() => {
+    ElMessage.success("临时密码已复制到剪贴板");
+  }).catch(() => {
+    ElMessage.warning("复制失败，请手动复制");
+  });
 }
 
 // ── 时间格式化 ──
@@ -295,6 +364,15 @@ onMounted(() => {
               >
                 修改角色
               </el-button>
+              <el-button
+                type="danger"
+                link
+                size="small"
+                style="margin-left: 8px"
+                @click="openResetPassword"
+              >
+                重置密码
+              </el-button>
             </template>
           </el-descriptions-item>
           <el-descriptions-item label="个人简介">
@@ -369,6 +447,90 @@ onMounted(() => {
       <template #footer>
         <el-button @click="roleEditVisible = false">取消</el-button>
         <el-button type="primary" @click="confirmRoleChange">确认修改</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 重置密码弹窗 -->
+    <el-dialog
+      v-model="resetPwdVisible"
+      title="重置用户密码"
+      width="420px"
+      destroy-on-close
+    >
+      <el-alert
+        title="⚠️ 危险操作提醒"
+        type="warning"
+        :closable="false"
+        show-icon
+        style="margin-bottom: 16px"
+      >
+        <template #default>
+          <p style="margin: 0; line-height: 1.6">
+            将重置 <strong>{{ detailUser?.nickname || detailUser?.email }}</strong> 的登录密码。
+            系统会自动生成一个临时强密码，请妥善记录并在重置后立即告知用户修改。
+          </p>
+        </template>
+      </el-alert>
+      <el-form label-width="80px">
+        <el-form-item label="目标用户">
+          <el-input :model-value="detailUser?.email || ''" disabled />
+        </el-form-item>
+        <el-form-item label="操作原因" required>
+          <el-input
+            v-model="resetReason"
+            type="textarea"
+            :rows="3"
+            placeholder="例如：用户反馈忘记密码，已核实身份"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="resetPwdVisible = false">取消</el-button>
+        <el-button type="danger" :loading="resetPwdLoading" @click="confirmResetPassword">
+          确认重置
+        </el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 重置密码结果弹窗（临时密码仅显示一次） -->
+    <el-dialog
+      v-model="resetResultVisible"
+      title="密码重置成功"
+      width="440px"
+      :close-on-click-modal="false"
+      :close-on-press-escape="false"
+      destroy-on-close
+    >
+      <el-alert
+        title="请立即记录下方临时密码"
+        type="success"
+        :closable="false"
+        show-icon
+        style="margin-bottom: 16px"
+      >
+        <template #default>
+          <p style="margin: 0; line-height: 1.6">
+            此密码关闭后将<strong>无法再次查看</strong>，请告知用户尽早登录并修改密码。
+          </p>
+        </template>
+      </el-alert>
+      <el-descriptions :column="1" border size="small">
+        <el-descriptions-item label="用户">
+          {{ resetResultData?.email }}
+        </el-descriptions-item>
+        <el-descriptions-item label="临时密码">
+          <div style="display: flex; align-items: center; gap: 8px">
+            <code style="font-size: 16px; font-weight: 700; background: #f0f2f5; padding: 4px 12px; border-radius: 6px; letter-spacing: 1px;">
+              {{ resetResultData?.password }}
+            </code>
+            <el-button size="small" type="primary" @click="copyPassword">复制</el-button>
+          </div>
+        </el-descriptions-item>
+      </el-descriptions>
+      <template #footer>
+        <el-button type="primary" @click="resetResultVisible = false; resetResultData = null">
+          我已记录，关闭
+        </el-button>
       </template>
     </el-dialog>
   </div>
