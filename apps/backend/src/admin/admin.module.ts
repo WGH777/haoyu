@@ -2,6 +2,7 @@
 import { Module } from '@nestjs/common';
 import { AdminController } from './admin.controller';
 import { PrismaModule } from '../prisma/prisma.module';
+import { WalletModule } from '../wallet/wallet.module';
 import { AdminAuditService } from './admin-audit.service';
 
 /**
@@ -13,6 +14,7 @@ import { AdminAuditService } from './admin-audit.service';
 @Module({
   imports: [
     PrismaModule, // 提供 PrismaService（事务、查询、审计写入）
+    WalletModule, // 提供 WalletService（创建用户钱包）
   ],
   controllers: [
     AdminController,

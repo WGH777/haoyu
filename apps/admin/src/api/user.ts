@@ -53,3 +53,14 @@ export const getAuditLogsApi = (params?: any) => {
 export const resetUserPasswordApi = (userId: number, reason: string) => {
   return http.request<any>("post", `/api/admin/users/${userId}/reset-password`, { data: { reason } });
 };
+
+/** 创建用户（仅 SUPER_ADMIN） */
+export const createUserApi = (data: {
+  email: string;
+  nickname: string;
+  password?: string;
+  role?: string;
+  reason: string;
+}) => {
+  return http.request<any>("post", "/api/admin/users", { data });
+};
