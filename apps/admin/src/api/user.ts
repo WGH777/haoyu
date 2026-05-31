@@ -43,3 +43,8 @@ export const getUserDetailApi = (id: number) => {
 export const changeUserRoleApi = (id: number, role: string) => {
   return http.request<any>("patch", `/api/user/${id}/role`, { data: { role } });
 };
+
+/** 审计日志（仅 SUPER_ADMIN） */
+export const getAuditLogsApi = (params?: any) => {
+  return http.request<any>("get", "/api/admin/audit-logs", { params });
+};

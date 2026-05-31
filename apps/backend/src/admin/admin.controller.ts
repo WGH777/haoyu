@@ -48,6 +48,79 @@ export class AdminController {
   ) {}
 
   // =========================
+  // 只读：审计日志（仅 SUPER_ADMIN）
+  // =========================
+
+  @Get('audit-logs')
+  @Roles('SUPER_ADMIN')
+  @ApiOperation({ summary: '（SUPER_ADMIN）查询管理员操作审计日志（只读）' })
+  @ApiQuery({ name: 'action', required: false, description: '操作类型：FORCE_CANCEL_TASK / FORCE_COMPLETE_ORDER / FORCE_REJECT_ORDER' })
+  @ApiQuery({ name: 'targetType', required: false, description: '目标类型：TASK / ORDER' })
+  @ApiQuery({ name: 'adminId', required: false, description: '管理员ID' })
+  @ApiQuery({ name: 'startDate', required: false, description: '起始时间 ISO 8601' })
+  @ApiQuery({ name: 'endDate', required: false, description: '结束时间 ISO 8601' })
+  @ApiQuery({ name: 'page', required: false, description: '页码，默认 1' })
+  @ApiQuery({ name: 'pageSize', required: false, description: '每页条数，默认 20，最大 100' })
+  async getAuditLogs(
+    @Query('action') action?: string,
+    @Query('targetType') targetType?: string,
+    @Query('adminId') adminId?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+  ) {
+    const where: any = {};
+
+    if (action) where.action = action;
+    if (targetType) where.targetType = targetType;
+
+    if (adminId) {
+      const idNum = parseInt(adminId, 10);
+      if (!Number.isNaN(idNum)) where.adminId = idNum;
+    }
+
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) {
+        const d = new Date(startDate);
+        if (!Number.isNaN(d.getTime())) where.createdAt.gte = d;
+      }
+      if (endDate) {
+        const d = new Date(endDate);
+        if (!Number.isNaN(d.getTime())) where.createdAt.lte = d;
+      }
+    }
+
+    const pageNum = Math.max(1, parseInt(page || '1', 10) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(pageSize || '20', 10) || 20));
+    const skip = (pageNum - 1) * limit;
+
+    const [items, total] = await Promise.all([
+      this.prisma.adminActionLog.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+        include: {
+          admin: {
+            select: { id: true, email: true, nickname: true },
+          },
+        },
+      }),
+      this.prisma.adminActionLog.count({ where }),
+    ]);
+
+    return {
+      items,
+      total,
+      page: pageNum,
+      pageSize: limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  // =========================
   // 只读：任务/流水/订单
   // =========================
 
