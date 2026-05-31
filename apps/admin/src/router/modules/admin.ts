@@ -48,6 +48,16 @@ export default [
         }
       },
       {
+        path: "/admin/orders",
+        name: "Orders",
+        component: () => import("@/views/orders/index.vue"),
+        meta: {
+          title: "订单管理",
+          icon: "ri:file-list-3-line",
+          roles: ["ADMIN", "SUPER_ADMIN"]
+        }
+      },
+      {
         path: "/admin/wallet",
         name: "Wallet",
         component: () => import("@/views/wallet/index.vue"),

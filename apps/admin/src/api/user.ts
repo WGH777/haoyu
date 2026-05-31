@@ -49,6 +49,11 @@ export const forceRejectOrderApi = (orderId: number, reason: string) => {
   return http.request<any>("post", `/api/admin/orders/${orderId}/force-reject`, { data: { reason } });
 };
 
+/** 全站流水（仅 SUPER_ADMIN，只读） */
+export const getAdminTransactionsApi = (params?: any) => {
+  return http.request<any>("get", "/api/admin/transactions", { params });
+};
+
 /** 用户详情 (含 wallet) */
 export const getUserDetailApi = (id: number) => {
   return http.request<any>("get", `/api/user/${id}`);
