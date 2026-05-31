@@ -34,6 +34,21 @@ export const getAdminOrdersApi = (params?: any) => {
   return http.request<any>("get", "/api/admin/orders", { params });
 };
 
+/** 强制取消任务（仅 SUPER_ADMIN） */
+export const forceCancelTaskApi = (taskId: number, reason: string) => {
+  return http.request<any>("post", `/api/admin/tasks/${taskId}/force-cancel`, { data: { reason } });
+};
+
+/** 强制结算订单（仅 SUPER_ADMIN） */
+export const forceCompleteOrderApi = (orderId: number, reason: string) => {
+  return http.request<any>("post", `/api/admin/orders/${orderId}/force-complete`, { data: { reason } });
+};
+
+/** 强制驳回订单（仅 SUPER_ADMIN） */
+export const forceRejectOrderApi = (orderId: number, reason: string) => {
+  return http.request<any>("post", `/api/admin/orders/${orderId}/force-reject`, { data: { reason } });
+};
+
 /** 用户详情 (含 wallet) */
 export const getUserDetailApi = (id: number) => {
   return http.request<any>("get", `/api/user/${id}`);
