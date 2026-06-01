@@ -142,7 +142,7 @@ function ensureAdminHome(fallbackPath?: string, redirectQuery?: string): string 
   return path;
 }
 
-router.beforeEach((to: ToRouteType, _from) => {
+router.beforeEach(async (to: ToRouteType, _from) => {
   to.meta.loaded = loadedPaths.has(to.path);
 
   if (!to.meta.loaded) {
@@ -185,17 +185,17 @@ router.beforeEach((to: ToRouteType, _from) => {
       usePermissionStoreHook().wholeMenus.length === 0 &&
       to.path !== "/login"
     ) {
-      initRouter().then((router: Router) => {
+      try {
+        await initRouter();
         getTopMenu(true);
-        const route = findRouteByPath(
-          to.path,
-          router.options.routes
-        );
+        const route = findRouteByPath(to.path, router.options.routes);
         if (route && route.meta?.title) {
           const { path, name, meta } = route;
           usePermissionStoreHook()?.handleTags?.("push", { path, name, meta });
         }
-      });
+      } catch (e) {
+        console.error("[admin-router] initRouter failed:", e);
+      }
     }
     return true;
   }
