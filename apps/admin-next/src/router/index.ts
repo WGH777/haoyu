@@ -6,6 +6,7 @@ import { buildHierarchyTree } from "@/utils/tree";
 import remainingRouter from "./modules/remaining";
 import { useMultiTagsStoreHook } from "@/store/modules/multiTags";
 import { usePermissionStoreHook } from "@/store/modules/permission";
+import { useAppStoreHook } from "@/store/modules/app";
 import {
   isUrl,
   openLink,
@@ -222,6 +223,11 @@ router.beforeEach((to: ToRouteType, _from, next) => {
 router.afterEach(to => {
   loadedPaths.add(to.path);
   NProgress.done();
+
+  // 移动端点击菜单后自动收起侧栏
+  if (useAppStoreHook().getDevice === "mobile" && useAppStoreHook().getSidebarStatus) {
+    useAppStoreHook().toggleSideBar(false, "resize");
+  }
 });
 
 export default router;
