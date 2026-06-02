@@ -5,7 +5,7 @@
   <footer
     class="layout-footer text-[rgba(0,0,0,0.6)] dark:text-[rgba(220,220,242,0.8)]"
   >
-    浩煜灯火站 · 可信协作平台
+    浩煜 · 万家灯火 | 有你值得
   </footer>
 </template>
 

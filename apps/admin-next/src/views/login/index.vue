@@ -78,13 +78,13 @@ useEventListener(document, "keydown", ({ code }) => {
             <div class="brand-icon">🏮</div>
           </Motion>
           <Motion :delay="100">
-            <h1 class="brand-title">浩煜灯火站</h1>
+            <h1 class="brand-title">浩煜 · 万家灯火</h1>
           </Motion>
           <Motion :delay="150">
             <p class="brand-subtitle">管理后台</p>
           </Motion>
           <Motion :delay="200">
-            <p class="brand-desc">让需求有着落，让协作有回响</p>
+            <p class="brand-desc">有你值得</p>
           </Motion>
         </div>
       </div>
@@ -139,7 +139,7 @@ useEventListener(document, "keydown", ({ code }) => {
         </div>
       </div>
     </div>
-    <div class="login-footer">浩煜灯火站 · 可信协作平台 · admin-next d4b4058</div>
+    <div class="login-footer">浩煜 · 万家灯火 | 有你值得</div>
   </div>
 </template>
 

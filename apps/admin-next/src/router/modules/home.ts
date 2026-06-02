@@ -8,7 +8,7 @@ export default {
   name: "Home",
   component: Layout,
   redirect: "/admin/dashboard",
-  meta: { title: "浩煜灯火站", icon: "ri:home-4-line", rank: 0 },
+  meta: { title: "浩煜 · 万家灯火", icon: "ri:home-4-line", rank: 0 },
   children: [
     {
       path: "/admin/dashboard",

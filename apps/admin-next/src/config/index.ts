@@ -3,7 +3,7 @@ import type { App } from "vue";
 
 let config: Record<string, any> = {
   // 默认品牌配置
-  Title: "浩煜灯火站",
+  Title: "浩煜 · 万家灯火",
   Theme: "default",
   Layout: "vertical",
   Grey: false,

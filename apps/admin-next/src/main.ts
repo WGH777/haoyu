@@ -44,7 +44,7 @@ import { Perms } from "@/components/RePerms";
 app.component("Auth", Auth);
 app.component("Perms", Perms);
 
-// 浩煜灯火站 · 管理后台
+// 浩煜 · 万家灯火 · 管理后台
 // HaoYu Admin Next — powered by vue-pure-admin
 
 // ═══════════════════════════════════════

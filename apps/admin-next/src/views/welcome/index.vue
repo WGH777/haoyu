@@ -50,12 +50,12 @@ function go(path: string) {
     <div class="welcome-section">
       <div class="welcome-icon">🏮</div>
       <div>
-        <h1 class="welcome-title">浩煜灯火站</h1>
-        <p class="welcome-subtitle">管理后台 · 可信协作平台</p>
+        <h1 class="welcome-title">浩煜 · 万家灯火</h1>
+        <p class="welcome-subtitle">万家灯火里，总有事被人放在心上</p>
       </div>
     </div>
 
-    <p class="governance-desc">平台治理中心 — 监控数据、管理用户、追踪日志、处理仲裁，维护可信协作秩序</p>
+    <p class="governance-desc">有人托付，有人回应；一盏一盏，把日子照亮</p>
 
     <!-- 数据卡片 -->
     <div v-if="loading" class="loading-hint">数据加载中...</div>
