@@ -3,14 +3,10 @@
  * 对接 HaoYu NestJS 后端 /api/auth/login
  */
 import { defineStore } from "pinia";
-import {
-  type userType,
-  store,
-  router,
-  resetRouter,
-  routerArrays,
-  storageLocal
-} from "../utils";
+import { type userType, store } from "../utils";
+import { router, resetRouter } from "@/router";
+import { routerArrays } from "@/layout/types";
+import { storageLocal } from "@pureadmin/utils";
 import {
   type UserResult,
   type RefreshTokenResult,

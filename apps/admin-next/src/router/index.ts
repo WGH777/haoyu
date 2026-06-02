@@ -1,12 +1,11 @@
 // import "@/utils/sso";
-import Cookies from "js-cookie";
 import { getConfig } from "@/config";
 import NProgress from "@/utils/progress";
 import { buildHierarchyTree } from "@/utils/tree";
 import remainingRouter from "./modules/remaining";
-import { useMultiTagsStoreHook } from "@/store/modules/multiTags";
-import { usePermissionStoreHook } from "@/store/modules/permission";
-import { useAppStoreHook } from "@/store/modules/app";
+// store imports via dynamic lazy-load to break circular deps
+// useMultiTagsStoreHook / usePermissionStoreHook / useAppStoreHook
+// are imported inside beforeEach guards
 import {
   isUrl,
   openLink,
@@ -120,7 +119,7 @@ const whiteList = ["/login"];
 
 const { VITE_HIDE_HOME } = import.meta.env;
 
-router.beforeEach((to: ToRouteType, _from, next) => {
+router.beforeEach(async (to: ToRouteType, _from, next) => {
   to.meta.loaded = loadedPaths.has(to.path);
 
   if (!to.meta.loaded) {
@@ -160,7 +159,7 @@ router.beforeEach((to: ToRouteType, _from, next) => {
     if (_from?.name) {
       // 登录后首次进入：确保菜单初始化
       if (usePermissionStoreHook().wholeMenus.length === 0 && to.path !== "/login") {
-        initRouter();
+        await initRouter();
       }
       // name为超链接
       if (externalLink) {

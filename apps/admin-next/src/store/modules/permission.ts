@@ -5,7 +5,6 @@ import {
   ascending,
   getKeyList,
   filterTree,
-  constantMenus,
   filterNoPermissionTree,
   formatFlatteningRoutes
 } from "../utils";
@@ -13,8 +12,8 @@ import { useMultiTagsStoreHook } from "./multiTags";
 
 export const usePermissionStore = defineStore("pure-permission", {
   state: () => ({
-    // 静态路由生成的菜单
-    constantMenus,
+    // 静态路由生成的菜单（通过 handleWholeMenus 懒加载，避免循环依赖）
+    constantMenus: [],
     // 整体路由生成的菜单（静态、动态）
     wholeMenus: [],
     // 整体路由（一维数组格式）
@@ -24,7 +23,11 @@ export const usePermissionStore = defineStore("pure-permission", {
   }),
   actions: {
     /** 组装整体路由生成的菜单 */
-    handleWholeMenus(routes: any[]) {
+    async handleWholeMenus(routes: any[]) {
+      if (this.constantMenus.length === 0) {
+        const mod = await import("@/router");
+        this.constantMenus = mod.constantMenus;
+      }
       this.wholeMenus = filterNoPermissionTree(
         filterTree(ascending(this.constantMenus.concat(routes)))
       );

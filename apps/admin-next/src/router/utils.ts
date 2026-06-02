@@ -154,9 +154,9 @@ function addPathMatch() {
 }
 
 /** 处理动态路由（后端返回的路由） */
-function handleAsyncRoutes(routeList) {
+async function handleAsyncRoutes(routeList) {
   if (routeList.length === 0) {
-    usePermissionStoreHook().handleWholeMenus(routeList);
+    await usePermissionStoreHook().handleWholeMenus(routeList);
   } else {
     formatFlatteningRoutes(addAsyncRoutes(routeList)).map(
       (v: RouteRecordRaw) => {
@@ -182,7 +182,7 @@ function handleAsyncRoutes(routeList) {
         }
       }
     );
-    usePermissionStoreHook().handleWholeMenus(routeList);
+    await usePermissionStoreHook().handleWholeMenus(routeList);
   }
   if (!useMultiTagsStoreHook().getMultiTagsCache) {
     useMultiTagsStoreHook().handleTags("equal", [
@@ -196,16 +196,13 @@ function handleAsyncRoutes(routeList) {
 }
 
 /** 初始化路由（HaoYu: 使用静态路由，直接写入现有 constantMenus，立即完成）*/
-function initRouter() {
-  return new Promise<void>(resolve => {
-    // HaoYu admin-next: 不调用后端菜单接口
-    // constantMenus 已在 router/index.ts 中从 modules/*.ts 加载
-    // 直接确保 wholeMenus 不为空（否则侧栏一直转圈）
-    if (usePermissionStoreHook().wholeMenus.length === 0) {
-      usePermissionStoreHook().handleWholeMenus([]);
-    }
-    resolve();
-  });
+async function initRouter() {
+  // HaoYu admin-next: 不调用后端菜单接口
+  // constantMenus 已在 router/index.ts 中从 modules/*.ts 加载
+  // 直接确保 wholeMenus 不为空（否则侧栏一直转圈）
+  if (usePermissionStoreHook().wholeMenus.length === 0) {
+    await usePermissionStoreHook().handleWholeMenus([]);
+  }
 }
 
 /**

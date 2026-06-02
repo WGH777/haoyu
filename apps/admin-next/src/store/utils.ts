@@ -1,6 +1,5 @@
 export { store } from "@/store";
 export { routerArrays } from "@/layout/types";
-export { router, resetRouter, constantMenus } from "@/router";
 export { getConfig, responsiveStorageNameSpace } from "@/config";
 export {
   ascending,
