@@ -18,6 +18,7 @@ import {
   refreshTokenApi
 } from "@/api/user";
 import { useMultiTagsStoreHook } from "./multiTags";
+import { usePermissionStoreHook } from "./permission";
 import { type DataInfo, setToken, removeToken, userKey } from "@/utils/auth";
 
 export const useUserStore = defineStore("pure-user", {
@@ -74,6 +75,11 @@ export const useUserStore = defineStore("pure-user", {
       this.SET_USERNAME(user?.nickname || user?.email);
       this.SET_NICKNAME(user?.nickname || user?.email);
       this.SET_AVATAR(user?.avatar || "");
+
+      // 确保菜单初始化（首次登录时路由守卫 _from.name 有值，不会触发 initRouter）
+      if (usePermissionStoreHook().wholeMenus.length === 0) {
+        usePermissionStoreHook().handleWholeMenus([]);
+      }
     },
 
     logOut() {
