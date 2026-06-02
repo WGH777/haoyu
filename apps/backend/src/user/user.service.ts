@@ -13,6 +13,7 @@ const safeUserSelect = {
   nickname: true,
   bio: true,
   role: true,
+  status: true,
   avatar: true,
   createdAt: true,
   updatedAt: true,
