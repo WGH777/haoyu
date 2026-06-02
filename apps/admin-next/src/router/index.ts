@@ -158,6 +158,10 @@ router.beforeEach((to: ToRouteType, _from, next) => {
       next({ path: "/error/404" });
     }
     if (_from?.name) {
+      // 登录后首次进入：确保菜单初始化
+      if (usePermissionStoreHook().wholeMenus.length === 0 && to.path !== "/login") {
+        initRouter();
+      }
       // name为超链接
       if (externalLink) {
         openLink(to?.name as string);
