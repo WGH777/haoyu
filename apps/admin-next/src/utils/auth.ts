@@ -13,9 +13,9 @@ export interface UserInfo {
   avatar?: string;
 }
 
-export const userKey = "admin-user-info";
-const TOKEN_KEY = "haoyu-admin-token";
-export const multipleTabsKey = "haoyu-multiple-tabs";
+export const userKey = "haoyu-admin-next-user";
+const TOKEN_KEY = "haoyu-admin-next-token";
+export const multipleTabsKey = "haoyu-admin-next-tabs";
 
 /** 获取 token */
 export function getToken(): string | null {
@@ -42,13 +42,18 @@ export function getUserInfo(): any {
   return storageLocal().getItem(userKey);
 }
 
-/** 删除 token */
+/** 删除 token — 同时清理旧 admin key 防止污染 */
 export function removeToken() {
+  // admin-next keys
   localStorage.removeItem(TOKEN_KEY);
+  storageLocal().removeItem(userKey);
+  // 旧 admin keys（防止切换后污染）
+  localStorage.removeItem("haoyu-admin-token");
+  localStorage.removeItem("token");
   localStorage.removeItem("access_token");
   localStorage.removeItem("jwt");
   localStorage.removeItem("currentUser");
-  storageLocal().removeItem(userKey);
+  storageLocal().removeItem("admin-user-info");
 }
 
 /** DataInfo 类型 */

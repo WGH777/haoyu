@@ -11,6 +11,22 @@ export default [
       showLink: false
     }
   },
+  // redirect 中转路由（多标签页刷新用）
+  {
+    path: "/redirect",
+    component: () => import("@/layout/index.vue"),
+    meta: {
+      title: "加载中...",
+      showLink: false
+    },
+    children: [
+      {
+        path: "/redirect/:path(.*)",
+        name: "Redirect",
+        component: () => import("@/layout/redirect.vue")
+      }
+    ]
+  },
   {
     path: "/error/403",
     name: "403",

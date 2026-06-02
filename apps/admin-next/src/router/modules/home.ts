@@ -11,7 +11,6 @@ export default {
   meta: {
     title: "浩煜灯火站",
     icon: "ri:home-4-line",
-    showLink: false,
     rank: 0
   },
   children: [

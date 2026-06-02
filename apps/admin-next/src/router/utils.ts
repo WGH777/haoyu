@@ -195,12 +195,15 @@ function handleAsyncRoutes(routeList) {
   addPathMatch();
 }
 
-/** 初始化路由（HaoYu: 使用静态路由，立即完成，不会转圈）*/
+/** 初始化路由（HaoYu: 使用静态路由，直接写入现有 constantMenus，立即完成）*/
 function initRouter() {
   return new Promise<void>(resolve => {
-    // HaoYu admin-next: 使用本地静态路由，不调用后端菜单接口
-    // 所有菜单定义在 src/router/index.ts 的 modules 目录中
-    handleAsyncRoutes([]);
+    // HaoYu admin-next: 不调用后端菜单接口
+    // constantMenus 已在 router/index.ts 中从 modules/*.ts 加载
+    // 直接确保 wholeMenus 不为空（否则侧栏一直转圈）
+    if (usePermissionStoreHook().wholeMenus.length === 0) {
+      usePermissionStoreHook().handleWholeMenus([]);
+    }
     resolve();
   });
 }
