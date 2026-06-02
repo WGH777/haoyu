@@ -139,7 +139,7 @@ useEventListener(document, "keydown", ({ code }) => {
         </div>
       </div>
     </div>
-    <div class="login-footer">浩煜灯火站 · 可信协作平台</div>
+    <div class="login-footer">浩煜灯火站 · 可信协作平台 · admin-next d4b4058</div>
   </div>
 </template>
 
