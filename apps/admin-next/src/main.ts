@@ -47,6 +47,40 @@ app.component("Perms", Perms);
 // 浩煜灯火站 · 管理后台
 // HaoYu Admin Next — powered by vue-pure-admin
 
+// ═══════════════════════════════════════
+// 版本标识 + 旧缓存清理
+// ═══════════════════════════════════════
+const BUILD_INFO = {
+  version: "admin-next",
+  buildTime: "__BUILD_TIME__",
+  commitHash: "__COMMIT_HASH__"
+};
+console.info("[haoyu-admin-next] build", BUILD_INFO);
+
+// 清理旧 admin 污染的 localStorage key
+(function cleanupLegacyKeys() {
+  const oldKeys = [
+    "token",                // 旧 admin TOKEN_KEY
+    "admin-user-info",      // 旧 admin userKey
+    "haoyu-admin-token",    // admin-next 旧版 TOKEN_KEY
+    "haoyu-multiple-tabs",  // 旧 tabsKey
+    "access_token",         // 兼容 key
+    "jwt"                   // 兼容 key
+  ];
+  oldKeys.forEach(k => {
+    try { localStorage.removeItem(k); } catch {}
+  });
+  // 注意：不删除当前 admin-next 的 key (haoyu-admin-next-*)
+})();
+
+// 禁用 Service Worker（管理后台不需要离线缓存）
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.getRegistrations().then(regs => {
+    regs.forEach(r => { try { r.unregister(); } catch {} });
+  });
+}
+
+// ═══════════════════════════════════════
 getPlatformConfig(app).then(async config => {
   setupStore(app);
   app.use(router);
