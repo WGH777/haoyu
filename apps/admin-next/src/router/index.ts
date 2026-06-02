@@ -224,9 +224,12 @@ router.afterEach(to => {
   loadedPaths.add(to.path);
   NProgress.done();
 
-  // 移动端点击菜单后自动收起侧栏
+  // 移动端点击菜单后自动收起侧栏（带动画过渡）
   if (useAppStoreHook().getDevice === "mobile" && useAppStoreHook().getSidebarStatus) {
-    useAppStoreHook().toggleSideBar(false, "resize");
+    // 延迟一帧，确保页面内容先开始渲染
+    requestAnimationFrame(() => {
+      useAppStoreHook().toggleSideBar(false);
+    });
   }
 });
 
