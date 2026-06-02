@@ -40,11 +40,27 @@ export function useNav() {
     return useUserStoreHook()?.avatar || "";
   });
 
-  /** 昵称（如果昵称为空则显示用户名） */
+  /** 显示名称：昵称 > 用户名 > 邮箱 > 角色中文 */
   const username = computed(() => {
-    return isAllEmpty(useUserStoreHook()?.nickname)
-      ? useUserStoreHook()?.username
-      : useUserStoreHook()?.nickname;
+    const store = useUserStoreHook();
+    const role = (store?.roles || [])[0] || "";
+
+    // 从多个字段取第一个有效值
+    const displayName =
+      store?.nickname ||
+      store?.username ||
+      store?.email ||
+      "";
+
+    // 过滤掉模板残留值
+    const invalidNames = ["荒", "admin", "ping", ""];
+    if (!displayName || invalidNames.includes(displayName)) {
+      if (role === "SUPER_ADMIN") return "超级管理员";
+      if (role === "ADMIN") return "管理员";
+      return "浩煜管理员";
+    }
+
+    return displayName;
   });
 
   const avatarsStyle = computed(() => {
