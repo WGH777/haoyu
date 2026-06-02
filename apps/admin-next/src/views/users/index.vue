@@ -166,9 +166,9 @@ async function submitBan() {
           </div>
           <div v-if="isSuperAdmin" class="card-actions">
             <el-button size="small" type="warning" plain @click="openReset(user)">重置密码</el-button>
-          </div>
             <el-button v-if="user.status === 'ACTIVE'" size="small" type="danger" plain @click="openBan(user, true)">封禁</el-button>
             <el-button v-else-if="user.status === 'SUSPENDED'" size="small" type="success" plain @click="openBan(user, false)">解封</el-button>
+          </div>
         </div>
       </div>
 
