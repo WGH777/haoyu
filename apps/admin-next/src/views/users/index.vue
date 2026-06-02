@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue";
-import { getUserListApi, resetUserPasswordApi, banUserApi, unbanUserApi } from "@/api/user";
+import { getUserListApi, resetUserPasswordApi, banUserApi, unbanUserApi, createUserApi } from "@/api/user";
 import { useUserStoreHook } from "@/store/modules/user";
 import { message } from "@/utils/message";
 import type { FormInstance } from "element-plus";
@@ -97,11 +97,56 @@ async function submitBan() {
     banLoading.value = false;
   }
 }
+
+// ── 创建用户对话框 ──
+const createVisible = ref(false);
+const createFormRef = ref<FormInstance>();
+const createForm = ref({ email: "", nickname: "", password: "", role: "USER", reason: "" });
+const createLoading = ref(false);
+const createResult = ref<{ email: string; password: string; role: string } | null>(null);
+
+function openCreate() {
+  createForm.value = { email: "", nickname: "", password: "", role: "USER", reason: "" };
+  createResult.value = null;
+  createVisible.value = true;
+}
+
+function closeCreate() {
+  createVisible.value = false;
+}
+
+async function submitCreate() {
+  if (!createForm.value.email.trim() || !createForm.value.nickname.trim() || !createForm.value.reason.trim()) return;
+  createLoading.value = true;
+  try {
+    const res = await createUserApi({
+      email: createForm.value.email.trim(),
+      nickname: createForm.value.nickname.trim(),
+      password: createForm.value.password.trim() || undefined,
+      role: createForm.value.role,
+      reason: createForm.value.reason.trim()
+    });
+    createResult.value = {
+      email: res.email || createForm.value.email,
+      password: res.temporaryPassword || "",
+      role: res.role || createForm.value.role
+    };
+    message("用户创建成功", { type: "success" });
+    fetchUsers();
+  } catch (e: any) {
+    message(e?.response?.data?.message || e?.message || "操作失败", { type: "error" });
+  } finally {
+    createLoading.value = false;
+  }
+}
 </script>
 
 <template>
   <div class="users-page">
-    <h1 class="page-title">用户管理</h1>
+    <div class="page-header">
+      <h1 class="page-title">用户管理</h1>
+      <el-button v-if="isSuperAdmin" type="primary" size="default" @click="openCreate">+ 创建用户</el-button>
+    </div>
 
     <div v-if="loading" class="hint-text">加载中...</div>
     <div v-else-if="error" class="hint-text error">{{ error }}</div>
@@ -251,12 +296,97 @@ async function submitBan() {
         </div>
       </template>
     </el-dialog>
+
+    <!-- 创建用户弹窗 -->
+    <el-dialog
+      v-model="createVisible"
+      title="创建用户"
+      width="460px"
+      :close-on-click-modal="false"
+      @close="closeCreate"
+    >
+      <!-- 第一步：表单 -->
+      <template v-if="!createResult">
+        <el-form ref="createFormRef" :model="createForm" label-width="80px">
+          <el-form-item label="邮箱" required>
+            <el-input v-model="createForm.email" placeholder="user@example.com" />
+          </el-form-item>
+          <el-form-item label="昵称" required>
+            <el-input v-model="createForm.nickname" placeholder="用户昵称" />
+          </el-form-item>
+          <el-form-item label="密码">
+            <el-input v-model="createForm.password" placeholder="留空则自动生成 12 位强密码" show-password />
+          </el-form-item>
+          <el-form-item label="角色" required>
+            <el-select v-model="createForm.role" style="width:100%">
+              <el-option label="普通用户 (USER)" value="USER" />
+              <el-option label="管理员 (ADMIN)" value="ADMIN" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="操作原因" required>
+            <el-input
+              v-model="createForm.reason"
+              placeholder="请填写创建原因（必填）"
+              :rows="2"
+              type="textarea"
+            />
+          </el-form-item>
+        </el-form>
+        <div class="flex items-center gap-3 mt-2 justify-end">
+          <el-button
+            type="primary"
+            :loading="createLoading"
+            :disabled="!createForm.email.trim() || !createForm.nickname.trim() || !createForm.reason.trim()"
+            @click="submitCreate"
+          >
+            确认创建
+          </el-button>
+          <el-button @click="closeCreate">取消</el-button>
+        </div>
+      </template>
+
+      <!-- 第二步：显示结果 -->
+      <template v-else>
+        <div class="create-done">
+          <el-alert type="success" :closable="false" show-icon>
+            <template #title>
+              用户创建成功
+            </template>
+          </el-alert>
+
+          <div v-if="createResult.password" class="mt-4">
+            <el-alert type="warning" :closable="false" show-icon>
+              <template #title>
+                请立即记录下方临时密码（仅显示一次，关闭后不可找回）
+              </template>
+            </el-alert>
+            <div class="temp-password-box mt-3">
+              <code class="temp-password">{{ createResult.password }}</code>
+            </div>
+          </div>
+          <div v-else class="mt-4">
+            <el-alert type="info" :closable="false" show-icon>
+              <template #title>
+                已使用自定义密码创建用户
+              </template>
+            </el-alert>
+          </div>
+
+          <div class="mt-3 text-sm" style="color:var(--el-text-color-secondary)">
+            <p>邮箱：{{ createResult.email }}</p>
+            <p>角色：{{ createResult.role === 'ADMIN' ? '管理员' : '普通用户' }}</p>
+          </div>
+          <el-button class="mt-4" type="primary" @click="closeCreate">关闭</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <style scoped>
 .users-page { max-width: 960px; }
-.page-title { font-size: 22px; font-weight: 700; margin: 0 0 16px; }
+.page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
+.page-title { font-size: 22px; font-weight: 700; margin: 0; }
 .hint-text { color: var(--el-text-color-secondary); }
 .hint-text.error { color: var(--el-color-danger); }
 .footer-text { color: var(--el-text-color-placeholder); font-size: 12px; margin-top: 12px; }
@@ -293,6 +423,7 @@ async function submitBan() {
 }
 
 .reset-done { text-align: center; }
+.create-done { text-align: center; }
 .temp-password-box {
   margin: 16px auto;
   padding: 12px;

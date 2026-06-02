@@ -31,3 +31,7 @@ export const unbanUserApi = (userId: number, reason: string) => {
   return http.request<any>("post", `/api/admin/users/${userId}/unban`, { data: { reason } });
 };
 
+export const createUserApi = (data: { email: string; nickname: string; password?: string; role?: string; reason: string }) => {
+  return http.request<any>("post", "/api/admin/users", { data });
+};
+
