@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue";
-import { getUserListApi, resetUserPasswordApi } from "@/api/user";
+import { getUserListApi, resetUserPasswordApi, banUserApi, unbanUserApi } from "@/api/user";
 import { useUserStoreHook } from "@/store/modules/user";
 import { message } from "@/utils/message";
 import type { FormInstance } from "element-plus";
@@ -64,6 +64,39 @@ async function submitReset() {
 function closeReset() {
   resetVisible.value = false;
 }
+
+// ── 封禁/解封对话框 ──
+const banVisible = ref(false);
+const banTarget = ref<any>(null);
+const banForm = ref({ reason: "" });
+const banLoading = ref(false);
+const isBanning = ref(false); // true=封禁, false=解封
+
+function openBan(user: any, doBan: boolean) {
+  banTarget.value = user;
+  banForm.value.reason = "";
+  isBanning.value = doBan;
+  banVisible.value = true;
+}
+
+async function submitBan() {
+  if (!banForm.value.reason.trim()) return;
+  banLoading.value = true;
+  try {
+    if (isBanning.value) {
+      await banUserApi(banTarget.value.id, banForm.value.reason.trim());
+    } else {
+      await unbanUserApi(banTarget.value.id, banForm.value.reason.trim());
+    }
+    message(isBanning.value ? "已封禁" : "已解封", { type: "success" });
+    banVisible.value = false;
+    fetchUsers();
+  } catch (e: any) {
+    message(e?.response?.data?.message || e?.message || "操作失败", { type: "error" });
+  } finally {
+    banLoading.value = false;
+  }
+}
 </script>
 
 <template>
@@ -96,9 +129,11 @@ function closeReset() {
         <el-table-column label="注册" min-width="100">
           <template #default="{ row }">{{ new Date(row.createdAt).toLocaleDateString('zh-CN') }}</template>
         </el-table-column>
-        <el-table-column v-if="isSuperAdmin" label="操作" width="90" fixed="right">
+        <el-table-column v-if="isSuperAdmin" label="操作" width="160" fixed="right">
           <template #default="{ row }">
             <el-button size="small" type="warning" plain @click="openReset(row)">重置密码</el-button>
+            <el-button v-if="row.status === 'ACTIVE'" size="small" type="danger" plain @click="openBan(row, true)">封禁</el-button>
+            <el-button v-else-if="row.status === 'SUSPENDED'" size="small" type="success" plain @click="openBan(row, false)">解封</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -132,6 +167,8 @@ function closeReset() {
           <div v-if="isSuperAdmin" class="card-actions">
             <el-button size="small" type="warning" plain @click="openReset(user)">重置密码</el-button>
           </div>
+            <el-button v-if="user.status === 'ACTIVE'" size="small" type="danger" plain @click="openBan(user, true)">封禁</el-button>
+            <el-button v-else-if="user.status === 'SUSPENDED'" size="small" type="success" plain @click="openBan(user, false)">解封</el-button>
         </div>
       </div>
 
@@ -179,6 +216,37 @@ function closeReset() {
           </div>
           <p class="text-gray-400 text-sm">目标用户：{{ resetResult.email }}</p>
           <el-button class="mt-4" @click="closeReset">关闭</el-button>
+        </div>
+      </template>
+    </el-dialog>
+
+    <!-- 封禁/解封弹窗 -->
+    <el-dialog
+      v-model="banVisible"
+      :title="isBanning ? '封禁用户' : '解封用户'"
+      width="420px"
+      :close-on-click-modal="false"
+    >
+      <template v-if="banTarget">
+        <p class="mb-3">用户：<b>{{ banTarget.email }}</b>（{{ banTarget.nickname }}）</p>
+        <el-form-item label="操作原因" required>
+          <el-input
+            v-model="banForm.reason"
+            :placeholder="isBanning ? '请填写封禁原因' : '请填写解封原因'"
+            :rows="2"
+            type="textarea"
+          />
+        </el-form-item>
+        <div class="flex items-center gap-3 mt-4">
+          <el-button
+            :type="isBanning ? 'danger' : 'success'"
+            :loading="banLoading"
+            :disabled="!banForm.reason.trim()"
+            @click="submitBan"
+          >
+            {{ isBanning ? '确认封禁' : '确认解封' }}
+          </el-button>
+          <el-button @click="banVisible = false">取消</el-button>
         </div>
       </template>
     </el-dialog>

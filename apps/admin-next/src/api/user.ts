@@ -23,3 +23,11 @@ export const getAdminTransactionsApi = (params?: any) => http.request<any>("get"
 export const resetUserPasswordApi = (userId: number, reason: string) => {
   return http.request<any>("post", `/api/admin/users/${userId}/reset-password`, { data: { reason } });
 };
+
+export const banUserApi = (userId: number, reason: string) => {
+  return http.request<any>("post", `/api/admin/users/${userId}/ban`, { data: { reason } });
+};
+export const unbanUserApi = (userId: number, reason: string) => {
+  return http.request<any>("post", `/api/admin/users/${userId}/unban`, { data: { reason } });
+};
+
