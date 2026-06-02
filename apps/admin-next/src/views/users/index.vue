@@ -140,6 +140,7 @@ async function submitBan() {
 
       <!-- 移动端卡片 -->
       <div class="mobile-cards">
+            <!-- ban/unban v2 -->
         <div v-for="user in users" :key="user.id" class="user-card">
           <div class="card-header">
             <span class="card-id">#{{ user.id }}</span>
