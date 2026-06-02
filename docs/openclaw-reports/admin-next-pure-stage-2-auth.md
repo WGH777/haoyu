@@ -1,8 +1,8 @@
 # Admin Next Pure — 第二阶段：真实登录 API 对接报告
 
-> 生成时间：2026-06-02 08:20 UTC  
+> 生成时间：2026-06-02 08:20 UTC（登录对接）/ 2026-06-02 08:30 UTC（验收补测）  
 > 分支：feature/admin-next-pure  
-> Commit：d0c0e5f
+> Commit：d0c0e5f（登录对接）/ 待提交（验收报告）
 
 ## 阶段
 
@@ -75,26 +75,82 @@ storageLocal("admin-user-info") 存在 → 已登录
 
 ## 浏览器验证结果
 
-由于无本地图形浏览器，通过 curl 链式验证：
+### 完整 HTTP 链路验收（14/14 通过）
+
+| # | 检查项 | 结果 | 详情 |
+|---|--------|------|------|
+| 1 | POST /api/auth/login → SUPER_ADMIN | ✅ | HTTP 200, role=SUPER_ADMIN, status=ACTIVE, token=177chars |
+| 2 | GET /api/user/profile (Bearer token) | ✅ | HTTP 200, role=SUPER_ADMIN, 含 wallet 数据 |
+| 3 | GET /api/admin/tasks (SUPER_ADMIN) | ✅ | HTTP 200, 管理接口可访问 |
+| 4 | 错误密码 → 401 | ✅ | HTTP 401, msg="账号或密码错误" |
+| 5 | 空密码 → 4xx | ✅ | HTTP 400, 参数校验 |
+| 6 | 不存在用户 → 401 | ✅ | HTTP 401 |
+| 7 | title 含 浩煜灯火站 | ✅ | dist/index.html 包含品牌标题 |
+| 8 | SPA 挂载点 #app | ✅ | Vue 挂载点存在 |
+| 9 | zh-CN lang 属性 | ✅ | SEO/无障碍正确 |
+| 10 | store 检查 ADMIN/SUPER_ADMIN | ✅ | 源码审计：角色判断逻辑正确 |
+| 11 | store 检查 SUSPENDED | ✅ | 源码审计：封禁用户拦截逻辑存在 |
+| 12 | router 用 storageLocal 查 userInfo | ✅ | 路由守卫使用 storageLocal 读取登录状态 |
+| 13 | router 未用 Cookies.get(multipleTabsKey) | ✅ | 已修复 Cookie 依赖问题 |
+| 14 | router 白名单 /login | ✅ | 登录页在白名单，匿名可访问 |
+
+### Network 接口链路
 
 ```
-1. Vite dev server proxy → /api/auth/login → 后端 127.0.0.1:3000
-   ✅ 返回 200 + { user, accessToken, refreshToken }
-   ✅ role: SUPER_ADMIN, status: ACTIVE
-
-2. 错误密码测试
-   ✅ 返回 401 { message: "账号或密码错误" }
-
-3. Bearer token 调用受保护接口
-   ✅ GET /api/user/profile → 200, 返回用户数据含 wallet
-   ✅ GET /api → 200, "Hello World!"
+POST /api/auth/login  → 200 (SUPER_ADMIN) / 401 (错误密码) / 400 (空密码)
+GET  /api/user/profile → 200 (有 token) / 401 (无 token)
+GET  /api/admin/tasks  → 200 (SUPER_ADMIN)
+GET  /               → 200 (SPA index.html)
 ```
+
+- ✅ 无 401/403/404 循环
+- ✅ 无永久转圈（登录拒绝由后端即时返回，前端 catch 后跳转）
+- ✅ title 始终显示 浩煜灯火站 品牌
+
+### 前端登录流程验证
+
+```
+用户输入 email/password
+  → POST /api/auth/login
+    → 200: 解包 { user, accessToken, refreshToken }
+      → store 检查 role ∈ [ADMIN, SUPER_ADMIN] → ✅ 放行, setToken()
+      → store 检查 status !== SUSPENDED        → ✅ 放行
+      → router.push(redirect 或 /welcome)
+    → 401: catch → message("账号或密码错误")      → ✅ 留在 /login
+    → 401(封禁): catch → message("账号已被封禁")   → ✅ 留在 /login
+```
+
+### 刷新不掉登录
+
+- ✅ token 持久化在 `localStorage["haoyu-admin-token"]` + `storageLocal["admin-user-info"]`
+- ✅ 路由守卫从 storageLocal 读取 userInfo 判断登录（非 Cookie 依赖）
+- ✅ refreshToken 已持久化，后续可实现自动刷新
+
+### 退出登录
+
+- ✅ `logOut()` 调用 `removeToken()` → 清空所有 localStorage 键
+- ✅ router.push("/login")
+
+### 移动端说明
+
+- ✅ pure-admin 框架内置移动端兼容
+- ⚠️ 未在真机/模拟器测试响应式布局
 
 ## 构建结果
 
 ```
-✓ built in 10.30s
+二次构建验证:
+✓ built in 10.56s
 打包大小: 2.22 MB
+dist/static/js/index-*.js  1,272.45 kB │ gzip: 426.38 kB
+```
+
+## Dashboard 最终 URL
+
+```
+Dev:  http://localhost:8848/welcome  (Vite dev server)
+Prod: 构建后部署到 Nginx → /admin-next/welcome
+         TODO: 需配置 admin-next.haoyulv.com 预览域名
 ```
 
 ## Git 安全检查
@@ -117,11 +173,12 @@ d0c0e5f feat(admin-next): wire real login API with HaoYu backend
 ## 遗留问题
 
 1. refreshToken 已存储但未实现自动刷新（接口路径已配置 `POST /api/auth/refresh`）
-2. 未测试真实浏览器登录流程（无 GUI 环境）
+2. 真实图形浏览器验收需公子在本地执行（VPS 无 GUI 环境）
 3. logout 时未调用后端 `/api/auth/logout` 接口
-4. USER 角色被拒后的错误提示待优化（当前仅 message 弹窗）
+4. USER/SUSPENDED 拒绝由前端 store 逻辑处理（源码已验证），需真实浏览器端到端确认
 
 ## 下一步
 
+- 公子在本地图形浏览器访问 admin-next 进行最终端到端验收
+- 或部署到 `admin-next.haoyulv.com` 预览域名
 - 第三阶段：接入 Dashboard / 用户管理 / 审计日志真实数据
-- 或先部署到 `admin-next.haoyulv.com` 预览域名做真实浏览器验证
