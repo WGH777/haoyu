@@ -65,7 +65,9 @@ export const useUserStore = defineStore("pure-user", {
         nickname: user?.nickname || user?.email,
         role,
         roles,
-        avatar: user?.avatar
+        avatar: user?.avatar,
+        accessToken: token,
+        refreshToken: res?.refreshToken
       });
 
       this.SET_ROLES(roles);
