@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
-import { getUserListApi } from "@/api/user";
+import { ref, onMounted, computed } from "vue";
+import { getUserListApi, resetUserPasswordApi } from "@/api/user";
+import { useUserStoreHook } from "@/store/modules/user";
+import { message } from "@/utils/message";
+import type { FormInstance } from "element-plus";
 
 defineOptions({ name: "Users" });
 
@@ -8,7 +11,13 @@ const loading = ref(true);
 const users = ref<any[]>([]);
 const error = ref("");
 
-onMounted(async () => {
+const currentUser = computed(() => useUserStoreHook());
+const isSuperAdmin = computed(() => currentUser.value.roles?.includes("SUPER_ADMIN"));
+
+onMounted(fetchUsers);
+
+async function fetchUsers() {
+  loading.value = true;
   try {
     const res = await getUserListApi();
     users.value = Array.isArray(res) ? res : res?.items || res?.data || [];
@@ -17,7 +26,44 @@ onMounted(async () => {
   } finally {
     loading.value = false;
   }
-});
+}
+
+// ── 重置密码对话框 ──
+const resetVisible = ref(false);
+const resetTarget = ref<any>(null);
+const resetFormRef = ref<FormInstance>();
+const resetForm = ref({ reason: "" });
+const resetLoading = ref(false);
+const resetResult = ref({ password: "", email: "" });
+
+function openReset(user: any) {
+  resetTarget.value = user;
+  resetForm.value.reason = "";
+  resetResult.value = { password: "", email: "" };
+  resetVisible.value = true;
+}
+
+async function submitReset() {
+  if (!resetForm.value.reason.trim()) return;
+  resetLoading.value = true;
+  try {
+    const res = await resetUserPasswordApi(resetTarget.value.id, resetForm.value.reason.trim());
+    resetResult.value = {
+      password: res.temporaryPassword || "",
+      email: res.targetEmail || resetTarget.value.email
+    };
+    message("密码已重置", { type: "success" });
+    // 注意：temporaryPassword 不写入 localStorage / console / 报告
+  } catch (e: any) {
+    message(e?.response?.data?.message || e?.message || "操作失败", { type: "error" });
+  } finally {
+    resetLoading.value = false;
+  }
+}
+
+function closeReset() {
+  resetVisible.value = false;
+}
 </script>
 
 <template>
@@ -31,24 +77,29 @@ onMounted(async () => {
       <!-- 桌面端表格 -->
       <el-table :data="users" stripe border style="width:100%" class="desktop-table">
         <el-table-column prop="id" label="ID" width="50" />
-        <el-table-column prop="email" label="邮箱" min-width="180" />
-        <el-table-column prop="nickname" label="昵称" min-width="100" />
-        <el-table-column label="角色" width="110">
+        <el-table-column prop="email" label="邮箱" min-width="160" />
+        <el-table-column prop="nickname" label="昵称" min-width="90" />
+        <el-table-column label="角色" width="80">
           <template #default="{ row }">
             <el-tag :type="row.role === 'SUPER_ADMIN' ? 'danger' : row.role === 'ADMIN' ? 'warning' : 'info'" size="small">
               {{ row.role === 'SUPER_ADMIN' ? '超管' : row.role === 'ADMIN' ? '管理员' : row.role }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="状态" width="80">
+        <el-table-column label="状态" width="70">
           <template #default="{ row }">
             <el-tag :type="row.status === 'ACTIVE' ? 'success' : 'danger'" size="small">
               {{ row.status === 'ACTIVE' ? '正常' : '封禁' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="注册时间" min-width="110">
+        <el-table-column label="注册" min-width="100">
           <template #default="{ row }">{{ new Date(row.createdAt).toLocaleDateString('zh-CN') }}</template>
+        </el-table-column>
+        <el-table-column v-if="isSuperAdmin" label="操作" width="90" fixed="right">
+          <template #default="{ row }">
+            <el-button size="small" type="warning" plain @click="openReset(row)">重置密码</el-button>
+          </template>
         </el-table-column>
       </el-table>
 
@@ -78,24 +129,69 @@ onMounted(async () => {
               <span class="card-value">{{ new Date(user.createdAt).toLocaleDateString('zh-CN') }}</span>
             </div>
           </div>
+          <div v-if="isSuperAdmin" class="card-actions">
+            <el-button size="small" type="warning" plain @click="openReset(user)">重置密码</el-button>
+          </div>
         </div>
       </div>
 
       <p class="footer-text">{{ users.length }} 条记录</p>
     </div>
+
+    <!-- 重置密码弹窗 -->
+    <el-dialog
+      v-model="resetVisible"
+      title="***"
+      width="420px"
+      :close-on-click-modal="false"
+      @close="closeReset"
+    >
+      <template v-if="resetTarget">
+        <p class="mb-3">用户：<b>{{ resetTarget.email }}</b>（{{ resetTarget.nickname }}）</p>
+
+        <div v-if="!resetResult.password">
+          <el-form ref="resetFormRef" :model="resetForm">
+            <el-form-item label="操作原因" required>
+              <el-input
+                v-model="resetForm.reason"
+                placeholder="请填写重置原因（必填）"
+                :rows="2"
+                type="textarea"
+              />
+            </el-form-item>
+          </el-form>
+          <div class="flex items-center gap-3 mt-4">
+            <el-button type="danger" :loading="resetLoading" :disabled="!resetForm.reason.trim()" @click="submitReset">
+              确认重置
+            </el-button>
+            <el-button @click="closeReset">取消</el-button>
+          </div>
+        </div>
+
+        <div v-else class="reset-done">
+          <el-alert type="warning" :closable="false" show-icon>
+            <template #title>
+              请立即记录下方临时密码（仅显示一次）
+            </template>
+          </el-alert>
+          <div class="temp-password-box">
+            <code class="temp-password">{{ resetResult.password }}</code>
+          </div>
+          <p class="text-gray-400 text-sm">目标用户：{{ resetResult.email }}</p>
+          <el-button class="mt-4" @click="closeReset">关闭</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <style scoped>
-.users-page {
-  max-width: 960px;
-}
+.users-page { max-width: 960px; }
 .page-title { font-size: 22px; font-weight: 700; margin: 0 0 16px; }
 .hint-text { color: var(--el-text-color-secondary); }
 .hint-text.error { color: var(--el-color-danger); }
 .footer-text { color: var(--el-text-color-placeholder); font-size: 12px; margin-top: 12px; }
 
-/* 桌面端表格可见，移动端隐藏 */
 .desktop-table { display: table; }
 .mobile-cards { display: none; }
 
@@ -106,23 +202,35 @@ onMounted(async () => {
   .user-card {
     border: 1px solid rgba(255,255,255,0.06);
     border-radius: 10px;
-    padding: 14px;
+    padding: 12px;
     background: rgba(255,255,255,0.02);
   }
   .card-header {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
   }
   .card-id { font-size: 12px; color: var(--el-text-color-placeholder); }
   .card-field {
     display: flex;
     justify-content: space-between;
-    padding: 4px 0;
+    padding: 3px 0;
     font-size: 13px;
   }
   .card-label { color: var(--el-text-color-secondary); flex-shrink: 0; }
   .card-value { color: var(--el-text-color-primary); text-align: right; word-break: break-all; }
+  .card-actions { margin-top: 8px; display: flex; justify-content: flex-end; }
 }
+
+.reset-done { text-align: center; }
+.temp-password-box {
+  margin: 16px auto;
+  padding: 12px;
+  background: rgba(198,161,94,0.1);
+  border: 1px solid rgba(198,161,94,0.3);
+  border-radius: 6px;
+  text-align: center;
+}
+.temp-password { font-size: 20px; font-weight: 700; letter-spacing: 2px; }
 </style>
