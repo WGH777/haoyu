@@ -153,7 +153,7 @@ router.beforeEach((to: ToRouteType, _from, next) => {
       next({ path: "/error/403" });
     }
     // 开启隐藏首页后在浏览器地址栏手动输入首页welcome路由则跳转到404页面
-    if (VITE_HIDE_HOME === "true" && to.fullPath === "/welcome") {
+    if (VITE_HIDE_HOME === "true" && to.fullPath === "/admin/dashboard") {
       next({ path: "/error/404" });
     }
     if (_from?.name) {
@@ -170,12 +170,13 @@ router.beforeEach((to: ToRouteType, _from, next) => {
         usePermissionStoreHook().wholeMenus.length === 0 &&
         to.path !== "/login"
       ) {
-        initRouter().then((router: Router) => {
+        initRouter().then(() => {
+          const router = router; // use imported router directly
           if (!useMultiTagsStoreHook().getMultiTagsCache) {
             const { path } = to;
             const route = findRouteByPath(
               path,
-              router.options.routes[0].children
+              router.options.routes[0]?.children || router.options.routes
             );
             getTopMenu(true);
             // query、params模式路由传参数的标签页不在此处处理

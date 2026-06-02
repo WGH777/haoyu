@@ -7,7 +7,7 @@ export default {
   path: "/",
   name: "Home",
   component: Layout,
-  redirect: "/welcome",
+  redirect: "/admin/dashboard",
   meta: {
     title: "浩煜灯火站",
     icon: "ri:home-4-line",
@@ -16,7 +16,7 @@ export default {
   },
   children: [
     {
-      path: "/welcome",
+      path: "/admin/dashboard",
       name: "Dashboard",
       component: () => import("@/views/welcome/index.vue"),
       meta: {
