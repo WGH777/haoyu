@@ -3,9 +3,9 @@ import { getConfig } from "@/config";
 import NProgress from "@/utils/progress";
 import { buildHierarchyTree } from "@/utils/tree";
 import remainingRouter from "./modules/remaining";
-// store imports via dynamic lazy-load to break circular deps
-// useMultiTagsStoreHook / usePermissionStoreHook / useAppStoreHook
-// are imported inside beforeEach guards
+import { useMultiTagsStoreHook } from "@/store/modules/multiTags";
+import { usePermissionStoreHook } from "@/store/modules/permission";
+import { useAppStoreHook } from "@/store/modules/app";
 import {
   isUrl,
   openLink,
