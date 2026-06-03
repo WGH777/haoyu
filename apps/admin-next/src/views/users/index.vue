@@ -281,12 +281,14 @@ async function submitCreate() {
         <el-table-column label="注册" min-width="100">
           <template #default="{ row }">{{ new Date(row.createdAt).toLocaleDateString('zh-CN') }}</template>
         </el-table-column>
-        <el-table-column v-if="isSuperAdmin" label="操作" width="160" fixed="right">
+        <el-table-column v-if="isSuperAdmin" label="操作" min-width="220" fixed="right" class-name="user-action-column">
           <template #default="{ row }">
-            <el-button size="small" type="warning" plain @click="openReset(row)">重置密码</el-button>
-            <el-button v-if="row.status === 'ACTIVE'" size="small" type="danger" plain @click="openBan(row, true)">封禁</el-button>
-            <el-button v-else-if="row.status === 'SUSPENDED'" size="small" type="success" plain @click="openBan(row, false)">解封</el-button>
-            <el-button v-if="row.role !== 'SUPER_ADMIN'" size="small" type="primary" plain @click="openRole(row)">调整角色</el-button>
+            <div class="user-action-buttons">
+              <el-button size="small" type="warning" plain @click="openReset(row)">重置密码</el-button>
+              <el-button v-if="row.status === 'ACTIVE'" size="small" type="danger" plain @click="openBan(row, true)">封禁</el-button>
+              <el-button v-else-if="row.status === 'SUSPENDED'" size="small" type="success" plain @click="openBan(row, false)">解封</el-button>
+              <el-button v-if="row.role !== 'SUPER_ADMIN'" size="small" type="warning" plain @click="openRole(row)">调整角色</el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -560,6 +562,28 @@ async function submitCreate() {
   margin-bottom: 12px;
 }
 .search-input { width: 180px; }
+
+/* 桌面端操作列布局 */
+.user-action-column .user-action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  max-width: 220px;
+}
+
+.user-action-column .user-action-buttons .el-button {
+  margin-left: 0;
+  height: 28px;
+  padding: 0 8px;
+  font-size: 12px;
+  line-height: 1;
+  border-radius: 6px;
+}
+
+.user-action-column .user-action-buttons .el-button + .el-button {
+  margin-left: 0;
+}
 .search-select { width: 110px; }
 
 /* 分页 */
