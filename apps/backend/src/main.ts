@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 
@@ -29,6 +30,9 @@ async function bootstrap() {
     transform: true, 
     whitelist: true, 
   }));
+
+  // 全局异常过滤器 — 统一错误响应格式
+  app.useGlobalFilters(new HttpExceptionFilter());
   
   // 🔥🔥🔥 4. 配置 Swagger 文档 🔥🔥🔥
   const config = new DocumentBuilder()
