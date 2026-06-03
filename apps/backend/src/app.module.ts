@@ -8,6 +8,8 @@ import { join } from 'path';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
+import { HealthModule } from './health/health.module';
+
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
@@ -32,6 +34,7 @@ import { SchedulerModule } from './scheduler/scheduler.module';
       serveRoot: '/uploads',
     }),
     PrismaModule,
+    HealthModule,
 
     // =========================
     // 核心业务模块
