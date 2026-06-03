@@ -139,21 +139,12 @@
                     <span>注册：{{ formatTime(u.createdAt || '') }}</span>
                   </div>
                   <div v-if="isSuperAdmin && u.id !== currentUser?.id" class="mdc-actions">
-                    <el-dropdown v-if="isSuperAdmin">
-                      <el-button size="small" plain>角色</el-button>
-                      <template #dropdown>
-                        <el-dropdown-menu>
-                          <el-dropdown-item @click="handleChangeRole(u, 'USER')">设为普通用户</el-dropdown-item>
-                          <el-dropdown-item @click="handleChangeRole(u, 'ADMIN')">设为管理员</el-dropdown-item>
-                        </el-dropdown-menu>
-                      </template>
-                    </el-dropdown>
-                    <el-button size="small" plain @click="openResetPasswordDialog(u)">重置密码</el-button>
-                    <el-button size="small" type="danger" plain @click="handleDeleteUser(u)">删除</el-button>
+                    <van-button size="small" round plain type="default" class="mdc-operate-btn" @click="openActionSheet(u)">操作</van-button>
                   </div>
                 </div>
               </div>
             </div>
+            <van-action-sheet v-model:show="actionSheetShow" :actions="actionSheetOptions" cancel-text="取消" close-on-click-action @select="onActionSheetSelect" />
           </el-tab-pane>
 
           <!-- Tab 2：任务监控（管理员专用，只读） -->
@@ -418,7 +409,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Refresh, ArrowDown } from '@element-plus/icons-vue'
-import { Empty, Tab, Tabs } from 'vant'
+import { Empty, Tab, Tabs, ActionSheet } from 'vant'
 
 import {
   getUserList,
@@ -477,6 +468,40 @@ const onTaskStatusTabChange = (index: number) => {
 const onTxnTypeTabChange = (index: number) => {
   const vals: AdminTxnType[] = ['all', 'DEPOSIT', 'WITHDRAW', 'PUBLISH', 'INCOME']
   adminTxnTypeFilter.value = vals[index] || 'all'
+}
+
+// Vant ActionSheet（移动端用户操作菜单）
+const actionSheetShow = ref(false)
+const actionSheetUser = ref<UserItem | null>(null)
+const actionSheetOptions = [
+  { name: '设为普通用户', key: 'role-user' },
+  { name: '设为管理员', key: 'role-admin' },
+  { name: '重置密码', key: 'reset-pwd' },
+  { name: '删除用户', key: 'delete-user', color: '#ef4444' },
+]
+
+const openActionSheet = (user: UserItem) => {
+  actionSheetUser.value = user
+  actionSheetShow.value = true
+}
+
+const onActionSheetSelect = (item: { key: string }) => {
+  const user = actionSheetUser.value
+  if (!user) return
+  switch (item.key) {
+    case 'role-user':
+      handleChangeRole(user, 'USER')
+      break
+    case 'role-admin':
+      handleChangeRole(user, 'ADMIN')
+      break
+    case 'reset-pwd':
+      openResetPasswordDialog(user)
+      break
+    case 'delete-user':
+      handleDeleteUser(user)
+      break
+  }
 }
 
 // Tab
@@ -984,5 +1009,42 @@ watch(
 }
 .vant-tabs-filter .van-tabs__line {
   display: none;
+}
+
+/* ====== van-action-sheet 暗色主题适配 ====== */
+:deep(.van-action-sheet) {
+  background: #111827 !important;
+  border-radius: 16px 16px 0 0 !important;
+}
+:deep(.van-action-sheet__item) {
+  color: #e2e8f0 !important;
+  background: #111827 !important;
+  font-size: 15px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.08) !important;
+}
+:deep(.van-action-sheet__item:active) {
+  background: rgba(99, 102, 241, 0.08) !important;
+}
+:deep(.van-action-sheet__cancel) {
+  color: #94a3b8 !important;
+  background: #111827 !important;
+  font-size: 15px;
+}
+:deep(.van-action-sheet__header) {
+  color: #f1f5f9 !important;
+}
+:deep(.van-action-sheet__gap) {
+  background: #0a0e17 !important;
+}
+:deep(.van-overlay) {
+  background: rgba(0, 0, 0, 0.6) !important;
+}
+
+.mdc-operate-btn {
+  min-height: 40px;
+  padding: 0 20px;
+  border-color: rgba(148, 163, 184, 0.18) !important;
+  color: #94a3b8 !important;
+  font-size: 13px;
 }
 </style>

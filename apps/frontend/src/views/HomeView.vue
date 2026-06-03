@@ -467,25 +467,25 @@
     <span class="mobile-page-title">{{ mobileTitle }}</span>
     <div class="mobile-topbar-right">
       <template v-if="isLogin && currentUser">
-        <el-dropdown trigger="click" @command="handleMobileAvatarCommand">
-          <button class="mobile-avatar-btn" aria-label="用户菜单">
-            <span class="mobile-avatar">{{ currentUser?.nickname?.[0] || currentUser?.email?.[0]?.toUpperCase() || '?' }}</span>
-          </button>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item command="profile">个人中心</el-dropdown-item>
-              <el-dropdown-item command="my-task">我的任务</el-dropdown-item>
-              <el-dropdown-item command="wallet">钱包</el-dropdown-item>
-              <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
+        <button class="mobile-avatar-btn" aria-label="用户菜单" @click="showMobileUserSheet = true">
+          <span class="mobile-avatar">{{ currentUser?.nickname?.[0] || currentUser?.email?.[0]?.toUpperCase() || '?' }}</span>
+        </button>
       </template>
       <template v-else>
         <el-button size="small" @click="$router.push('/login')">登录</el-button>
       </template>
     </div>
   </header>
+
+  <!-- 移动端用户操作 ActionSheet -->
+  <van-action-sheet
+    v-model:show="showMobileUserSheet"
+    :actions="mobileUserSheetOptions"
+    cancel-text="取消"
+    close-on-click-action
+    @select="onMobileUserSheetSelect"
+    class="van-action-sheet-dark"
+  />
 
   <!-- 移动端遮罩 -->
   <div v-if="mobileDrawerOpen" class="mobile-drawer-mask" @click="mobileDrawerOpen = false"></div>
@@ -538,6 +538,7 @@ import { formatYumiFromCent, formatYumiCompactFromCent, yumiToCent } from '@/uti
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Plus, Refresh, Search, CaretBottom, List, Checked, Wallet, User, Document, Bell, Setting, Lock, Tickets, Connection } from '@element-plus/icons-vue'
+import { ActionSheet } from 'vant'
 import { getTaskList, createTask, uploadTaskImage, type Task } from '@/api/task'
 import { getProfile, type UserProfile } from '@/api/user'
 import { notificationApi } from '@/api/notification'
@@ -551,6 +552,26 @@ const currentUser = ref<UserProfile | null>(null)
 const walletBalance = ref(0)
 const unreadCount = ref(0)
 const mobileDrawerOpen = ref(false)
+
+// Vant ActionSheet for mobile user menu
+const showMobileUserSheet = ref(false)
+const mobileUserSheetOptions = [
+  { name: '个人中心', key: 'profile' },
+  { name: '我的任务', key: 'my-task' },
+  { name: '钱包', key: 'wallet' },
+  { name: '退出登录', key: 'logout' },
+]
+
+const onMobileUserSheetSelect = (item: { key: string }) => {
+  if (item.key === 'logout') {
+    localStorage.removeItem('token')
+    localStorage.removeItem('currentUser')
+    ElMessage.success('已退出登录')
+    window.location.reload()
+  } else {
+    router.push('/' + item.key)
+  }
+}
 
 const routeTitleMap: Record<string, string> = {
   '/task': '任务大厅', '/': '任务大厅',
@@ -1543,5 +1564,36 @@ onMounted(() => {
     width: 44px;
     height: 44px;
   }
+}
+
+/* ====== van-action-sheet 暗色主题适配 ====== */
+:deep(.van-action-sheet) {
+  background: #1e293b !important;
+}
+:deep(.van-action-sheet__item) {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+  font-size: 15px !important;
+  min-height: 48px;
+  border-bottom: 1px solid rgba(255,255,255,0.06) !important;
+}
+:deep(.van-action-sheet__item:active) {
+  background: rgba(99,102,241,0.12) !important;
+}
+:deep(.van-action-sheet__cancel) {
+  background: #1e293b !important;
+  color: #94a3b8 !important;
+  font-size: 15px !important;
+  min-height: 48px;
+}
+:deep(.van-action-sheet__header) {
+  background: #1e293b !important;
+  color: #f1f5f9 !important;
+}
+:deep(.van-overlay) {
+  background: rgba(0,0,0,0.52) !important;
+}
+:deep(.van-action-sheet__gap) {
+  display: none !important;
 }
 </style>

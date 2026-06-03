@@ -562,6 +562,20 @@
     <el-dialog v-model="imagePreviewVisible" title="参考图" width="80%" destroy-on-close>
       <img v-if="task?.image" :src="getFullUrl(task.image)" alt="参考图" class="preview-full-img" />
     </el-dialog>
+
+    <!-- 移动端子任务删除确认弹窗 -->
+    <van-dialog
+      v-model:show="showSubtaskDeleteDialog"
+      title="确认删除"
+      show-cancel-button
+      confirm-button-text="确认删除"
+      cancel-button-text="取消"
+      @confirm="confirmDeleteSubTask"
+      class="van-dialog-dark"
+      :close-on-click-overlay="false"
+    >
+      <p style="padding:16px;margin:0;color:#e2e8f0;font-size:14px;text-align:center;">确定要删除该子任务吗？此操作不可恢复。</p>
+    </van-dialog>
   </section>
 </template>
 
@@ -569,6 +583,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Dialog } from 'vant'
 
 import {
   findTaskDetail,
@@ -691,6 +706,10 @@ const submitForm = reactive({ content: '', image: '' })
 const imagePreviewVisible = ref(false)
 
 // 争议
+// Vant dialog for mobile subtask delete
+const showSubtaskDeleteDialog = ref(false)
+const pendingDeleteSubtask = ref<SubTask | null>(null)
+
 const showDisputeDialog = ref(false)
 const disputeReason = ref('')
 const disputeLoading = ref(false)
@@ -980,11 +999,30 @@ const handleToggleSubTask = async (subTask: SubTask, value: boolean) => {
 
 const handleDeleteSubTask = async (subTask: SubTask) => {
   if (!task.value) return
+  // 移动端使用 van-dialog，桌面端使用 ElMessageBox
+  if (window.innerWidth <= 768) {
+    pendingDeleteSubtask.value = subTask
+    showSubtaskDeleteDialog.value = true
+    return
+  }
   try {
     await ElMessageBox.confirm('确定要删除该子任务吗？此操作不可恢复。', '提示', { type: 'warning' })
   } catch {
     return
   }
+  doDeleteSubTask(subTask)
+}
+
+const confirmDeleteSubTask = async () => {
+  const subTask = pendingDeleteSubtask.value
+  if (!subTask || !task.value) return
+  showSubtaskDeleteDialog.value = false
+  pendingDeleteSubtask.value = null
+  doDeleteSubTask(subTask)
+}
+
+const doDeleteSubTask = async (subTask: SubTask) => {
+  if (!task.value) return
   updatingSubTask.value = true
   try {
     await deleteSubTask(task.value.id, subTask.id)
@@ -1986,4 +2024,40 @@ onMounted(() => {
   }
 }
 
+/* ====== van-dialog 暗色主题适配 ====== */
+:deep(.van-dialog-dark) {
+  background: #1e293b !important;
+}
+:deep(.van-dialog-dark .van-dialog__header) {
+  color: #f1f5f9 !important;
+  font-size: 16px !important;
+  padding-top: 20px !important;
+}
+:deep(.van-dialog-dark .van-dialog__message) {
+  color: #e2e8f0 !important;
+  font-size: 14px !important;
+}
+:deep(.van-dialog-dark .van-button--default) {
+  background: transparent !important;
+  border-top: 1px solid rgba(255,255,255,0.08) !important;
+  color: #94a3b8 !important;
+  font-size: 15px !important;
+  min-height: 48px;
+}
+:deep(.van-dialog-dark .van-button--primary) {
+  background: transparent !important;
+  border-top: 1px solid rgba(255,255,255,0.08) !important;
+  color: #ef4444 !important;
+  font-size: 15px !important;
+  min-height: 48px;
+}
+:deep(.van-dialog-dark .van-button--primary:active) {
+  background: rgba(239,68,68,0.08) !important;
+}
+:deep(.van-dialog-dark .van-button--default:active) {
+  background: rgba(255,255,255,0.06) !important;
+}
+:deep(.van-dialog-dark .van-hairline--top) {
+  border-color: rgba(255,255,255,0.08) !important;
+}
 </style>
