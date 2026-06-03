@@ -6,7 +6,7 @@ import { useFullscreen } from "@vueuse/core";
 import type { routeMetaType } from "../types";
 import { useRouter, useRoute } from "vue-router";
 import { router, remainingPaths } from "@/router";
-import { computed, type CSSProperties } from "vue";
+import { computed, ref, type CSSProperties } from "vue";
 import { useAppStoreHook } from "@/store/modules/app";
 import { useUserStoreHook } from "@/store/modules/user";
 import { useGlobal, isAllEmpty } from "@pureadmin/utils";
@@ -40,6 +40,13 @@ export function useNav() {
     const raw = useUserStoreHook()?.avatar || "";
     return raw && (raw.startsWith("http") || raw.startsWith("/") || raw.startsWith("data:")) ? raw : "";
   });
+
+  /** 头像是否显示 img（失败后自动切换为 fallback） */
+  const showAvatarImg = ref(true);
+
+  function onAvatarError(e: Event) {
+    showAvatarImg.value = false;
+  }
 
   /** 头像 fallback 文字 */
   const avatarAlt = computed(() => {
@@ -172,7 +179,9 @@ export function useNav() {
     pureApp,
     username,
     userAvatar,
+    showAvatarImg,
     avatarAlt,
+    onAvatarError,
     avatarsStyle,
     tooltipEffect
   };
