@@ -6,6 +6,7 @@ export interface ListItem {
   description: string;
   status?: "primary" | "success" | "warning" | "info" | "danger";
   extra?: string;
+  link?: string;
 }
 
 export interface TabItem {
@@ -26,7 +27,8 @@ export const noticesData: TabItem[] = [
         description: "创建用户、重置密码、封禁/解封、调整角色等管理操作已全面上线。",
         datetime: "",
         type: "1",
-        status: "success"
+        status: "success",
+        link: "/admin/users"
       },
       {
         avatar: "",
@@ -34,15 +36,17 @@ export const noticesData: TabItem[] = [
         description: "所有 SUPER_ADMIN 操作均自动记录，可在审计日志中查询追溯。",
         datetime: "",
         type: "1",
-        status: "primary"
+        status: "primary",
+        link: "/admin/audit"
       },
       {
         avatar: "",
-        title: "请妥善保管管理员账号",
-        description: "SUPER_ADMIN 拥有最高权限，请勿分享账号或在不安全设备登录。",
+        title: "请定期复核管理员账号",
+        description: "确认 ADMIN 和 SUPER_ADMIN 账号均为在职负责人，及时调整角色权限。",
         datetime: "",
         type: "1",
-        status: "warning"
+        status: "warning",
+        link: "/admin/users"
       }
     ],
     emptyText: "暂无通知"
@@ -53,24 +57,35 @@ export const noticesData: TabItem[] = [
     list: [
       {
         avatar: "",
-        title: "创建用户后请及时通知账号负责人",
-        description: "新创建的用户如需登录，请将账号信息安全发送给对应负责人。",
+        title: "创建用户记录请在审计日志查看",
+        description: "每次创建用户操作均生成 CREATE_USER 审计记录，包含操作人和目标邮箱。",
         datetime: "",
-        type: "2"
+        type: "2",
+        link: "/admin/audit"
       },
       {
         avatar: "",
-        title: "重置密码后请提醒用户尽快修改",
-        description: "临时密码仅显示一次，建议用户首次登录后立即修改密码。",
+        title: "重置密码记录请在审计日志查看",
+        description: "每次重置密码操作均生成 RESET_PASSWORD 审计记录，临时密码仅显示一次。",
         datetime: "",
-        type: "2"
+        type: "2",
+        link: "/admin/audit"
       },
       {
         avatar: "",
-        title: "角色调整后请复核权限范围",
-        description: "将用户提升为 ADMIN 后，该用户可查看全站数据。请定期复核。",
+        title: "封禁/解封记录请在用户管理查看",
+        description: "BAN_USER 与 UNBAN_USER 操作均记录在审计日志，可在用户页查看当前状态。",
         datetime: "",
-        type: "2"
+        type: "2",
+        link: "/admin/users"
+      },
+      {
+        avatar: "",
+        title: "角色调整记录请在审计日志查看",
+        description: "CHANGE_USER_ROLE 记录了每次角色变更前后的状态和操作原因。",
+        datetime: "",
+        type: "2",
+        link: "/admin/audit"
       }
     ],
     emptyText: "暂无消息"
@@ -81,30 +96,43 @@ export const noticesData: TabItem[] = [
     list: [
       {
         avatar: "",
-        title: "定期检查审计日志",
-        description: "建议每周查看审计日志，确认无异常管理操作。",
+        title: "复核管理员账号",
+        description: "检查当前 ADMIN 和 SUPER_ADMIN 账号列表，确保均为有效在职人员。",
         datetime: "",
         extra: "建议",
         status: "info",
-        type: "3"
+        type: "3",
+        link: "/admin/users"
       },
       {
         avatar: "",
-        title: "定期复核管理员账号",
-        description: "确认 ADMIN 和 SUPER_ADMIN 账号均为在职负责人，及时调整离职人员角色。",
-        datetime: "",
-        extra: "建议",
-        status: "info",
-        type: "3"
-      },
-      {
-        avatar: "",
-        title: "关注异常封禁与解封记录",
-        description: "频繁的封禁/解封操作可能表示账号异常，请关注审计日志中的 BAN/UNBAN 记录。",
+        title: "检查异常用户状态",
+        description: "查看是否有账号被频繁封禁/解封，或存在 SUSPENDED 状态需处理的用户。",
         datetime: "",
         extra: "建议",
         status: "warning",
-        type: "3"
+        type: "3",
+        link: "/admin/users"
+      },
+      {
+        avatar: "",
+        title: "查看仲裁记录",
+        description: "在仲裁中心查看待处理争议，确认无超时未裁决的任务或订单。",
+        datetime: "",
+        extra: "建议",
+        status: "info",
+        type: "3",
+        link: "/admin/arbitration"
+      },
+      {
+        avatar: "",
+        title: "观察钱包监控",
+        description: "在钱包监控页面查看全站流水，关注大额交易和异常资金变动。",
+        datetime: "",
+        extra: "建议",
+        status: "info",
+        type: "3",
+        link: "/admin/wallet"
       }
     ],
     emptyText: "暂无待办"

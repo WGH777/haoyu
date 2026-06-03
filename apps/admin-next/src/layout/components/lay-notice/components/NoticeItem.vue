@@ -1,22 +1,30 @@
 <script setup lang="ts">
 import { ListItem } from "../data";
 import { ref, PropType, nextTick } from "vue";
+import { useRouter } from "vue-router";
 import { useNav } from "@/layout/hooks/useNav";
 import { deviceDetection } from "@pureadmin/utils";
 
-defineProps({
+const props = defineProps({
   noticeItem: {
     type: Object as PropType<ListItem>,
     default: () => {}
   }
 });
 
+const router = useRouter();
 const titleRef = ref(null);
 const titleTooltip = ref(false);
 const descriptionRef = ref(null);
 const descriptionTooltip = ref(false);
 const { tooltipEffect } = useNav();
 const isMobile = deviceDetection();
+
+function handleClick() {
+  if (props.noticeItem.link) {
+    router.push(props.noticeItem.link);
+  }
+}
 
 function hoverTitle() {
   nextTick(() => {
@@ -50,6 +58,8 @@ function hoverDescription(event, description) {
 <template>
   <div
     class="notice-container border-0 border-b-[1px] border-solid border-[#f0f0f0] dark:border-[#303030]"
+    :class="{ 'notice-clickable': !!noticeItem.link }"
+    @click="handleClick"
   >
     <el-avatar
       v-if="noticeItem.avatar"
@@ -119,7 +129,14 @@ function hoverDescription(event, description) {
   justify-content: space-between;
   padding: 12px 0;
 
-  // border-bottom: 1px solid #f0f0f0;
+  &.notice-clickable {
+    cursor: pointer;
+    transition: background-color 0.2s;
+
+    &:hover {
+      background-color: rgba(0, 0, 0, 0.02);
+    }
+  }
 
   .notice-container-avatar {
     margin-right: 16px;
