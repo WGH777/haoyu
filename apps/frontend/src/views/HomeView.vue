@@ -44,15 +44,18 @@
         <div class="topbar-right">
           <span v-if="isLogin && currentUser" class="balance-badge">💰 {{ formatYumiCompactFromCent(walletBalance) }}</span>
           <template v-if="isLogin">
-            <el-avatar
-              :size="34"
-              :src="currentUser?.avatar ? getFullUrl(currentUser.avatar!) : undefined"
-              :style="!currentUser?.avatar ? { backgroundColor: '#6366f1', color: '#fff', fontSize: '14px' } : {}"
-            >
-              {{ currentUser?.email?.[0]?.toUpperCase() || '?' }}
-            </el-avatar>
             <el-dropdown trigger="click" @command="handleCommand">
-              <span class="dropdown-trigger">{{ currentUser?.nickname }} <el-icon><CaretBottom /></el-icon></span>
+              <span class="user-entry">
+                <el-avatar
+                  :size="32"
+                  :src="currentUser?.avatar ? getFullUrl(currentUser.avatar!) : undefined"
+                  :style="!currentUser?.avatar ? { backgroundColor: '#6366f1', color: '#fff', fontSize: '13px' } : {}"
+                >
+                  {{ currentUser?.email?.[0]?.toUpperCase() || '?' }}
+                </el-avatar>
+                <span class="user-entry-nick">{{ currentUser?.nickname }}</span>
+                <el-icon class="user-entry-arrow"><CaretBottom /></el-icon>
+              </span>
               <template #dropdown>
                 <el-dropdown-menu>
                   <el-dropdown-item command="profile">个人资料</el-dropdown-item>
@@ -843,6 +846,26 @@ onMounted(() => {
   color: #6ee7b7; padding: 4px 12px; border-radius: 20px;
   font-size: 13px; font-weight: 600;
 }
+.user-entry {
+  cursor: pointer;
+  display: flex; align-items: center; gap: 8px;
+  padding: 4px 12px; border-radius: 24px;
+  background: rgba(148,163,184,0.06);
+  border: 1px solid rgba(148,163,184,0.12);
+  transition: all 0.2s ease;
+}
+.user-entry:hover {
+  background: rgba(148,163,184,0.12);
+  border-color: rgba(148,163,184,0.22);
+}
+.user-entry-nick {
+  font-size: 14px; color: #cbd5e1; font-weight: 500;
+  max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.user-entry-arrow {
+  font-size: 12px; color: #64748b; margin-left: -2px;
+}
+
 .dropdown-trigger {
   cursor: pointer; font-size: 14px; color: #cbd5e1;
   display: flex; align-items: center; gap: 4px;
@@ -1413,19 +1436,76 @@ onMounted(() => {
     line-height: 1; margin-top: -1px;
   }
 
-  /* 卡片最小点击区域 */
+  /* 手机端任务卡片 — 信息流布局 */
   .task-card-premium {
-    padding: 18px 16px !important;
-    min-height: 140px;
+    padding: 16px 14px !important;
+    min-height: auto;
+    display: flex; flex-direction: column; gap: 8px;
+    position: relative;
   }
-  .premium-card-title { font-size: 15px !important; }
-  .premium-card-bottom { flex-wrap: wrap; gap: 6px; }
-  .premium-card-price { font-size: 18px !important; }
+  /* 角标不挤压内容 */
+  .card-corner-badge {
+    position: absolute; top: 8px; right: 10px; z-index: 3;
+    font-size: 10px; padding: 2px 8px;
+    pointer-events: none;
+  }
+  .premium-card-top {
+    flex-wrap: wrap; gap: 6px;
+    padding-right: 50px; /* 给角标留空间 */
+  }
+  .premium-card-category {
+    font-size: 10px; padding: 2px 8px;
+    white-space: nowrap;
+  }
+  .status-badge {
+    font-size: 10px; padding: 2px 8px;
+    white-space: nowrap;
+  }
+  .premium-card-title {
+    font-size: 15px !important; font-weight: 700;
+    line-height: 1.35; margin-bottom: 0;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .premium-card-desc {
+    font-size: 12px !important; color: #64748b;
+    -webkit-line-clamp: 2;
+    margin-bottom: 0;
+  }
+  /* 进度条缩小 */
+  .progress-mini {
+    margin-bottom: 0 !important; height: 3px;
+  }
+  /* 底部信息行：赏金 / 服务方式 / 浏览量 */
+  .premium-card-bottom {
+    flex-direction: row; flex-wrap: wrap;
+    align-items: center; gap: 10px;
+    padding-top: 4px;
+    border-top: 1px solid rgba(148,163,184,0.06);
+  }
+  .premium-card-price {
+    font-size: 16px !important; font-weight: 800;
+    line-height: 1;
+  }
+  .premium-card-meta {
+    font-size: 11px; gap: 8px;
+    flex-wrap: wrap;
+  }
 
   /* 抽屉菜单项加大点击区 */
   .mdm-item {
     min-height: 48px;
     padding: 12px 14px !important;
   }
+
+  /* 手机端隐藏钱包余额 */
+  .topbar .balance-badge { display: none !important; }
+
+  /* 手机端用户入口简化 */
+  .topbar .user-entry-nick { display: none; }
+  .user-entry {
+    padding: 2px; gap: 0; background: none; border: none;
+  }
+  .user-entry-arrow { display: none; }
 }
 </style>
