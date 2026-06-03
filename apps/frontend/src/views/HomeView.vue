@@ -69,17 +69,91 @@
       </header>
 
       <div class="content" v-if="$route.path === '/' || $route.path === '/task'">
-        <!-- Hero -->
-        <section class="hero">
-          <div class="hero-bg"></div>
-          <div class="hero-content">
-            <span class="hero-tag">🔒 资金托管 · 信用沉淀 · 智能仲裁</span>
-            <h1>浩煜<span class="glow-text"> Haoyu</span></h1>
-            <p class="hero-subtitle">可信价值协作平台 — 连接真实需求，激活真实能力，保障可信交付</p>
-            <div class="hero-actions">
-              <el-button type="primary" size="large" round @click="openCreateDialog" v-if="isLogin" class="btn-glow">✨ 发布需求</el-button>
-              <el-button size="large" round @click="$router.push('/register')" v-else class="btn-glow">创建协作身份</el-button>
-              <el-button size="large" round class="btn-outline" @click="$router.push('/trust')">了解保障</el-button>
+        <!-- Hero — 万家灯火主题 -->
+        <section class="hero-v2">
+          <!-- 灯火背景 -->
+          <div class="hero-lights">
+            <span class="light-dot" v-for="i in 24" :key="'l'+i"
+              :style="{
+                left: (10 + Math.sin(i * 1.7) * 42 + 42) + '%',
+                top: (8 + Math.cos(i * 2.3) * 38 + 38) + '%',
+                animationDelay: (i * 0.35) + 's',
+                animationDuration: (2.2 + (i % 3) * 1.4) + 's',
+                width: (3 + (i % 4)) + 'px',
+                height: (3 + (i % 4)) + 'px'
+              }"
+            ></span>
+          </div>
+          <div class="hero-gradient"></div>
+
+          <div class="hero-v2-content">
+            <!-- 标签 -->
+            <span class="hero-anim-tag hero-tag-v2">
+              <span class="tag-icon">🔒</span>资金托管 · 信用沉淀 · 智能仲裁
+            </span>
+
+            <!-- 标题 -->
+            <h1 class="hero-anim-h1 hero-title-v2">
+              浩煜<span class="glow-text-v2"> Haoyu</span>
+            </h1>
+
+            <!-- 副标题 -->
+            <p class="hero-anim-sub hero-sub-v2">
+              可信价值协作平台 — 连接真实需求，激活真实能力，保障可信交付
+            </p>
+
+            <!-- CTA 按钮 -->
+            <div class="hero-anim-actions hero-actions-v2">
+              <el-button type="primary" size="large" round @click="openCreateDialog" v-if="isLogin" class="btn-glow-v2">✨ 发布需求</el-button>
+              <el-button type="primary" size="large" round @click="$router.push('/register')" v-else class="btn-glow-v2">创建协作身份</el-button>
+              <el-button size="large" round class="btn-outline-v2" @click="$router.push('/task')">浏览任务</el-button>
+              <el-button size="large" round class="btn-outline-v2" @click="$router.push('/trust')">了解保障</el-button>
+            </div>
+
+            <!-- 协作流转视觉 -->
+            <div class="hero-anim-flow hero-flow-v2">
+              <svg class="flow-svg" viewBox="0 0 720 72" preserveAspectRatio="xMidYMid meet">
+                <defs>
+                  <linearGradient id="flowGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#6366f1" stop-opacity="0" />
+                    <stop offset="20%" stop-color="#818cf8" stop-opacity="0.6" />
+                    <stop offset="50%" stop-color="#f59e0b" stop-opacity="0.7" />
+                    <stop offset="80%" stop-color="#06b6d4" stop-opacity="0.6" />
+                    <stop offset="100%" stop-color="#6366f1" stop-opacity="0" />
+                  </linearGradient>
+                </defs>
+                <!-- 连接线 -->
+                <path d="M52,36 L108,36 L118,26 L158,26" stroke="url(#flowGrad)" stroke-width="1.5" fill="none" stroke-dasharray="6 4" opacity="0.5">
+                  <animate attributeName="stroke-dashoffset" from="20" to="0" dur="3s" repeatCount="indefinite" />
+                </path>
+                <path d="M202,26 L258,26 L268,36 L308,36" stroke="url(#flowGrad)" stroke-width="1.5" fill="none" stroke-dasharray="6 4" opacity="0.5">
+                  <animate attributeName="stroke-dashoffset" from="20" to="0" dur="3s" repeatCount="indefinite" begin="1s" />
+                </path>
+                <path d="M352,36 L408,36 L418,26 L458,26" stroke="url(#flowGrad)" stroke-width="1.5" fill="none" stroke-dasharray="6 4" opacity="0.5">
+                  <animate attributeName="stroke-dashoffset" from="20" to="0" dur="3s" repeatCount="indefinite" begin="0.5s" />
+                </path>
+                <path d="M502,26 L558,26 L568,36 L608,36" stroke="url(#flowGrad)" stroke-width="1.5" fill="none" stroke-dasharray="6 4" opacity="0.5">
+                  <animate attributeName="stroke-dashoffset" from="20" to="0" dur="3s" repeatCount="indefinite" begin="1.5s" />
+                </path>
+                <path d="M652,36 L668,36" stroke="url(#flowGrad)" stroke-width="1.5" fill="none" stroke-dasharray="6 4" opacity="0.5">
+                  <animate attributeName="stroke-dashoffset" from="20" to="0" dur="3s" repeatCount="indefinite" begin="2s" />
+                </path>
+                <!-- 节点 -->
+                <circle cx="36" cy="36" r="16" fill="rgba(99,102,241,0.15)" stroke="rgba(129,140,248,0.5)" stroke-width="1.5" />
+                <text x="36" y="40" text-anchor="middle" fill="#a5b4fc" font-size="11" font-weight="600">发布</text>
+
+                <circle cx="174" cy="26" r="16" fill="rgba(245,158,11,0.12)" stroke="rgba(252,211,77,0.45)" stroke-width="1.5" />
+                <text x="174" y="30" text-anchor="middle" fill="#fcd34d" font-size="11" font-weight="600">托管</text>
+
+                <circle cx="324" cy="36" r="16" fill="rgba(6,182,212,0.12)" stroke="rgba(34,211,238,0.45)" stroke-width="1.5" />
+                <text x="324" y="40" text-anchor="middle" fill="#67e8f9" font-size="11" font-weight="600">协作</text>
+
+                <circle cx="474" cy="26" r="16" fill="rgba(16,185,129,0.12)" stroke="rgba(52,211,153,0.45)" stroke-width="1.5" />
+                <text x="474" y="30" text-anchor="middle" fill="#6ee7b7" font-size="11" font-weight="600">验收</text>
+
+                <circle cx="624" cy="36" r="16" fill="rgba(139,92,246,0.12)" stroke="rgba(167,139,250,0.45)" stroke-width="1.5" />
+                <text x="624" y="40" text-anchor="middle" fill="#c4b5fd" font-size="11" font-weight="600">信用</text>
+              </svg>
             </div>
           </div>
         </section>
@@ -175,11 +249,18 @@
 
             <div class="task-grid">
               <div
-                v-for="task in tasks"
+                v-for="(task, idx) in tasks"
                 :key="task.id"
                 class="task-card-premium"
+                :class="{ 'high-budget': task.price >= 50000, 'task-card-anim': true }"
+                :style="{ animationDelay: (idx * 0.06) + 's' }"
                 @click="$router.push(`/task/${task.id}`)"
               >
+                <!-- 高预算角标 -->
+                <span v-if="task.price >= 50000" class="card-corner-badge hot">🔥 高预算</span>
+                <!-- 新任务角标（3天内） -->
+                <span v-else-if="isNewTask(task)" class="card-corner-badge new">🆕 新发布</span>
+
                 <div class="premium-card-top">
                   <span class="premium-card-category">
                     {{ categoryLabel(task.category || '') }}
@@ -240,8 +321,11 @@
               <div class="leaderboard-title">
                 <span>🏆</span> 完成榜
               </div>
-              <div style="font-size: 12px; color: #64748b; text-align: center; padding: 20px 0;">
-                协作完成后上榜
+              <div class="leaderboard-empty">
+                <div class="empty-icon-row">🏮</div>
+                <p class="empty-title-row">第一批灯火正在点亮</p>
+                <p class="empty-desc-row">完成协作任务后，你将有机会上榜</p>
+                <el-button size="small" round @click="$router.push('/task')" class="empty-action">浏览任务</el-button>
               </div>
             </div>
 
@@ -250,8 +334,11 @@
               <div class="leaderboard-title">
                 <span>⭐</span> 信用榜
               </div>
-              <div style="font-size: 12px; color: #64748b; text-align: center; padding: 20px 0;">
-                信用分达标后上榜
+              <div class="leaderboard-empty">
+                <div class="empty-icon-row">🛡️</div>
+                <p class="empty-title-row">信用从这里开始</p>
+                <p class="empty-desc-row">每完成一次可信协作，你的信用分都会增长</p>
+                <el-button size="small" round @click="$router.push('/trust')" class="empty-action">了解信任机制</el-button>
               </div>
             </div>
 
@@ -260,8 +347,12 @@
               <div class="leaderboard-title">
                 <span>🆕</span> 最新加入
               </div>
-              <div style="font-size: 12px; color: #64748b; text-align: center; padding: 20px 0;">
-                新用户加入后展示
+              <div class="leaderboard-empty">
+                <div class="empty-icon-row">🌟</div>
+                <p class="empty-title-row">等你点亮浩煜</p>
+                <p class="empty-desc-row">加入协作网络，成为第一批创造者</p>
+                <el-button v-if="!isLogin" size="small" round @click="$router.push('/register')" class="empty-action">创建协作身份</el-button>
+                <el-button v-else size="small" round @click="openCreateDialog" class="empty-action">发布第一个需求</el-button>
               </div>
             </div>
           </aside>
@@ -288,6 +379,16 @@
           <span class="dot">·</span>
           <span>资金托管 · 信用沉淀 · 争议协调</span>
         </footer>
+
+        <!-- 移动端浮动发布按钮 -->
+        <button
+          v-if="isLogin"
+          class="mobile-fab"
+          @click="openCreateDialog"
+          aria-label="发布需求"
+        >
+          <span class="fab-icon">+</span>
+        </button>
       </div>
 
       <div class="content" v-else>
@@ -543,6 +644,13 @@ const progressPercent = (s: string) => {
 const truncate = (text: string, len: number) =>
   text && text.length > len ? text.slice(0, len) + '...' : text || ''
 
+const isNewTask = (task: Task) => {
+  if (!task.createdAt) return false
+  const created = new Date(task.createdAt).getTime()
+  const threeDays = 3 * 24 * 60 * 60 * 1000
+  return Date.now() - created < threeDays
+}
+
 const getFullUrl = (path: string) =>
   path ? (path.startsWith('http') ? path : `http://localhost:3000${path}`) : ''
 
@@ -740,48 +848,95 @@ onMounted(() => {
 .main-area { flex: 1; margin-left: 200px; background: #0a0e17; min-height: 100vh; }
 .content { max-width: 1200px; margin: 0 auto; padding: 0 24px 40px; }
 
-/* === Hero === */
-.hero {
-  position: relative; overflow: hidden; padding: 64px 0 48px; text-align: center;
+/* === Hero V2 — 万家灯火 === */
+.hero-v2 {
+  position: relative; overflow: hidden;
+  padding: 72px 0 40px; text-align: center;
+  min-height: 420px;
 }
-.hero-bg {
+/* 灯火光源 */
+.hero-lights {
+  position: absolute; inset: 0; pointer-events: none; z-index: 0;
+}
+.light-dot {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(252,211,77,0.8) 0%, rgba(251,191,36,0.2) 50%, transparent 70%);
+  animation: twinkle 3s ease-in-out infinite;
+  filter: blur(1px);
+}
+/* 底色渐变 */
+.hero-gradient {
   position: absolute; inset: 0;
   background:
-    radial-gradient(ellipse at 50% 0%, rgba(99,102,241,0.08) 0%, transparent 60%),
-    radial-gradient(ellipse at 80% 50%, rgba(6,182,212,0.04) 0%, transparent 50%);
+    radial-gradient(ellipse at 50% 0%, rgba(99,102,241,0.1) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 30%, rgba(245,158,11,0.06) 0%, transparent 45%),
+    radial-gradient(ellipse at 20% 60%, rgba(6,182,212,0.04) 0%, transparent 40%);
+  pointer-events: none; z-index: 0;
 }
-.hero-content { position: relative; z-index: 1; }
-.hero-tag {
-  display: inline-block; padding: 4px 16px; border-radius: 20px;
-  background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.2);
+.hero-v2-content { position: relative; z-index: 1; }
+
+.hero-tag-v2 {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 18px; border-radius: 20px;
+  background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.22);
   color: #a5b4fc; font-size: 12px; font-weight: 600;
-  margin-bottom: 16px; letter-spacing: 0.5px;
+  margin-bottom: 20px; letter-spacing: 0.5px;
 }
-.hero h1 {
-  font-size: 40px; font-weight: 800; color: #f1f5f9;
-  margin: 0 0 12px; letter-spacing: -1px;
+.tag-icon { font-size: 13px; }
+
+.hero-title-v2 {
+  font-size: 46px; font-weight: 800; color: #f1f5f9;
+  margin: 0 0 14px; letter-spacing: -1.5px;
+  line-height: 1.15;
 }
-.hero-subtitle { font-size: 16px; color: #94a3b8; margin: 0 0 28px; }
-.hero-actions { display: flex; gap: 12px; justify-content: center; }
-.btn-glow {
+.glow-text-v2 {
+  background: linear-gradient(135deg, #a5b4fc 0%, #fcd34d 50%, #67e8f9 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-sub-v2 {
+  font-size: 16px; color: #94a3b8; margin: 0 0 32px;
+  max-width: 500px; margin-left: auto; margin-right: auto;
+}
+
+.hero-actions-v2 {
+  display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
+  margin-bottom: 32px;
+}
+
+.btn-glow-v2 {
   background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
-  border: none !important;
-  color: #ffffff !important;
-  font-weight: 700 !important;
-  box-shadow: 0 4px 20px rgba(99,102,241,0.3);
+  border: none !important; color: #fff !important;
+  font-weight: 700 !important; font-size: 15px !important;
+  box-shadow: 0 4px 24px rgba(99,102,241,0.35);
+  transition: all 0.3s !important;
 }
-.btn-glow:hover {
-  box-shadow: 0 6px 30px rgba(99,102,241,0.5);
-  transform: translateY(-1px);
+.btn-glow-v2:hover {
+  box-shadow: 0 6px 32px rgba(99,102,241,0.5);
+  transform: translateY(-2px);
 }
-.btn-outline {
+
+.btn-outline-v2 {
   background: transparent !important;
-  border: 1px solid rgba(148,163,184,0.2) !important;
-  color: #94a3b8 !important;
+  border: 1px solid rgba(148,163,184,0.22) !important;
+  color: #94a3b8 !important; font-size: 15px !important;
+  transition: all 0.3s !important;
 }
-.btn-outline:hover {
-  border-color: #6366f1 !important;
-  color: #a5b4fc !important;
+.btn-outline-v2:hover {
+  border-color: #6366f1 !important; color: #a5b4fc !important;
+}
+
+/* 流转图 */
+.hero-flow-v2 {
+  max-width: 680px; margin: 0 auto;
+  padding: 0 16px;
+}
+.flow-svg {
+  width: 100%; height: auto;
+  filter: drop-shadow(0 0 6px rgba(99,102,241,0.15));
 }
 
 /* === 数据看板 === */
@@ -906,6 +1061,57 @@ onMounted(() => {
   flex-shrink: 0;
   position: sticky;
   top: 72px;
+}
+
+/* 榜单空状态引导 */
+.leaderboard-empty {
+  text-align: center; padding: 16px 10px 12px;
+}
+.empty-icon-row {
+  font-size: 28px; margin-bottom: 8px;
+}
+.empty-title-row {
+  font-size: 13px; font-weight: 600; color: #cbd5e1; margin: 0 0 4px;
+}
+.empty-desc-row {
+  font-size: 11px; color: #64748b; margin: 0 0 10px; line-height: 1.5;
+}
+.empty-action {
+  font-size: 12px !important; padding: 5px 14px !important;
+}
+.empty-action:hover {
+  transform: translateY(-1px);
+}
+
+/* === 卡片角标 === */
+.card-corner-badge {
+  position: absolute; top: 10px; right: 10px; z-index: 2;
+  font-size: 11px; font-weight: 700;
+  padding: 3px 10px; border-radius: 6px;
+  letter-spacing: 0.3px;
+  pointer-events: none;
+}
+.card-corner-badge.hot {
+  background: linear-gradient(135deg, rgba(245,158,11,0.2), rgba(251,191,36,0.1));
+  border: 1px solid rgba(245,158,11,0.3);
+  color: #fcd34d;
+}
+.card-corner-badge.new {
+  background: linear-gradient(135deg, rgba(6,182,212,0.15), rgba(34,211,238,0.08));
+  border: 1px solid rgba(6,182,212,0.25);
+  color: #67e8f9;
+}
+.task-card-premium.high-budget {
+  border-color: rgba(245,158,11,0.2);
+}
+.task-card-premium.high-budget:hover {
+  border-color: rgba(245,158,11,0.4);
+  box-shadow: 0 8px 40px rgba(245,158,11,0.08);
+}
+
+/* === 移动端浮动发布按钮 === */
+.mobile-fab {
+  display: none;
 }
 
 /* === 信任机制 === */
@@ -1142,11 +1348,28 @@ onMounted(() => {
   .topbar { padding: 0 12px !important; }
   .topbar .greeting { display: none !important; }
   .content { padding: 0 12px 32px !important; max-width: 100vw; }
+
+  /* Hero V2 移动端 */
+  .hero-v2 {
+    padding: 28px 0 20px !important;
+    min-height: auto;
+  }
+  .hero-title-v2 { font-size: 26px !important; }
+  .hero-sub-v2 { font-size: 14px !important; padding: 0 8px; }
+  .hero-actions-v2 {
+    flex-direction: column; align-items: center; gap: 10px;
+    margin-bottom: 20px;
+  }
+  .hero-actions-v2 .el-button { width: 80%; min-height: 44px; }
+  .hero-flow-v2 { padding: 0 4px; }
+
+  /* 旧 Hero 兼容 */
   .hero { padding: 32px 0 24px !important; }
   .hero h1 { font-size: 24px !important; }
   .hero-subtitle { font-size: 14px !important; }
   .hero-actions { flex-direction: column; align-items: center; gap: 10px; }
   .hero-actions .el-button { width: 80%; }
+
   .dashboard { flex-wrap: wrap; gap: 8px; padding: 14px; }
   .stat-item { flex: 1 1 40%; min-width: 120px; padding: 8px; }
   .stat-divider { display: none; }
@@ -1158,8 +1381,47 @@ onMounted(() => {
   .filter-row .el-button { flex-shrink: 0; }
   .search-input { max-width: 100% !important; flex: 1; }
   .filter-select { width: 130px !important; flex-shrink: 0; }
+  .filter-row .el-button { min-height: 44px; }
   .trust-grid { gap: 8px; }
   .trust-item { font-size: 12px; padding: 6px 10px; }
   .balance-badge { display: none; }
+
+  /* 移动端 FAB */
+  .mobile-fab {
+    display: flex !important;
+    align-items: center; justify-content: center;
+    position: fixed; bottom: 24px; right: 20px;
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    border: none;
+    box-shadow: 0 4px 24px rgba(99,102,241,0.4);
+    cursor: pointer; z-index: 850;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .mobile-fab:active {
+    transform: scale(0.92);
+    box-shadow: 0 2px 12px rgba(99,102,241,0.25);
+  }
+  .fab-icon {
+    font-size: 28px; color: #fff; font-weight: 300;
+    line-height: 1; margin-top: -1px;
+  }
+
+  /* 卡片最小点击区域 */
+  .task-card-premium {
+    padding: 18px 16px !important;
+    min-height: 140px;
+  }
+  .premium-card-title { font-size: 15px !important; }
+  .premium-card-bottom { flex-wrap: wrap; gap: 6px; }
+  .premium-card-price { font-size: 18px !important; }
+
+  /* 抽屉菜单项加大点击区 */
+  .mdm-item {
+    min-height: 48px;
+    padding: 12px 14px !important;
+  }
 }
 </style>
