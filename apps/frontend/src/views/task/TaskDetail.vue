@@ -123,12 +123,21 @@
                   <el-button
                     type="primary"
                     :loading="creatingSubTask"
+                    class="add-subtask-btn-desktop"
                     @click="handleCreateSubTask"
                   >
                     添加
                   </el-button>
                 </template>
               </el-input>
+              <el-button
+                type="primary"
+                :loading="creatingSubTask"
+                class="add-subtask-btn-mobile"
+                @click="handleCreateSubTask"
+              >
+                添加子任务
+              </el-button>
             </div>
           </div>
 
@@ -169,28 +178,32 @@
 
               <div v-if="canEditSubTasks" class="subtask-actions">
                 <template v-if="editingSubTaskId === sub.id">
-                  <el-button type="primary" link size="small" :disabled="updatingSubTask" @click="handleSaveSubTaskTitle(sub)">保存</el-button>
-                  <el-button type="info" link size="small" :disabled="updatingSubTask" @click="cancelEditSubTask">取消</el-button>
+                  <el-button size="small" plain :disabled="updatingSubTask" @click="handleSaveSubTaskTitle(sub)">保存</el-button>
+                  <el-button size="small" plain :disabled="updatingSubTask" @click="cancelEditSubTask">取消</el-button>
                 </template>
                 <template v-else>
-                  <el-button type="primary" link size="small" :disabled="updatingSubTask" @click="startEditSubTask(sub)">编辑</el-button>
-                  <el-button type="danger" link size="small" :disabled="updatingSubTask" @click="handleDeleteSubTask(sub)">删除</el-button>
+                  <el-button size="small" plain :disabled="updatingSubTask" @click="startEditSubTask(sub)">编辑</el-button>
+                  <el-button size="small" type="danger" plain :disabled="updatingSubTask" @click="handleDeleteSubTask(sub)">删除</el-button>
                 </template>
               </div>
             </li>
 
             <!-- 发布者可在列表底部新增 -->
             <li v-if="canEditSubTasks && hasSubTasks" class="subtask-item subtask-input-row">
-              <el-input
-                v-model="newSubTaskTitle"
-                size="small"
-                placeholder="输入新子任务标题，回车添加"
-                @keyup.enter="handleCreateSubTask"
-              >
-                <template #append>
-                  <el-button type="primary" size="small" :loading="creatingSubTask" @click="handleCreateSubTask">添加</el-button>
-                </template>
-              </el-input>
+              <div class="add-subtask-row">
+                <el-input
+                  v-model="newSubTaskTitle"
+                  size="small"
+                  placeholder="输入新子任务标题，回车添加"
+                  class="add-subtask-input"
+                  @keyup.enter="handleCreateSubTask"
+                >
+                  <template #append>
+                    <el-button type="primary" size="small" class="add-subtask-btn-desktop" :loading="creatingSubTask" @click="handleCreateSubTask">添加</el-button>
+                  </template>
+                </el-input>
+                <el-button type="primary" size="small" class="add-subtask-btn-mobile" :loading="creatingSubTask" @click="handleCreateSubTask">添加子任务</el-button>
+              </div>
             </li>
           </ul>
         </article>
@@ -1499,6 +1512,13 @@ onMounted(() => {
 .subtask-input {
   margin-top: 12px;
 }
+/* 添加子任务按钮 — 手机/桌面切换 */
+.add-subtask-btn-mobile {
+  display: none;
+}
+@media (min-width: 901px) {
+  .add-subtask-btn-desktop { display: inline-flex !important; }
+}
 .subtask-input-row {
   border: none;
   background: none;
@@ -1885,8 +1905,7 @@ onMounted(() => {
 
   /* 操作按钮移动端点击区放大 */
   .aside-btn-full,
-  .action-btn-row .el-button,
-  .subtask-actions .el-button {
+  .action-btn-row .el-button {
     min-height: 44px;
   }
 
@@ -1896,14 +1915,74 @@ onMounted(() => {
     padding: 0 18px;
   }
 
-  /* 子任务操作按钮 */
+  /* ====== 子任务区移动端调整 ====== */
+  /* 子任务操作按钮 — 去重紫色，改为轻量描边 */
   .subtask-actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 4px;
+    gap: 6px;
+    margin-left: 0;
+    margin-top: 6px;
+    width: 100%;
   }
   .subtask-actions .el-button {
     font-size: 12px;
+    min-height: 36px;
+    padding: 0 12px;
+  }
+  /* 编辑按钮降级为默认 */
+  .subtask-actions .el-button:not(.el-button--danger) {
+    color: #94a3b8 !important;
+    border-color: rgba(148, 163, 184, 0.18) !important;
+  }
+  /* 删除按钮保留红色描边 */
+  .subtask-actions .el-button--danger.is-plain {
+    color: #fca5a5 !important;
+    border-color: rgba(239, 68, 68, 0.25) !important;
+    background: rgba(239, 68, 68, 0.06) !important;
+  }
+
+  /* 移动端添加子任务 — 上下布局 */
+  .add-subtask-row {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .add-subtask-input {
+    width: 100%;
+  }
+  .add-subtask-btn-desktop {
+    display: none !important;
+  }
+  .add-subtask-btn-mobile {
+    display: block !important;
+    width: 100%;
+    min-height: 44px;
+  }
+
+  /* 子任务输入框 */
+  .subtask-input .el-input {
+    width: 100%;
+  }
+  .subtask-input .add-subtask-btn-mobile {
+    margin-top: 8px;
+    width: 100%;
+    min-height: 44px;
+  }
+
+  /* 子任务列表项 — 每项更清晰 */
+  .subtask-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    padding: 10px 12px;
+  }
+  .subtask-main {
+    width: 100%;
+  }
+  .subtask-input-row {
+    padding: 10px 0;
   }
 }
 
