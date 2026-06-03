@@ -122,6 +122,16 @@ a:hover {
   }
 }
 
+/* 页面切换过渡 */
+.page-fade-enter-active,
+.page-fade-leave-active {
+  transition: opacity 0.18s ease;
+}
+.page-fade-enter-from,
+.page-fade-leave-to {
+  opacity: 0;
+}
+
 /* Hero 动画类 */
 .hero-anim-tag { animation: fadeInUp 0.5s ease both; }
 .hero-anim-h1 { animation: fadeInUp 0.5s 0.12s ease both; }
