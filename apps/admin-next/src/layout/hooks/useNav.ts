@@ -35,9 +35,18 @@ export function useNav() {
       overflow: "hidden"
     };
   });
-  /** 头像 */
+  /** 头像 — 严格校验：仅 http/https/data 开头的才是有效头像 */
   const userAvatar = computed(() => {
-    return useUserStoreHook()?.avatar || "";
+    const raw = useUserStoreHook()?.avatar || "";
+    return raw && (raw.startsWith("http") || raw.startsWith("/") || raw.startsWith("data:")) ? raw : "";
+  });
+
+  /** 头像 fallback 文字 */
+  const avatarAlt = computed(() => {
+    const role = (useUserStoreHook()?.roles || [])[0] || "";
+    if (role === "SUPER_ADMIN") return "超";
+    if (role === "ADMIN") return "管";
+    return "用";
   });
 
   /** 显示名称：昵称 > 用户名 > 邮箱 > 角色中文 */
@@ -163,6 +172,7 @@ export function useNav() {
     pureApp,
     username,
     userAvatar,
+    avatarAlt,
     avatarsStyle,
     tooltipEffect
   };
