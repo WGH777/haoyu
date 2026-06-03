@@ -100,7 +100,8 @@ watch(
       <!-- 退出登录 -->
       <el-dropdown trigger="click">
         <span class="el-dropdown-link navbar-bg-hover select-none">
-          <img :src="userAvatar" :style="avatarsStyle" />
+          <img v-if="userAvatar" :src="userAvatar" :style="avatarsStyle" />
+          <span v-else class="avatar-placeholder" :style="avatarsStyle">{{ username.charAt(0) }}</span>
           <p v-if="username" class="dark:text-white">{{ username }}</p>
         </span>
         <template #dropdown>
@@ -139,5 +140,19 @@ watch(
     flex-wrap: wrap;
     min-width: 100%;
   }
+}
+
+.avatar-placeholder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--el-color-primary);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  flex-shrink: 0;
 }
 </style>
