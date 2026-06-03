@@ -25,6 +25,7 @@ export interface UserProfile {
   createdAt: string
   updatedAt: string
   bio?: string | null
+  wallet?: { available: number }
 }
 
 export interface LoginDto {

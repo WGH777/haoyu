@@ -71,7 +71,7 @@
                     :src="profile.avatar"
                     fit="cover"
                     class="avatar-img"
-                    @error="onAvatarError"
+
                   >
                     <template #error>
                       <div class="avatar-fallback">{{ profile?.nickname?.[0] || '煜' }}</div>

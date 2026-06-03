@@ -1882,5 +1882,29 @@ onMounted(() => {
   .escrow-number {
     font-size: 26px;
   }
+
+  /* 操作按钮移动端点击区放大 */
+  .aside-btn-full,
+  .action-btn-row .el-button,
+  .subtask-actions .el-button {
+    min-height: 44px;
+  }
+
+  /* 评论发送按钮 */
+  .comment-input .el-button {
+    min-height: 44px;
+    padding: 0 18px;
+  }
+
+  /* 子任务操作按钮 */
+  .subtask-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .subtask-actions .el-button {
+    font-size: 12px;
+  }
 }
+
 </style>

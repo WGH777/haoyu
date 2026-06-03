@@ -93,6 +93,38 @@ a:hover {
   to { opacity: 1; }
 }
 
+/* ====== 移动端功能键系统规范 ====== */
+:root {
+  --hy-mobile-tap: 44px;
+  --hy-btn-radius: 14px;
+  --hy-btn-gap: 10px;
+}
+
+@media (max-width: 768px) {
+  .mobile-action-group,
+  .card-actions,
+  .hero-actions-v2 {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--hy-btn-gap);
+  }
+
+  .mobile-action-group.two-cols,
+  .hero-actions-v2.two-cols {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  button:not(.mobile-fab):not(.mobile-menu-btn):not(.drawer-close):not(.mobile-avatar-btn):not(.hero-back):not(.cover-zoom-btn),
+  .hy-btn,
+  .el-button {
+    min-height: var(--hy-mobile-tap);
+  }
+
+  .el-button--small {
+    min-height: 36px;
+  }
+}
+
 /* 灯火闪烁 */
 @keyframes twinkle {
   0%, 100% { opacity: 0.25; transform: scale(1); }

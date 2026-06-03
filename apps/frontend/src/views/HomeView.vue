@@ -110,7 +110,7 @@
               <el-button type="primary" size="large" round @click="openCreateDialog" v-if="isLogin" class="btn-glow-v2">✨ 发布需求</el-button>
               <el-button type="primary" size="large" round @click="$router.push('/register')" v-else class="btn-glow-v2">创建协作身份</el-button>
               <el-button size="large" round class="btn-outline-v2" @click="$router.push('/task')">浏览任务</el-button>
-              <el-button size="large" round class="btn-outline-v2" @click="$router.push('/trust')">了解保障</el-button>
+              <el-button size="large" round class="btn-outline-v2 hide-mobile" @click="$router.push('/trust')">了解保障</el-button>
             </div>
 
             <!-- 协作流转视觉 -->
@@ -590,7 +590,6 @@ const logout = () => {
 }
 
 // watch drawer open state to toggle body scroll
-import { watch } from 'vue'
 watch(mobileDrawerOpen, (val) => {
   if (val) document.body.classList.add('drawer-open')
   else document.body.classList.remove('drawer-open')
@@ -1507,5 +1506,23 @@ onMounted(() => {
     padding: 2px; gap: 0; background: none; border: none;
   }
   .user-entry-arrow { display: none; }
+
+  /* 抽屉登录/注册/退出按钮加大点击区 */
+  .mobile-drawer-footer .el-button {
+    min-height: 44px;
+    width: 100%;
+    margin-top: 6px;
+  }
+
+  /* 移动端顶栏登录按钮 */
+  .mobile-topbar-right .el-button {
+    min-height: 36px;
+  }
+
+  /* 移动端顶栏头像按钮加大点击区 */
+  .mobile-avatar-btn {
+    width: 44px;
+    height: 44px;
+  }
 }
 </style>
