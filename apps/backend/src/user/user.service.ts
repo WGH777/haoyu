@@ -130,22 +130,36 @@ export class UserService {
    * 修改用户角色（含安全规则）
    */
   async changeRole(id: number, newRole: string) {
-    // 规则 2: 禁止降级最后一个 SUPER_ADMIN
     const targetUser = await this.prisma.user.findUnique({
       where: { id },
-      select: { role: true },
+      select: { id: true, role: true, email: true },
     });
 
-    if (targetUser?.role === 'SUPER_ADMIN' && newRole !== 'SUPER_ADMIN') {
-      const superAdminCount = await this.prisma.user.count({
-        where: { role: 'SUPER_ADMIN' },
-      });
-      if (superAdminCount <= 1) {
-        throw new BadRequestException('不能降级最后一个超级管理员');
-      }
+    if (!targetUser) {
+      throw new BadRequestException('用户不存在');
     }
 
-    return this.update(id, { role: newRole } as any);
+    // 规则: 禁止修改 SUPER_ADMIN 用户的角色
+    if (targetUser.role === 'SUPER_ADMIN') {
+      throw new BadRequestException('不能修改超级管理员的角色');
+    }
+
+    // 规则: 禁止设目标为 SUPER_ADMIN（前端/controller 已拦截，这里再兜底）
+    if (newRole === 'SUPER_ADMIN') {
+      throw new BadRequestException('不能将用户提升为超级管理员');
+    }
+
+    // 规则: 不允许无变更
+    if (targetUser.role === newRole) {
+      throw new BadRequestException(`该用户当前角色已是 ${newRole === 'ADMIN' ? '管理员' : '普通用户'}`);
+    }
+
+    await this.prisma.user.update({
+      where: { id },
+      data: { role: newRole },
+    });
+
+    return { previousRole: targetUser.role };
   }
 
   /**

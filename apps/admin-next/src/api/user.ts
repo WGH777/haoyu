@@ -35,3 +35,7 @@ export const createUserApi = (data: { email: string; nickname: string; password?
   return http.request<any>("post", "/api/admin/users", { data });
 };
 
+export const changeUserRoleApi = (userId: number, role: string, reason: string) => {
+  return http.request<any>("patch", `/api/user/${userId}/role`, { data: { role, reason } });
+};
+

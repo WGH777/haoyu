@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue";
-import { getUserListApi, resetUserPasswordApi, banUserApi, unbanUserApi, createUserApi } from "@/api/user";
+import { getUserListApi, resetUserPasswordApi, banUserApi, unbanUserApi, createUserApi, changeUserRoleApi } from "@/api/user";
 import { useUserStoreHook } from "@/store/modules/user";
 import { message } from "@/utils/message";
 import type { FormInstance } from "element-plus";
@@ -132,6 +132,33 @@ async function submitBan() {
   }
 }
 
+// ── 调整角色对话框 ──
+const roleVisible = ref(false);
+const roleTarget = ref<any>(null);
+const roleForm = ref({ role: "USER", reason: "" });
+const roleLoading = ref(false);
+
+function openRole(user: any) {
+  roleTarget.value = user;
+  roleForm.value = { role: user.role === "ADMIN" ? "USER" : "ADMIN", reason: "" };
+  roleVisible.value = true;
+}
+
+async function submitRole() {
+  if (!roleForm.value.reason.trim()) return;
+  roleLoading.value = true;
+  try {
+    await changeUserRoleApi(roleTarget.value.id, roleForm.value.role, roleForm.value.reason.trim());
+    message("角色已更新", { type: "success" });
+    roleVisible.value = false;
+    fetchUsers();
+  } catch (e: any) {
+    message(e?.response?.data?.message || e?.message || "操作失败", { type: "error" });
+  } finally {
+    roleLoading.value = false;
+  }
+}
+
 // ── 创建用户对话框 ──
 const createVisible = ref(false);
 const createFormRef = ref<FormInstance>();
@@ -259,6 +286,7 @@ async function submitCreate() {
             <el-button size="small" type="warning" plain @click="openReset(row)">重置密码</el-button>
             <el-button v-if="row.status === 'ACTIVE'" size="small" type="danger" plain @click="openBan(row, true)">封禁</el-button>
             <el-button v-else-if="row.status === 'SUSPENDED'" size="small" type="success" plain @click="openBan(row, false)">解封</el-button>
+            <el-button v-if="row.role !== 'SUPER_ADMIN'" size="small" type="primary" plain @click="openRole(row)">调整角色</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -294,6 +322,7 @@ async function submitCreate() {
             <el-button size="small" type="warning" plain @click="openReset(user)">重置密码</el-button>
             <el-button v-if="user.status === 'ACTIVE'" size="small" type="danger" plain @click="openBan(user, true)">封禁</el-button>
             <el-button v-else-if="user.status === 'SUSPENDED'" size="small" type="success" plain @click="openBan(user, false)">解封</el-button>
+            <el-button v-if="user.role !== 'SUPER_ADMIN'" size="small" type="primary" plain @click="openRole(user)">调整角色</el-button>
           </div>
         </div>
       </div>
@@ -470,6 +499,46 @@ async function submitCreate() {
             <p>角色：{{ createResult.role === 'ADMIN' ? '管理员' : '普通用户' }}</p>
           </div>
           <el-button class="mt-4" type="primary" @click="closeCreate">关闭</el-button>
+        </div>
+      </template>
+    </el-dialog>
+
+    <!-- 调整角色弹窗 -->
+    <el-dialog
+      v-model="roleVisible"
+      title="调整角色"
+      width="420px"
+      :close-on-click-modal="false"
+    >
+      <template v-if="roleTarget">
+        <p class="mb-3">用户：<b>{{ roleTarget.email }}</b>（{{ roleTarget.nickname }}）</p>
+        <p class="mb-3 text-sm" style="color:var(--el-text-color-secondary)">
+          当前角色：{{ roleTarget.role === 'ADMIN' ? '管理员' : '普通用户' }}
+        </p>
+        <el-form-item label="新角色" required>
+          <el-select v-model="roleForm.role" style="width:100%">
+            <el-option label="普通用户 (USER)" value="USER" />
+            <el-option label="管理员 (ADMIN)" value="ADMIN" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="操作原因" required>
+          <el-input
+            v-model="roleForm.reason"
+            placeholder="请填写调整原因（必填）"
+            :rows="2"
+            type="textarea"
+          />
+        </el-form-item>
+        <div class="flex items-center gap-3 mt-4">
+          <el-button
+            type="primary"
+            :loading="roleLoading"
+            :disabled="!roleForm.reason.trim()"
+            @click="submitRole"
+          >
+            确认调整
+          </el-button>
+          <el-button @click="roleVisible = false">取消</el-button>
         </div>
       </template>
     </el-dialog>
