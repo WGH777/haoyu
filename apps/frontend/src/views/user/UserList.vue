@@ -125,10 +125,7 @@
             <!-- 移动端卡片列表 -->
             <div class="mobile-only">
               <div v-if="loadingUsers" style="text-align:center;padding:24px;color:#64748b;">加载中...</div>
-              <div v-else-if="!users.length" class="mobile-card-empty">
-                <p>暂无用户记录</p>
-                <p class="empty-sub">请调整筛选条件，或稍后再试</p>
-              </div>
+              <van-empty v-else-if="!users.length" description="暂无用户记录" />
               <div v-else class="mobile-card-list">
                 <div v-for="u in users" :key="u.id" class="mobile-data-card">
                   <div class="mdc-head">
@@ -229,9 +226,7 @@
               </div>
 
               <div v-if="loadingTasks" style="text-align:center;padding:24px;color:#64748b;">加载中...</div>
-              <div v-else-if="!filteredAdminTasks.length" class="mobile-card-empty">
-                <p>当前没有任务</p>
-              </div>
+              <van-empty v-else-if="!filteredAdminTasks.length" description="当前没有任务" />
               <div v-else class="mobile-card-list">
                 <div v-for="t in filteredAdminTasks" :key="t.id" class="mobile-data-card" @click="goTaskDetail(t.id)" style="cursor:pointer;">
                   <div class="mdc-head">
@@ -360,9 +355,7 @@
               </div>
 
               <div v-if="loadingAdminTransactions" style="text-align:center;padding:24px;color:#64748b;">加载中...</div>
-              <div v-else-if="!filteredAdminTransactions.length" class="mobile-card-empty">
-                <p>当前没有流水记录</p>
-              </div>
+              <van-empty v-else-if="!filteredAdminTransactions.length" description="当前没有流水记录" />
               <div v-else class="mobile-card-list">
                 <div v-for="tx in filteredAdminTransactions" :key="tx.id" class="mobile-data-card">
                   <div class="mdc-head">
@@ -433,6 +426,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Refresh, ArrowDown } from '@element-plus/icons-vue'
+import { Empty } from 'vant'
 
 import {
   getUserList,
