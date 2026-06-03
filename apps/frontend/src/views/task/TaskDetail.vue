@@ -324,7 +324,7 @@
 
             <el-button
               v-if="canRobOrder"
-              class="aside-btn-full mt-12"
+              class="aside-btn-full mt-12 mobile-primary-action"
               type="primary"
               size="large"
               :loading="opLoading"
@@ -369,7 +369,7 @@
                 show-icon
                 class="mt-12"
               />
-              <el-button class="aside-btn-full mt-12" type="primary" size="large" @click="openSubmitDialog">
+              <el-button class="aside-btn-full mt-12 mobile-primary-action" type="primary" size="large" @click="openSubmitDialog">
                 {{ hasSubmissionHistory ? '🔄 重新提交成果' : '🏁 提交任务成果' }}
               </el-button>
             </template>
@@ -439,11 +439,11 @@
               </div>
 
               <div class="mt-12 action-btn-row">
-                <el-button type="success" class="flex-1" :loading="opLoading" @click="handleAccept">✅ 通过</el-button>
-                <el-button type="danger" class="flex-1" :loading="opLoading" @click="handleReject">❌ 驳回</el-button>
+                <el-button type="success" class="flex-1 mobile-secondary-action" :loading="opLoading" @click="handleAccept">✅ 通过</el-button>
+                <el-button type="danger" class="flex-1 mobile-secondary-action" :loading="opLoading" @click="handleReject">❌ 驳回</el-button>
               </div>
               <div class="mt-8 text-center">
-                <el-button type="warning" plain size="small" @click="showDisputeDialog = true">⚡ 发起争议</el-button>
+                <el-button type="warning" plain size="small" class="mobile-small-action" @click="showDisputeDialog = true">⚡ 发起争议</el-button>
               </div>
             </template>
 
@@ -1888,6 +1888,30 @@ onMounted(() => {
   overflow: hidden;
 }
 
+/* ====== 移动端按钮层级 class ====== */
+.mobile-primary-action {
+  min-height: 46px;
+  border-radius: 14px;
+  font-weight: 700;
+  width: 100%;
+}
+.mobile-secondary-action {
+  min-height: 42px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+.mobile-small-action {
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 10px;
+  font-size: 13px;
+}
+.mobile-danger-action {
+  min-height: 34px;
+  border-radius: 10px;
+  font-size: 13px;
+}
+
 /* ====== 工具类 ====== */
 .mt-8 { margin-top: 8px; }
 .mt-12 { margin-top: 12px; }
@@ -1954,30 +1978,38 @@ onMounted(() => {
   }
 
   /* ====== 子任务区移动端调整 ====== */
-  /* 子任务操作按钮 — 去重紫色，改为轻量描边 */
+  /* 子任务操作按钮 — 统一尺寸层级 */
   .subtask-actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 8px;
     margin-left: 0;
-    margin-top: 6px;
+    margin-top: 8px;
     width: 100%;
   }
   .subtask-actions .el-button {
     font-size: 12px;
-    min-height: 36px;
-    padding: 0 12px;
+    min-height: 34px;
+    padding: 0 14px;
+    border-radius: 10px;
+    flex: 1;
+    max-width: 120px;
   }
-  /* 编辑按钮降级为默认 */
+  /* 编辑 — 次级轻描边 */
   .subtask-actions .el-button:not(.el-button--danger) {
     color: #94a3b8 !important;
     border-color: rgba(148, 163, 184, 0.18) !important;
   }
-  /* 删除按钮保留红色描边 */
+  /* 删除 — 红色轻背景危险按钮 */
   .subtask-actions .el-button--danger.is-plain {
     color: #fca5a5 !important;
     border-color: rgba(239, 68, 68, 0.25) !important;
     background: rgba(239, 68, 68, 0.06) !important;
+  }
+  /* 子任务行内保存/取消 — 中号次级 */
+  .subtask-actions .el-button:first-child {
+    border-radius: 10px;
+    min-height: 34px;
   }
 
   /* 移动端添加子任务 — 上下布局 */

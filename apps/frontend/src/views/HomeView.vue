@@ -1462,7 +1462,7 @@ onMounted(() => {
   .stat-divider { display: none; }
   .value-flow-enhanced { gap: 4px; padding: 10px; overflow-x: auto; }
   .value-flow-enhanced .flow-step-connector { min-width: 8px; }
-  .task-grid { grid-template-columns: 1fr !important; gap: 12px !important; }
+  .task-grid { grid-template-columns: 1fr; gap: 12px; }
   .market-layout { flex-direction: column; }
   .filter-row { flex-wrap: wrap; gap: 8px; }
   .filter-row .el-button { flex-shrink: 0; }
@@ -1635,7 +1635,22 @@ onMounted(() => {
 
   /* FAB 底部留空 — 避免遮挡最后一张卡片 */
   .task-grid {
-    padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(110px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* 两列卡片：确保宽度稳定，不出现半张挤压 */
+  .task-card-premium {
+    min-width: 0;
+  }
+
+  /* 两列模式下：描述压缩为1行，角标缩小，底部信息紧凑 */
+  .premium-card-desc-mobile {
+    -webkit-line-clamp: 1;
+  }
+  .mobile-badge {
+    height: 20px;
+    font-size: 9px;
+    padding: 0 6px;
   }
 
   /* 隐藏桌面端元素 */
@@ -1679,6 +1694,17 @@ onMounted(() => {
   .mobile-avatar-btn {
     width: 44px;
     height: 44px;
+  }
+}
+
+/* ====== 大手机 / 小平板：任务卡片两列布局 ====== */
+@media (min-width: 601px) and (max-width: 768px) {
+  .task-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px;
+  }
+  .task-card-premium {
+    min-width: 0;
   }
 }
 
