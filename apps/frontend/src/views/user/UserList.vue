@@ -217,13 +217,9 @@
 
             <!-- 移动端筛选 chip + 卡片列表 -->
             <div class="mobile-only">
-              <div class="mobile-chip-row">
-                <span v-for="opt in taskStatusOptions" :key="opt.value"
-                  class="mobile-chip"
-                  :class="{ active: adminTaskStatusFilter === opt.value }"
-                  @click="adminTaskStatusFilter = opt.value as AdminTaskStatus"
-                >{{ opt.label }}</span>
-              </div>
+              <van-tabs v-model:active="adminTaskStatusTabIndex" @change="onTaskStatusTabChange" class="vant-tabs-filter" :swipeable="false" :ellipsis="false" :duration="0.2" color="#6366f1" title-active-color="#a5b4fc" title-inactive-color="#94a3b8">
+                <van-tab v-for="opt in taskStatusOptions" :key="opt.value" :title="opt.label" />
+              </van-tabs>
 
               <div v-if="loadingTasks" style="text-align:center;padding:24px;color:#64748b;">加载中...</div>
               <van-empty v-else-if="!filteredAdminTasks.length" description="当前没有任务" />
@@ -334,13 +330,9 @@
             <!-- 移动端 -->
             <div class="mobile-only">
               <div class="mobile-filter-bar">
-                <div class="mobile-chip-row">
-                  <span v-for="opt in txnTypeOptions" :key="opt.value"
-                    class="mobile-chip"
-                    :class="{ active: adminTxnTypeFilter === opt.value }"
-                    @click="adminTxnTypeFilter = opt.value as AdminTxnType"
-                  >{{ opt.label }}</span>
-                </div>
+                <van-tabs v-model:active="adminTxnTypeTabIndex" @change="onTxnTypeTabChange" class="vant-tabs-filter" :swipeable="false" :ellipsis="false" :duration="0.2" color="#6366f1" title-active-color="#a5b4fc" title-inactive-color="#94a3b8">
+                <van-tab v-for="opt in txnTypeOptions" :key="opt.value" :title="opt.label" />
+              </van-tabs>
                 <div class="filter-row-inner">
                   <el-input-number
                     v-model="adminTxnUserId"
@@ -426,7 +418,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Refresh, ArrowDown } from '@element-plus/icons-vue'
-import { Empty } from 'vant'
+import { Empty, Tab, Tabs } from 'vant'
 
 import {
   getUserList,
@@ -473,6 +465,19 @@ const adminTransactions = ref<AdminTransaction[]>([])
 const loadingAdminTransactions = ref(false)
 const adminTxnTypeFilter = ref<AdminTxnType>('all')
 const adminTxnUserId = ref<number | null>(null)
+
+// Vant tabs 索引（移动端筛选用）
+const adminTaskStatusTabIndex = ref(0)
+const adminTxnTypeTabIndex = ref(0)
+
+const onTaskStatusTabChange = (index: number) => {
+  const vals: AdminTaskStatus[] = ['all', 'PENDING', 'ASSIGNED', 'SUBMITTED', 'COMPLETED', 'CANCELLED']
+  adminTaskStatusFilter.value = vals[index] || 'all'
+}
+const onTxnTypeTabChange = (index: number) => {
+  const vals: AdminTxnType[] = ['all', 'DEPOSIT', 'WITHDRAW', 'PUBLISH', 'INCOME']
+  adminTxnTypeFilter.value = vals[index] || 'all'
+}
 
 // Tab
 const activeTab = ref<'users' | 'tasks' | 'wallet'>('users')
@@ -951,5 +956,33 @@ watch(
 .mdc-actions .el-button {
   font-size: 12px;
   min-height: 36px;
+}
+
+/* ====== Vant Tabs 暗色主题适配（仅移动端）====== */
+.vant-tabs-filter {
+  margin-bottom: 10px;
+}
+.vant-tabs-filter .van-tabs__wrap {
+  background: transparent;
+}
+.vant-tabs-filter .van-tabs__nav {
+  background: rgba(148, 163, 184, 0.06);
+  border-radius: 8px;
+  padding: 2px;
+}
+.vant-tabs-filter .van-tab {
+  font-size: 13px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  min-height: 34px;
+  color: #94a3b8;
+  background: transparent;
+}
+.vant-tabs-filter .van-tab--active {
+  background: rgba(99, 102, 241, 0.15);
+  font-weight: 600;
+}
+.vant-tabs-filter .van-tabs__line {
+  display: none;
 }
 </style>
