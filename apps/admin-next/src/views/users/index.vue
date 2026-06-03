@@ -11,6 +11,13 @@ const loading = ref(true);
 const users = ref<any[]>([]);
 const error = ref("");
 
+// ── 搜索和分页 ──
+const searchForm = ref({ email: "", nickname: "", role: "", status: "" });
+const currentPage = ref(1);
+const pageSize = ref(20);
+const total = ref(0);
+let searchTimer: ReturnType<typeof setTimeout> | null = null;
+
 const currentUser = computed(() => useUserStoreHook());
 const isSuperAdmin = computed(() => currentUser.value.roles?.includes("SUPER_ADMIN"));
 
@@ -19,13 +26,40 @@ onMounted(fetchUsers);
 async function fetchUsers() {
   loading.value = true;
   try {
-    const res = await getUserListApi();
+    const params: any = { page: currentPage.value, pageSize: pageSize.value };
+    if (searchForm.value.email.trim()) params.email = searchForm.value.email.trim();
+    if (searchForm.value.nickname.trim()) params.nickname = searchForm.value.nickname.trim();
+    if (searchForm.value.role) params.role = searchForm.value.role;
+    if (searchForm.value.status) params.status = searchForm.value.status;
+
+    const res = await getUserListApi(params);
     users.value = Array.isArray(res) ? res : res?.items || res?.data || [];
+    total.value = res?.total || users.value.length;
   } catch (e: any) {
     error.value = e?.message || "加载失败";
   } finally {
     loading.value = false;
   }
+}
+
+// 搜索防抖
+function onSearchChange() {
+  if (searchTimer) clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    currentPage.value = 1;
+    fetchUsers();
+  }, 300);
+}
+
+function onPageChange(page: number) {
+  currentPage.value = page;
+  fetchUsers();
+}
+
+function onSizeChange(size: number) {
+  pageSize.value = size;
+  currentPage.value = 1;
+  fetchUsers();
 }
 
 // ── 重置密码对话框 ──
@@ -152,6 +186,52 @@ async function submitCreate() {
     <div v-else-if="error" class="hint-text error">{{ error }}</div>
 
     <div v-else>
+      <!-- 搜索筛选栏 -->
+      <div class="search-bar">
+        <el-input
+          v-model="searchForm.email"
+          placeholder="邮箱搜索"
+          clearable
+          size="small"
+          class="search-input"
+          @input="onSearchChange"
+          @clear="onSearchChange"
+        />
+        <el-input
+          v-model="searchForm.nickname"
+          placeholder="昵称搜索"
+          clearable
+          size="small"
+          class="search-input"
+          @input="onSearchChange"
+          @clear="onSearchChange"
+        />
+        <el-select
+          v-model="searchForm.role"
+          placeholder="角色"
+          clearable
+          size="small"
+          class="search-select"
+          @change="onSearchChange"
+          @clear="onSearchChange"
+        >
+          <el-option label="超管" value="SUPER_ADMIN" />
+          <el-option label="管理员" value="ADMIN" />
+          <el-option label="用户" value="USER" />
+        </el-select>
+        <el-select
+          v-model="searchForm.status"
+          placeholder="状态"
+          clearable
+          size="small"
+          class="search-select"
+          @change="onSearchChange"
+          @clear="onSearchChange"
+        >
+          <el-option label="正常" value="ACTIVE" />
+          <el-option label="封禁" value="SUSPENDED" />
+        </el-select>
+      </div>
       <!-- 桌面端表格 -->
       <el-table :data="users" stripe border style="width:100%" class="desktop-table">
         <el-table-column prop="id" label="ID" width="50" />
@@ -218,7 +298,20 @@ async function submitCreate() {
         </div>
       </div>
 
-      <p class="footer-text">{{ users.length }} 条记录</p>
+      <div class="pagination-wrap">
+        <span class="footer-text">共 {{ total }} 条</span>
+        <el-pagination
+          v-model:current-page="currentPage"
+          v-model:page-size="pageSize"
+          :total="total"
+          :page-sizes="[10, 20, 50]"
+          layout="sizes, prev, pager, next"
+          small
+          background
+          @current-change="onPageChange"
+          @size-change="onSizeChange"
+        />
+      </div>
     </div>
 
     <!-- 重置密码弹窗 -->
@@ -385,11 +478,31 @@ async function submitCreate() {
 
 <style scoped>
 .users-page { max-width: 960px; }
-.page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
+.page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
 .page-title { font-size: 22px; font-weight: 700; margin: 0; }
 .hint-text { color: var(--el-text-color-secondary); }
 .hint-text.error { color: var(--el-color-danger); }
-.footer-text { color: var(--el-text-color-placeholder); font-size: 12px; margin-top: 12px; }
+
+/* 搜索栏 */
+.search-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.search-input { width: 180px; }
+.search-select { width: 110px; }
+
+/* 分页 */
+.pagination-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.footer-text { color: var(--el-text-color-placeholder); font-size: 12px; white-space: nowrap; }
 
 .desktop-table { display: table; }
 .mobile-cards { display: none; }
@@ -397,6 +510,9 @@ async function submitCreate() {
 @media (max-width: 640px) {
   .desktop-table { display: none; }
   .mobile-cards { display: flex; flex-direction: column; gap: 10px; }
+  .search-input { width: 100%; }
+  .search-select { width: 100%; }
+  .pagination-wrap { justify-content: center; }
 
   .user-card {
     border: 1px solid rgba(255,255,255,0.06);

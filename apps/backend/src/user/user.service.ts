@@ -38,13 +38,52 @@ export class UserService {
   }
 
   /**
-   * 获取所有用户列表
+   * 获取用户列表（分页 + 筛选）
    */
-  async findAll() {
-    return this.prisma.user.findMany({
-      orderBy: { createdAt: 'desc' },
-      select: safeUserSelect,
-    });
+  async findAll(params?: {
+    page?: number;
+    pageSize?: number;
+    email?: string;
+    nickname?: string;
+    role?: string;
+    status?: string;
+  }) {
+    const page = Math.max(1, params?.page || 1);
+    const pageSize = Math.min(100, Math.max(1, params?.pageSize || 20));
+    const skip = (page - 1) * pageSize;
+
+    const where: any = {};
+    if (params?.email) {
+      where.email = { contains: params.email };
+    }
+    if (params?.nickname) {
+      where.nickname = { contains: params.nickname };
+    }
+    if (params?.role && ['USER', 'ADMIN', 'SUPER_ADMIN'].includes(params.role)) {
+      where.role = params.role;
+    }
+    if (params?.status && ['ACTIVE', 'SUSPENDED'].includes(params.status)) {
+      where.status = params.status;
+    }
+
+    const [items, total] = await Promise.all([
+      this.prisma.user.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: pageSize,
+        select: safeUserSelect,
+      }),
+      this.prisma.user.count({ where }),
+    ]);
+
+    return {
+      items,
+      total,
+      page,
+      pageSize,
+      totalPages: Math.ceil(total / pageSize),
+    };
   }
 
   /**

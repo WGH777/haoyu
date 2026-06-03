@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
   UseGuards,
   Req,
   ParseIntPipe,
@@ -17,6 +18,7 @@ import {
   ApiBody,
   ApiOperation,
   ApiParam,
+  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 
@@ -74,15 +76,35 @@ export class UserController {
   }
 
   /**
-   * （管理员）查询所有用户
+   * （管理员）查询所有用户（支持分页和筛选）
    */
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'SUPER_ADMIN')
   @Get()
   @ApiBearerAuth()
-  @ApiOperation({ summary: '（管理员）获取用户列表' })
-  findAll() {
-    return this.userService.findAll();
+  @ApiOperation({ summary: '（管理员）获取用户列表（分页+筛选）' })
+  @ApiQuery({ name: 'page', required: false, description: '页码，默认 1' })
+  @ApiQuery({ name: 'pageSize', required: false, description: '每页条数，默认 20，最大 100' })
+  @ApiQuery({ name: 'email', required: false, description: '按邮箱模糊搜索' })
+  @ApiQuery({ name: 'nickname', required: false, description: '按昵称模糊搜索' })
+  @ApiQuery({ name: 'role', required: false, description: '按角色筛选：USER | ADMIN | SUPER_ADMIN' })
+  @ApiQuery({ name: 'status', required: false, description: '按状态筛选：ACTIVE | SUSPENDED' })
+  findAll(
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+    @Query('email') email?: string,
+    @Query('nickname') nickname?: string,
+    @Query('role') role?: string,
+    @Query('status') status?: string,
+  ) {
+    return this.userService.findAll({
+      page: page ? parseInt(page, 10) : undefined,
+      pageSize: pageSize ? parseInt(pageSize, 10) : undefined,
+      email,
+      nickname,
+      role,
+      status,
+    });
   }
 
   /**
