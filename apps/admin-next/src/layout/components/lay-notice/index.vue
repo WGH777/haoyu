@@ -93,4 +93,16 @@ const getLabel = computed(
     padding: 0 36px;
   }
 }
+
+@media (max-width: 640px) {
+  .dropdown-tabs {
+    :deep(.el-tabs__nav-wrap) {
+      padding: 0 12px;
+    }
+
+    .noticeList-container {
+      padding: 12px 16px 0;
+    }
+  }
+}
 </style>

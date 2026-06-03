@@ -49,7 +49,8 @@ const {
       <!-- 退出登录 -->
       <el-dropdown trigger="click">
         <span class="el-dropdown-link navbar-bg-hover select-none">
-          <img :src="userAvatar" :style="avatarsStyle" />
+          <img v-if="userAvatar" :src="userAvatar" :style="avatarsStyle" />
+          <span v-else class="avatar-placeholder" :style="avatarsStyle">{{ (username || 'H')[0].toUpperCase() }}</span>
           <p v-if="username" class="dark:text-white">{{ username }}</p>
         </span>
         <template #dropdown>
@@ -113,6 +114,20 @@ const {
         width: 22px;
         height: 22px;
         border-radius: 50%;
+      }
+
+      .avatar-placeholder {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: var(--el-color-primary);
+        color: #fff;
+        font-size: 12px;
+        font-weight: 600;
+        flex-shrink: 0;
       }
     }
   }

@@ -19,7 +19,32 @@ export const noticesData: TabItem[] = [
   {
     key: "1",
     name: "通知",
-    list: [],
+    list: [
+      {
+        avatar: "",
+        title: "v0.2.3-trial 正在观察",
+        description: "用户治理完整阶段已上线，包含分页搜索、创建用户、重置密码、封禁/解封、调整角色、审计日志。",
+        datetime: "刚刚",
+        type: "1",
+        status: "primary"
+      },
+      {
+        avatar: "",
+        title: "用户治理模块已上线",
+        description: "SUPER_ADMIN 可在用户管理页进行危险操作，所有操作均记录审计日志。",
+        datetime: "今天",
+        type: "1",
+        status: "success"
+      },
+      {
+        avatar: "",
+        title: "请关注审计日志记录",
+        description: "CREATE_USER / RESET_PASSWORD / BAN_USER / UNBAN_USER / CHANGE_USER_ROLE 五类事件已全量记录。",
+        datetime: "今天",
+        type: "1",
+        status: "warning"
+      }
+    ],
     emptyText: "暂无通知"
   },
   {
@@ -27,25 +52,31 @@ export const noticesData: TabItem[] = [
     name: "消息",
     list: [
       {
-        avatar: "https://xiaoxian521.github.io/hyperlink/svg/smile1.svg",
-        title: "小铭 评论了你",
-        description: "诚在于心，信在于行，诚信在于心行合一。",
+        avatar: "",
+        title: "创建用户已接入 CREATE_USER 审计",
+        description: "通过 POST /api/admin/users 创建的用户将自动记录管理员操作行为。",
         datetime: "今天",
         type: "2"
       },
       {
-        avatar: "https://xiaoxian521.github.io/hyperlink/svg/smile2.svg",
-        title: "李白 回复了你",
-        description: "长风破浪会有时，直挂云帆济沧海。",
-        datetime: "昨天",
+        avatar: "",
+        title: "重置密码已接入 RESET_PASSWORD 审计",
+        description: "SUPER_ADMIN 重置用户密码后将自动生成强密码并记录审计。",
+        datetime: "今天",
         type: "2"
       },
       {
-        avatar: "https://xiaoxian521.github.io/hyperlink/svg/smile5.svg",
-        title: "标题",
-        description:
-          "请将鼠标移动到此处，以便测试超长的消息在此处将如何处理。本例中设置的描述最大行数为2，超过2行的描述内容将被省略并且可以通过tooltip查看完整内容",
-        datetime: "时间",
+        avatar: "",
+        title: "封禁/解封已接入审计",
+        description: "BAN_USER / UNBAN_USER 操作均需填写原因，完整记录管理员行为。",
+        datetime: "今天",
+        type: "2"
+      },
+      {
+        avatar: "",
+        title: "调整角色已接入 CHANGE_USER_ROLE 审计",
+        description: "仅支持 USER ↔ ADMIN 切换，禁止修改 SUPER_ADMIN 角色。",
+        datetime: "今天",
         type: "2"
       }
     ],
@@ -57,37 +88,37 @@ export const noticesData: TabItem[] = [
     list: [
       {
         avatar: "",
-        title: "第三方紧急代码变更",
-        description:
-          "小林提交于 2024-05-10，需在 2024-05-11 前完成代码变更任务",
+        title: "手机端 UI 细节优化",
+        description: "通知弹层移动端适配、头像默认图、按钮间距微调。",
         datetime: "",
-        extra: "马上到期",
-        status: "danger",
+        extra: "计划中",
+        status: "info",
         type: "3"
       },
       {
         avatar: "",
-        title: "版本发布",
-        description: "指派小铭于 2024-06-18 前完成更新并发布",
+        title: "主站 /assets 缓存策略复核",
+        description: "admin-next /static 已采用 no-cache，主站 /assets 仍为 immutable，需评估是否统一。",
         datetime: "",
-        extra: "已耗时 8 天",
+        extra: "待评估",
         status: "warning",
         type: "3"
       },
       {
         avatar: "",
-        title: "新功能开发",
-        description: "开发多租户管理",
+        title: "admin-next 部署路径标准化",
+        description: "当前部署在 /home/web/html/haoyu-admin-next/，非标准路径，需迁移到 /var/www/ 下。",
         datetime: "",
-        extra: "进行中",
+        extra: "待排期",
+        status: "warning",
         type: "3"
       },
       {
         avatar: "",
-        title: "任务名称",
-        description: "任务需要在 2030-10-30 10:00 前启动",
+        title: "任务治理只读详情增强",
+        description: "任务/订单列表仅展示基本信息，需补充详情页和状态筛选。",
         datetime: "",
-        extra: "未开始",
+        extra: "计划中",
         status: "info",
         type: "3"
       }
