@@ -467,9 +467,19 @@
     <span class="mobile-page-title">{{ mobileTitle }}</span>
     <div class="mobile-topbar-right">
       <template v-if="isLogin && currentUser">
-        <button class="mobile-avatar-btn" @click="goMenu('/profile')">
-          <span class="mobile-avatar">{{ currentUser?.nickname?.[0] || currentUser?.email?.[0]?.toUpperCase() || '?' }}</span>
-        </button>
+        <el-dropdown trigger="click" @command="handleMobileAvatarCommand">
+          <button class="mobile-avatar-btn" aria-label="用户菜单">
+            <span class="mobile-avatar">{{ currentUser?.nickname?.[0] || currentUser?.email?.[0]?.toUpperCase() || '?' }}</span>
+          </button>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="profile">个人中心</el-dropdown-item>
+              <el-dropdown-item command="my-task">我的任务</el-dropdown-item>
+              <el-dropdown-item command="wallet">钱包</el-dropdown-item>
+              <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
       </template>
       <template v-else>
         <el-button size="small" @click="$router.push('/login')">登录</el-button>
@@ -775,12 +785,20 @@ const fetchWalletBalance = async () => {
 
 const handleCommand = (cmd: string) => {
   if (cmd === 'profile') router.push('/profile')
+  if (cmd === 'my-task') router.push('/my-task')
+  if (cmd === 'wallet') router.push('/wallet')
   if (cmd === 'logout') {
     localStorage.clear()
     ElMessage.success('已退出登录')
     // 直接跳转首页，让 Vue 重新初始化，避免状态残留
     window.location.href = '/task'
   }
+}
+
+const handleMobileAvatarCommand = (cmd: string) => {
+  mobileDrawerOpen.value = false
+  document.body.classList.remove('drawer-open')
+  handleCommand(cmd)
 }
 
 onMounted(() => {
@@ -1416,7 +1434,7 @@ onMounted(() => {
   .mobile-fab {
     display: flex !important;
     align-items: center; justify-content: center;
-    position: fixed; bottom: 24px; right: 20px;
+    position: fixed; bottom: calc(72px + env(safe-area-inset-bottom, 0px)); right: 18px;
     width: 56px; height: 56px;
     border-radius: 50%;
     background: linear-gradient(135deg, #6366f1, #8b5cf6);
@@ -1497,10 +1515,11 @@ onMounted(() => {
     padding: 12px 14px !important;
   }
 
-  /* 手机端隐藏钱包余额 */
+  /* 手机端隐藏钱包余额和桌面端用户入口（仅保留移动端统一入口） */
   .topbar .balance-badge { display: none !important; }
+  .topbar .user-entry { display: none !important; }
 
-  /* 手机端用户入口简化 */
+  /* 手机端用户入口只保留移动顶栏的统一入口 */
   .topbar .user-entry-nick { display: none; }
   .user-entry {
     padding: 2px; gap: 0; background: none; border: none;

@@ -40,227 +40,348 @@
         <el-tabs v-model="activeTab">
           <!-- Tab 1：用户列表 -->
           <el-tab-pane label="用户列表" name="users">
-            <el-table
-              v-loading="loadingUsers"
-              :data="users"
-              border
-              style="width: 100%"
-            >
-              <el-table-column prop="id" label="ID" width="80" />
-              <el-table-column label="昵称" min-width="120">
-                <template #default="{ row }">
-                  {{ row.nickname || '-' }}
-                </template>
-              </el-table-column>
-              <el-table-column prop="email" label="邮箱" min-width="200" />
-              <el-table-column label="角色" width="120">
-                <template #default="{ row }">
-                  <el-tag :type="getRoleTagType(row.role)" size="small">
-                    {{ getRoleLabel(row.role) }}
-                  </el-tag>
-                </template>
-              </el-table-column>
-              <el-table-column label="余额 (元)" width="120">
-                <template #default="{ row }">
-                  {{ ((row.balance || 0) / 100).toFixed(2) }}
-                </template>
-              </el-table-column>
-              <el-table-column label="注册时间" min-width="180">
-                <template #default="{ row }">
-                  {{ formatTime(row.createdAt) }}
-                </template>
-              </el-table-column>
-              <el-table-column label="操作" width="280" fixed="right">
-                <template #default="{ row }">
-                  <el-space>
-                    <!-- 只有 SUPER_ADMIN 且不能操作自己 -->
-                    <el-dropdown
-                      v-if="isSuperAdmin && row.id !== currentUser?.id"
-                    >
-                      <el-button type="primary" size="small">
-                        调整角色
-                        <el-icon class="el-icon--right">
-                          <ArrowDown />
-                        </el-icon>
+            <!-- 桌面端表格 -->
+            <div class="desktop-only">
+              <el-table
+                v-loading="loadingUsers"
+                :data="users"
+                border
+                style="width: 100%"
+              >
+                <el-table-column prop="id" label="ID" width="80" />
+                <el-table-column label="昵称" min-width="120">
+                  <template #default="{ row }">
+                    {{ row.nickname || '-' }}
+                  </template>
+                </el-table-column>
+                <el-table-column prop="email" label="邮箱" min-width="200" />
+                <el-table-column label="角色" width="120">
+                  <template #default="{ row }">
+                    <el-tag :type="getRoleTagType(row.role)" size="small">
+                      {{ getRoleLabel(row.role) }}
+                    </el-tag>
+                  </template>
+                </el-table-column>
+                <el-table-column label="余额 (元)" width="120">
+                  <template #default="{ row }">
+                    {{ ((row.balance || 0) / 100).toFixed(2) }}
+                  </template>
+                </el-table-column>
+                <el-table-column label="注册时间" min-width="180">
+                  <template #default="{ row }">
+                    {{ formatTime(row.createdAt) }}
+                  </template>
+                </el-table-column>
+                <el-table-column label="操作" width="280" fixed="right">
+                  <template #default="{ row }">
+                    <el-space>
+                      <el-dropdown
+                        v-if="isSuperAdmin && row.id !== currentUser?.id"
+                      >
+                        <el-button type="primary" size="small">
+                          调整角色
+                          <el-icon class="el-icon--right">
+                            <ArrowDown />
+                          </el-icon>
+                        </el-button>
+                        <template #dropdown>
+                          <el-dropdown-menu>
+                            <el-dropdown-item
+                              @click="handleChangeRole(row, 'USER')"
+                            >
+                              设为普通用户
+                            </el-dropdown-item>
+                            <el-dropdown-item
+                              @click="handleChangeRole(row, 'ADMIN')"
+                            >
+                              设为管理员
+                            </el-dropdown-item>
+                          </el-dropdown-menu>
+                        </template>
+                      </el-dropdown>
+
+                      <el-button
+                        v-if="isSuperAdmin && row.id !== currentUser?.id"
+                        size="small"
+                        @click="openResetPasswordDialog(row)"
+                      >
+                        重置密码
                       </el-button>
+
+                      <el-button
+                        v-if="isSuperAdmin && row.id !== currentUser?.id"
+                        type="danger"
+                        size="small"
+                        @click="handleDeleteUser(row)"
+                      >
+                        删除
+                      </el-button>
+                    </el-space>
+                  </template>
+                </el-table-column>
+              </el-table>
+            </div>
+
+            <!-- 移动端卡片列表 -->
+            <div class="mobile-only">
+              <div v-if="loadingUsers" style="text-align:center;padding:24px;color:#64748b;">加载中...</div>
+              <div v-else-if="!users.length" class="mobile-card-empty">
+                <p>暂无用户记录</p>
+                <p class="empty-sub">请调整筛选条件，或稍后再试</p>
+              </div>
+              <div v-else class="mobile-card-list">
+                <div v-for="u in users" :key="u.id" class="mobile-data-card">
+                  <div class="mdc-head">
+                    <span class="mdc-id">#{{ u.id }}</span>
+                    <el-tag :type="getRoleTagType(u.role)" size="small">{{ getRoleLabel(u.role) }}</el-tag>
+                  </div>
+                  <div class="mdc-nick">{{ u.nickname || '-' }}</div>
+                  <div class="mdc-email">{{ u.email }}</div>
+                  <div class="mdc-meta">
+                    <span>余额：{{ ((u.balance || 0) / 100).toFixed(2) }} 元</span>
+                    <span>注册：{{ formatTime(u.createdAt || '') }}</span>
+                  </div>
+                  <div v-if="isSuperAdmin && u.id !== currentUser?.id" class="mdc-actions">
+                    <el-dropdown v-if="isSuperAdmin">
+                      <el-button size="small" plain>角色</el-button>
                       <template #dropdown>
                         <el-dropdown-menu>
-                          <el-dropdown-item
-                            @click="handleChangeRole(row, 'USER')"
-                          >
-                            设为普通用户
-                          </el-dropdown-item>
-                          <el-dropdown-item
-                            @click="handleChangeRole(row, 'ADMIN')"
-                          >
-                            设为管理员
-                          </el-dropdown-item>
+                          <el-dropdown-item @click="handleChangeRole(u, 'USER')">设为普通用户</el-dropdown-item>
+                          <el-dropdown-item @click="handleChangeRole(u, 'ADMIN')">设为管理员</el-dropdown-item>
                         </el-dropdown-menu>
                       </template>
                     </el-dropdown>
-
-                    <el-button
-                      v-if="isSuperAdmin && row.id !== currentUser?.id"
-                      size="small"
-                      @click="openResetPasswordDialog(row)"
-                    >
-                      重置密码
-                    </el-button>
-
-                    <el-button
-                      v-if="isSuperAdmin && row.id !== currentUser?.id"
-                      type="danger"
-                      size="small"
-                      @click="handleDeleteUser(row)"
-                    >
-                      删除
-                    </el-button>
-                  </el-space>
-                </template>
-              </el-table-column>
-            </el-table>
+                    <el-button size="small" plain @click="openResetPasswordDialog(u)">重置密码</el-button>
+                    <el-button size="small" type="danger" plain @click="handleDeleteUser(u)">删除</el-button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </el-tab-pane>
 
           <!-- Tab 2：任务监控（管理员专用，只读） -->
           <el-tab-pane label="任务监控" name="tasks">
-            <!-- 状态筛选条 -->
-            <div class="task-filter-bar">
-              <span class="filter-label">状态：</span>
-              <el-radio-group v-model="adminTaskStatusFilter" size="small">
-                <el-radio-button label="all">全部</el-radio-button>
-                <el-radio-button label="PENDING">待领取</el-radio-button>
-                <el-radio-button label="ASSIGNED">进行中</el-radio-button>
-                <el-radio-button label="SUBMITTED">待验收</el-radio-button>
-                <el-radio-button label="COMPLETED">已完成</el-radio-button>
-                <el-radio-button label="CANCELLED">已取消</el-radio-button>
-              </el-radio-group>
+            <!-- 桌面端筛选条 + 表格 -->
+            <div class="desktop-only">
+              <div class="task-filter-bar">
+                <span class="filter-label">状态：</span>
+                <el-radio-group v-model="adminTaskStatusFilter" size="small">
+                  <el-radio-button label="all">全部</el-radio-button>
+                  <el-radio-button label="PENDING">待领取</el-radio-button>
+                  <el-radio-button label="ASSIGNED">进行中</el-radio-button>
+                  <el-radio-button label="SUBMITTED">待验收</el-radio-button>
+                  <el-radio-button label="COMPLETED">已完成</el-radio-button>
+                  <el-radio-button label="CANCELLED">已取消</el-radio-button>
+                </el-radio-group>
+              </div>
+
+              <el-table
+                v-loading="loadingTasks"
+                :data="filteredAdminTasks"
+                border
+                style="width: 100%"
+                empty-text="当前没有任务"
+              >
+                <el-table-column prop="id" label="任务 ID" width="90" />
+                <el-table-column label="任务标题" min-width="180">
+                  <template #default="{ row }">
+                    <el-link type="primary" @click="goTaskDetail(row.id)">
+                      {{ row.title }}
+                    </el-link>
+                  </template>
+                </el-table-column>
+                <el-table-column label="发布人" width="140">
+                  <template #default="{ row }">
+                    {{ row.publisher?.nickname || row.publisher?.email || 'N/A' }}
+                  </template>
+                </el-table-column>
+                <el-table-column label="赏金 (元)" width="120">
+                  <template #default="{ row }">
+                    {{ (row.price / 100).toFixed(2) }}
+                  </template>
+                </el-table-column>
+                <el-table-column label="状态" width="120">
+                  <template #default="{ row }">
+                    <el-tag :type="getTaskStatusTag(row.status)" size="small">
+                      {{ getTaskStatusText(row.status) }}
+                    </el-tag>
+                  </template>
+                </el-table-column>
+                <el-table-column label="发布时间" width="180">
+                  <template #default="{ row }">
+                    {{ formatTime(row.createdAt) }}
+                  </template>
+                </el-table-column>
+              </el-table>
+              <div class="tab-tip">
+                当前任务数据来自接口 <code>/admin/tasks</code>，包含各状态任务。
+              </div>
             </div>
 
-            <el-table
-              v-loading="loadingTasks"
-              :data="filteredAdminTasks"
-              border
-              style="width: 100%"
-              empty-text="当前没有任务"
-            >
-              <el-table-column prop="id" label="任务 ID" width="90" />
-              <el-table-column label="任务标题" min-width="180">
-                <template #default="{ row }">
-                  <el-link type="primary" @click="goTaskDetail(row.id)">
-                    {{ row.title }}
-                  </el-link>
-                </template>
-              </el-table-column>
-              <el-table-column label="发布人" width="140">
-                <template #default="{ row }">
-                  {{ row.publisher?.nickname || row.publisher?.email || 'N/A' }}
-                </template>
-              </el-table-column>
-              <el-table-column label="赏金 (元)" width="120">
-                <template #default="{ row }">
-                  {{ (row.price / 100).toFixed(2) }}
-                </template>
-              </el-table-column>
-              <el-table-column label="状态" width="120">
-                <template #default="{ row }">
-                  <el-tag :type="getTaskStatusTag(row.status)" size="small">
-                    {{ getTaskStatusText(row.status) }}
-                  </el-tag>
-                </template>
-              </el-table-column>
-              <el-table-column label="发布时间" width="180">
-                <template #default="{ row }">
-                  {{ formatTime(row.createdAt) }}
-                </template>
-              </el-table-column>
-            </el-table>
-            <div class="tab-tip">
-              当前任务数据来自接口 <code>/admin/tasks</code>，包含各状态任务。
+            <!-- 移动端筛选 chip + 卡片列表 -->
+            <div class="mobile-only">
+              <div class="mobile-chip-row">
+                <span v-for="opt in taskStatusOptions" :key="opt.value"
+                  class="mobile-chip"
+                  :class="{ active: adminTaskStatusFilter === opt.value }"
+                  @click="adminTaskStatusFilter = opt.value as AdminTaskStatus"
+                >{{ opt.label }}</span>
+              </div>
+
+              <div v-if="loadingTasks" style="text-align:center;padding:24px;color:#64748b;">加载中...</div>
+              <div v-else-if="!filteredAdminTasks.length" class="mobile-card-empty">
+                <p>当前没有任务</p>
+              </div>
+              <div v-else class="mobile-card-list">
+                <div v-for="t in filteredAdminTasks" :key="t.id" class="mobile-data-card" @click="goTaskDetail(t.id)" style="cursor:pointer;">
+                  <div class="mdc-head">
+                    <span class="mdc-id">#{{ t.id }}</span>
+                    <el-tag :type="getTaskStatusTag(t.status)" size="small">{{ getTaskStatusText(t.status) }}</el-tag>
+                  </div>
+                  <div class="mdc-title">{{ t.title }}</div>
+                  <div class="mdc-meta">
+                    <span>👤 {{ t.publisher?.nickname || t.publisher?.email || 'N/A' }}</span>
+                    <span>💰 {{ (t.price / 100).toFixed(2) }}</span>
+                  </div>
+                  <div class="mdc-time">📅 {{ formatTime(t.createdAt) }}</div>
+                </div>
+              </div>
             </div>
           </el-tab-pane>
 
           <!-- Tab 3：资金监控（管理员专用，只读） -->
           <el-tab-pane label="资金监控" name="wallet">
-            <div class="task-filter-bar">
-              <span class="filter-label">类型：</span>
-              <el-radio-group v-model="adminTxnTypeFilter" size="small">
-                <el-radio-button label="all">全部</el-radio-button>
-                <el-radio-button label="DEPOSIT">充值</el-radio-button>
-                <el-radio-button label="WITHDRAW">提现</el-radio-button>
-                <el-radio-button label="PUBLISH">发布任务</el-radio-button>
-                <el-radio-button label="INCOME">任务收入</el-radio-button>
-              </el-radio-group>
+            <!-- 桌面端 -->
+            <div class="desktop-only">
+              <div class="task-filter-bar">
+                <span class="filter-label">类型：</span>
+                <el-radio-group v-model="adminTxnTypeFilter" size="small">
+                  <el-radio-button label="all">全部</el-radio-button>
+                  <el-radio-button label="DEPOSIT">充值</el-radio-button>
+                  <el-radio-button label="WITHDRAW">提现</el-radio-button>
+                  <el-radio-button label="PUBLISH">发布任务</el-radio-button>
+                  <el-radio-button label="INCOME">任务收入</el-radio-button>
+                </el-radio-group>
 
-              <span class="filter-label" style="margin-left: 20px;">用户ID：</span>
-              <el-input-number
-                v-model="adminTxnUserId"
-                :min="1"
-                :controls="false"
-                placeholder="全部用户"
-                style="width: 160px"
-              />
-              <el-button
-                size="small"
-                type="primary"
-                style="margin-left: 10px;"
-                @click="handleSearchAdminTransactions"
+                <span class="filter-label" style="margin-left: 20px;">用户ID：</span>
+                <el-input-number
+                  v-model="adminTxnUserId"
+                  :min="1"
+                  :controls="false"
+                  placeholder="全部用户"
+                  style="width: 160px"
+                />
+                <el-button
+                  size="small"
+                  type="primary"
+                  style="margin-left: 10px;"
+                  @click="handleSearchAdminTransactions"
+                >
+                  查询
+                </el-button>
+              </div>
+
+              <el-table
+                v-loading="loadingAdminTransactions"
+                :data="filteredAdminTransactions"
+                border
+                style="width: 100%"
+                empty-text="当前没有流水记录"
               >
-                查询
-              </el-button>
+                <el-table-column prop="id" label="流水ID" width="90" />
+                <el-table-column label="用户" min-width="180">
+                  <template #default="{ row }">
+                    <span>
+                      {{ row.user?.nickname || row.user?.email || 'N/A' }}
+                    </span>
+                    <span class="user-id-text">（ID：{{ row.userId }}）</span>
+                  </template>
+                </el-table-column>
+                <el-table-column label="类型" width="110">
+                  <template #default="{ row }">
+                    <el-tag
+                      :type="row.amount > 0 ? 'success' : 'danger'"
+                      size="small"
+                    >
+                      {{ getTxnTypeLabel(row.type) }}
+                    </el-tag>
+                  </template>
+                </el-table-column>
+                <el-table-column label="金额" width="120">
+                  <template #default="{ row }">
+                    <span :class="row.amount > 0 ? 'text-green' : 'text-red'">
+                      {{ formatTxnAmount(row) }}
+                    </span>
+                  </template>
+                </el-table-column>
+                <el-table-column label="状态" width="100">
+                  <template #default="{ row }">
+                    <el-tag
+                      :type="row.status === 'SUCCESS' ? 'success' : 'info'"
+                      size="small"
+                    >
+                      {{ row.status }}
+                    </el-tag>
+                  </template>
+                </el-table-column>
+                <el-table-column label="时间" width="180">
+                  <template #default="{ row }">
+                    {{ formatTime(row.createdAt) }}
+                  </template>
+                </el-table-column>
+              </el-table>
+              <div class="tab-tip">
+                当前流水数据来自接口 <code>/admin/transactions</code>，展示最近 100 条记录。
+                本页仅支持查看，不提供资金修改入口，资金安全完全由业务逻辑控制。
+              </div>
             </div>
 
-            <el-table
-              v-loading="loadingAdminTransactions"
-              :data="filteredAdminTransactions"
-              border
-              style="width: 100%"
-              empty-text="当前没有流水记录"
-            >
-              <el-table-column prop="id" label="流水ID" width="90" />
-              <el-table-column label="用户" min-width="180">
-                <template #default="{ row }">
-                  <span>
-                    {{ row.user?.nickname || row.user?.email || 'N/A' }}
-                  </span>
-                  <span class="user-id-text">（ID：{{ row.userId }}）</span>
-                </template>
-              </el-table-column>
-              <el-table-column label="类型" width="110">
-                <template #default="{ row }">
-                  <el-tag
-                    :type="row.amount > 0 ? 'success' : 'danger'"
-                    size="small"
-                  >
-                    {{ getTxnTypeLabel(row.type) }}
-                  </el-tag>
-                </template>
-              </el-table-column>
-              <el-table-column label="金额" width="120">
-                <template #default="{ row }">
-                  <span :class="row.amount > 0 ? 'text-green' : 'text-red'">
-                    {{ formatTxnAmount(row) }}
-                  </span>
-                </template>
-              </el-table-column>
-              <el-table-column label="状态" width="100">
-                <template #default="{ row }">
-                  <el-tag
-                    :type="row.status === 'SUCCESS' ? 'success' : 'info'"
-                    size="small"
-                  >
-                    {{ row.status }}
-                  </el-tag>
-                </template>
-              </el-table-column>
-              <el-table-column label="时间" width="180">
-                <template #default="{ row }">
-                  {{ formatTime(row.createdAt) }}
-                </template>
-              </el-table-column>
-            </el-table>
-            <div class="tab-tip">
-              当前流水数据来自接口 <code>/admin/transactions</code>，展示最近 100 条记录。
-              本页仅支持查看，不提供资金修改入口，资金安全完全由业务逻辑控制。
+            <!-- 移动端 -->
+            <div class="mobile-only">
+              <div class="mobile-filter-bar">
+                <div class="mobile-chip-row">
+                  <span v-for="opt in txnTypeOptions" :key="opt.value"
+                    class="mobile-chip"
+                    :class="{ active: adminTxnTypeFilter === opt.value }"
+                    @click="adminTxnTypeFilter = opt.value as AdminTxnType"
+                  >{{ opt.label }}</span>
+                </div>
+                <div class="filter-row-inner">
+                  <el-input-number
+                    v-model="adminTxnUserId"
+                    :min="1"
+                    :controls="false"
+                    placeholder="用户ID（全部用户）"
+                    style="flex:1;"
+                    :style="{ width: 'auto' }"
+                  />
+                  <el-button type="primary" @click="handleSearchAdminTransactions" style="min-height:40px;">查询</el-button>
+                </div>
+              </div>
+
+              <div v-if="loadingAdminTransactions" style="text-align:center;padding:24px;color:#64748b;">加载中...</div>
+              <div v-else-if="!filteredAdminTransactions.length" class="mobile-card-empty">
+                <p>当前没有流水记录</p>
+              </div>
+              <div v-else class="mobile-card-list">
+                <div v-for="tx in filteredAdminTransactions" :key="tx.id" class="mobile-data-card">
+                  <div class="mdc-head">
+                    <span class="mdc-id">#{{ tx.id }}</span>
+                    <el-tag
+                      :type="tx.amount > 0 ? 'success' : 'danger'"
+                      size="small"
+                    >{{ getTxnTypeLabel(tx.type) }}</el-tag>
+                  </div>
+                  <div class="mdc-meta">
+                    <span>👤 {{ tx.user?.nickname || tx.user?.email || 'N/A' }}（ID:{{ tx.userId }}）</span>
+                  </div>
+                  <div class="mdc-meta">
+                    <span :class="tx.amount > 0 ? 'text-green' : 'text-red'">{{ formatTxnAmount(tx) }}</span>
+                    <el-tag :type="tx.status === 'SUCCESS' ? 'success' : 'info'" size="small">{{ tx.status }}</el-tag>
+                  </div>
+                  <div class="mdc-time">📅 {{ formatTime(tx.createdAt) }}</div>
+                </div>
+              </div>
             </div>
           </el-tab-pane>
         </el-tabs>
@@ -458,6 +579,24 @@ const getTaskStatusTag = (
       return ''
   }
 }
+
+// 移动端筛选芯片选项
+const taskStatusOptions = [
+  { value: 'all', label: '全部' },
+  { value: 'PENDING', label: '待领取' },
+  { value: 'ASSIGNED', label: '进行中' },
+  { value: 'SUBMITTED', label: '待验收' },
+  { value: 'COMPLETED', label: '已完成' },
+  { value: 'CANCELLED', label: '已取消' },
+]
+
+const txnTypeOptions = [
+  { value: 'all', label: '全部' },
+  { value: 'DEPOSIT', label: '充值' },
+  { value: 'WITHDRAW', label: '提现' },
+  { value: 'PUBLISH', label: '发布任务' },
+  { value: 'INCOME', label: '任务收入' },
+]
 
 // 前端过滤后的任务列表
 const filteredAdminTasks = computed(() => {
@@ -756,5 +895,67 @@ watch(
 .text-red {
   color: #fca5a5;
   font-weight: 600;
+}
+
+/* ====== 移动端卡片样式 ====== */
+.mobile-card-empty {
+  text-align: center;
+  padding: 40px 16px;
+  color: #64748b;
+  font-size: 14px;
+}
+.mobile-card-empty .empty-sub {
+  font-size: 12px;
+  color: #475569;
+  margin-top: 4px;
+}
+
+.mdc-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.mdc-id {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 600;
+}
+.mdc-nick {
+  font-size: 15px;
+  font-weight: 600;
+  color: #f1f5f9;
+  margin-bottom: 2px;
+}
+.mdc-email,
+.mdc-title {
+  font-size: 13px;
+  color: #94a3b8;
+  margin-bottom: 4px;
+  word-break: break-all;
+  line-height: 1.5;
+}
+.mdc-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 12px;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+.mdc-time {
+  font-size: 11px;
+  color: #475569;
+  margin-top: 4px;
+}
+.mdc-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.mdc-actions .el-button {
+  font-size: 12px;
+  min-height: 36px;
 }
 </style>
