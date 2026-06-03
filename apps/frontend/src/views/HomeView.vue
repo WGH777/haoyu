@@ -259,34 +259,41 @@
                 :style="{ animationDelay: (idx * 0.06) + 's' }"
                 @click="$router.push(`/task/${task.id}`)"
               >
-                <!-- 高预算角标 -->
-                <span v-if="task.price >= 50000" class="card-corner-badge hot">🔥 高预算</span>
-                <!-- 新任务角标（3天内） -->
-                <span v-else-if="isNewTask(task)" class="card-corner-badge new">🆕 新发布</span>
-
                 <div class="premium-card-top">
-                  <span class="premium-card-category">
-                    {{ categoryLabel(task.category || '') }}
-                    <span v-if="task.isPublicWelfare" class="welfare-badge">公益</span>
-                  </span>
-                  <span :class="['status-badge', statusClass(task.status)]">
-                    {{ statusLabel(task.status) }}
-                  </span>
+                  <div class="pct-tags">
+                    <span class="premium-card-category">
+                      {{ categoryLabel(task.category || '') }}
+                      <span v-if="task.isPublicWelfare" class="welfare-badge">公益</span>
+                    </span>
+                    <span :class="['status-badge', statusClass(task.status)]">
+                      {{ statusLabel(task.status) }}
+                    </span>
+                  </div>
+                  <div class="pct-badges mobile-only-flow">
+                    <span v-if="task.price >= 50000" class="mobile-badge hot">🔥 高预算</span>
+                    <span v-else-if="isNewTask(task)" class="mobile-badge new">🆕 新发布</span>
+                  </div>
                 </div>
 
                 <h3 class="premium-card-title">{{ task.title }}</h3>
-                <p class="premium-card-desc">{{ truncate(task.description, 80) }}</p>
+                <p class="premium-card-desc-desktop desktop-only">{{ truncate(task.description, 80) }}</p>
+                <p class="premium-card-desc-mobile mobile-only">{{ task.description ? (task.description.length > 120 ? task.description.slice(0, 120) + '...' : task.description) : '暂无描述' }}</p>
 
                 <!-- 迷你进度条 -->
-                <div class="progress-mini" style="margin-bottom: 12px;">
+                <div class="progress-mini" style="margin-bottom: 0;">
                   <div class="progress-fill" :style="{ width: progressPercent(task.status) }"></div>
                 </div>
 
                 <div class="premium-card-bottom">
-                  <span class="premium-card-price glow-amber">{{ formatYumiCompactFromCent(task.price) }}</span>
+                  <div class="mobile-bottom-row mobile-only">
+                    <span class="premium-card-price glow-amber">{{ formatYumiCompactFromCent(task.price) }}</span>
+                    <span class="pcr-service">{{ task.serviceMode === 'OFFLINE' ? '📍线下' : task.serviceMode === 'BOTH' ? '🌐均' : '💻线上' }}</span>
+                  </div>
+                  <span class="premium-card-price glow-amber desktop-only">{{ formatYumiCompactFromCent(task.price) }}</span>
                   <span class="premium-card-meta">
-                    <span>{{ task.serviceMode === 'OFFLINE' ? '📍 线下' : task.serviceMode === 'BOTH' ? '🌐 均可' : '💻 线上' }}</span>
+                    <span class="desktop-only">{{ task.serviceMode === 'OFFLINE' ? '📍 线下' : task.serviceMode === 'BOTH' ? '🌐 均可' : '💻 线上' }}</span>
                     <span>👁 {{ task.views || 0 }}</span>
+                    <span class="mobile-only">{{ timeAgo(task.createdAt) }}</span>
                   </span>
                 </div>
               </div>
@@ -680,6 +687,21 @@ const progressPercent = (s: string) => {
 
 const truncate = (text: string, len: number) =>
   text && text.length > len ? text.slice(0, len) + '...' : text || ''
+
+const timeAgo = (dateStr: string) => {
+  if (!dateStr) return ''
+  const now = Date.now()
+  const then = new Date(dateStr).getTime()
+  const diff = now - then
+  const minutes = Math.floor(diff / 60000)
+  const hours = Math.floor(diff / 3600000)
+  const days = Math.floor(diff / 86400000)
+  if (minutes < 1) return '刚刚'
+  if (minutes < 60) return minutes + '分钟前'
+  if (hours < 24) return hours + '小时前'
+  if (days < 7) return days + '天前'
+  return new Date(dateStr).toLocaleDateString('zh-CN')
+}
 
 const isNewTask = (task: Task) => {
   if (!task.createdAt) return false
@@ -1474,60 +1496,154 @@ onMounted(() => {
     line-height: 1; margin-top: -1px;
   }
 
-  /* 手机端任务卡片 — 信息流布局 */
+  /* ===== 手机端任务卡片 — 信息流布局重构 ===== */
   .task-card-premium {
-    padding: 16px 14px !important;
-    min-height: auto;
-    display: flex; flex-direction: column; gap: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 18px 16px;
+    border-radius: 20px;
+    background: linear-gradient(180deg, rgba(15,23,42,0.88), rgba(15,23,42,0.72));
+    border: 1px solid rgba(148,163,184,0.14);
+    box-shadow: none;
     position: relative;
   }
-  /* 角标不挤压内容 */
-  .card-corner-badge {
-    position: absolute; top: 8px; right: 10px; z-index: 3;
-    font-size: 10px; padding: 2px 8px;
-    pointer-events: none;
+  .task-card-premium:active {
+    transform: scale(0.992);
+    opacity: 0.96;
   }
+
+  /* meta 行：左侧 tags + 右侧 badge */
   .premium-card-top {
-    flex-wrap: wrap; gap: 6px;
-    padding-right: 50px; /* 给角标留空间 */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: nowrap;
+  }
+  .pct-tags {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: wrap;
   }
   .premium-card-category {
-    font-size: 10px; padding: 2px 8px;
+    font-size: 10px;
+    padding: 2px 10px;
+    border-radius: 999px;
+    background: rgba(148,163,184,0.08);
+    color: #94a3b8;
     white-space: nowrap;
   }
   .status-badge {
-    font-size: 10px; padding: 2px 8px;
+    font-size: 10px;
+    padding: 2px 10px;
+    border-radius: 999px;
     white-space: nowrap;
   }
-  .premium-card-title {
-    font-size: 15px !important; font-weight: 700;
-    line-height: 1.35; margin-bottom: 0;
-    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-    overflow: hidden;
+  .pct-badges.mobile-only-flow {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
   }
-  .premium-card-desc {
-    font-size: 12px !important; color: #64748b;
-    -webkit-line-clamp: 2;
-    margin-bottom: 0;
-  }
-  /* 进度条缩小 */
-  .progress-mini {
-    margin-bottom: 0 !important; height: 3px;
-  }
-  /* 底部信息行：赏金 / 服务方式 / 浏览量 */
-  .premium-card-bottom {
-    flex-direction: row; flex-wrap: wrap;
-    align-items: center; gap: 10px;
-    padding-top: 4px;
-    border-top: 1px solid rgba(148,163,184,0.06);
-  }
-  .premium-card-price {
-    font-size: 16px !important; font-weight: 800;
+  .mobile-badge {
+    display: inline-flex;
+    align-items: center;
+    height: 22px;
+    padding: 0 8px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 700;
+    white-space: nowrap;
+    pointer-events: none;
     line-height: 1;
   }
+  .mobile-badge.hot {
+    background: linear-gradient(135deg, rgba(245,158,11,0.2), rgba(251,191,36,0.1));
+    border: 1px solid rgba(245,158,11,0.3);
+    color: #fcd34d;
+  }
+  .mobile-badge.new {
+    background: linear-gradient(135deg, rgba(6,182,212,0.15), rgba(34,211,238,0.08));
+    border: 1px solid rgba(6,182,212,0.25);
+    color: #67e8f9;
+  }
+
+  /* 标题 */
+  .premium-card-title {
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.45;
+    color: #f1f5f9;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin: 0;
+  }
+
+  /* 描述，最多两行，颜色降低 */
+  .premium-card-desc-mobile {
+    font-size: 13px;
+    line-height: 1.5;
+    color: #64748b;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin: 0;
+  }
+  .premium-card-desc-desktop {
+    display: none;
+  }
+
+  /* 迷你进度条 — 更细更淡 */
+  .progress-mini {
+    height: 3px;
+    margin: 0;
+  }
+
+  /* 底部信息区：两行布局 */
+  .premium-card-bottom {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(148,163,184,0.08);
+  }
+  .mobile-bottom-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .premium-card-price {
+    font-size: 18px;
+    font-weight: 800;
+    line-height: 1;
+    color: #fcd34d;
+  }
+  .pcr-service {
+    font-size: 12px;
+    color: #94a3b8;
+  }
   .premium-card-meta {
-    font-size: 11px; gap: 8px;
-    flex-wrap: wrap;
+    display: flex;
+    gap: 12px;
+    font-size: 11px;
+    color: #64748b;
+  }
+
+  /* FAB 底部留空 — 避免遮挡最后一张卡片 */
+  .task-grid {
+    padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* 隐藏桌面端元素 */
+  .premium-card-price.desktop-only {
+    display: none;
+  }
+  .premium-card-meta .desktop-only {
+    display: none;
   }
 
   /* 抽屉菜单项加大点击区 */
