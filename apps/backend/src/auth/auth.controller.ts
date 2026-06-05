@@ -42,14 +42,16 @@ export class AuthController {
   @Post('login')
   @ApiOperation({ summary: '用户登录' })
   @ApiBody({ type: LoginDto })
-  async signIn(@Body() dto: LoginDto) {
+  async signIn(@Req() req: any, @Body() dto: LoginDto) {
     if (!dto || !dto.email || !dto.password) {
       throw new BadRequestException('email/password required');
     }
     try {
       const result = await this.authService.signIn(dto.email, dto.password);
-      // 登录成功：清除该 email 失败记录
+      // 登录成功：清除该 email 失败记录 + 该 IP 请求计数
       LoginThrottleGuard.clearEmailFails(dto.email);
+      const ip = req.headers['x-real-ip'] || req.ip || 'unknown';
+      LoginThrottleGuard.clearIp(ip);
       return result;
     } catch (err) {
       // 登录失败：记录该 email 失败次数（不影响其他校验异常传播）
