@@ -16,6 +16,7 @@ import { AuthService } from './auth.service';
 import { Roles } from './decorators/roles.decorator';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
+import { LoginThrottleGuard } from './guards/login-throttle.guard';
 import {
   LoginDto,
   RegisterDto,
@@ -37,6 +38,7 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @HttpCode(HttpStatus.OK)
+  @UseGuards(LoginThrottleGuard)
   @Post('login')
   @ApiOperation({ summary: '用户登录' })
   @ApiBody({ type: LoginDto })
@@ -44,7 +46,16 @@ export class AuthController {
     if (!dto || !dto.email || !dto.password) {
       throw new BadRequestException('email/password required');
     }
-    return this.authService.signIn(dto.email, dto.password);
+    try {
+      const result = await this.authService.signIn(dto.email, dto.password);
+      // 登录成功：清除该 email 失败记录
+      LoginThrottleGuard.clearEmailFails(dto.email);
+      return result;
+    } catch (err) {
+      // 登录失败：记录该 email 失败次数（不影响其他校验异常传播）
+      LoginThrottleGuard.recordEmailFail(dto.email);
+      throw err;
+    }
   }
 
   @Post('register')
