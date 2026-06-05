@@ -27,3 +27,9 @@ build/
 *.db-journal
 *.sqlite-journal
 *.sqlite3-journal
+
+# 8. .env 跟踪规则说明
+# .env / .env.* 默认不入库（由 .gitignore 保护）
+# 示例文件使用 .env.example（已解禁跟踪）
+# 若有 .env 文件意外被跟踪，执行 git rm --cached <file>
+# 当前已从索引移除 apps/admin/.env.production（原为历史遗留）
