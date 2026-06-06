@@ -1,5 +1,6 @@
 // 浩煜 Haoyu — Element Plus 深色科技主题覆盖 V2
 // 多场景统一 · 柔和输入 · 高对比文字
+// v0.2.6 Phase 0：新增暖金按钮 · 卡片层级变体
 
 // === 全局重置 ===
 html, body {
@@ -34,6 +35,35 @@ html, body {
 }
 .el-card__body {
   color: #94a3b8 !important;
+}
+
+// ---- 卡片层级变体 v0.2.6 Phase 0 ----
+.el-card.card-layer-1 {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+}
+.el-card.card-layer-2 {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25) !important;
+}
+.el-card.card-layer-3 {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+}
+
+// ---- 暖金色按钮 v0.2.6 Phase 0 ----
+.el-button--warning {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b) !important;
+  border: none !important;
+  color: #0a0e17 !important;
+  font-weight: 700 !important;
+  box-shadow: 0 2px 12px rgba(251, 191, 36, 0.3);
+  transition: all 0.3s ease !important;
+}
+.el-button--warning:hover {
+  box-shadow: 0 4px 20px rgba(251, 191, 36, 0.45);
+  transform: translateY(-1px);
+  background: linear-gradient(135deg, #fcd34d, #f59e0b) !important;
+}
+.el-button--warning:active {
+  transform: translateY(0);
 }
 
 // ---- 按钮 ----

@@ -1,5 +1,6 @@
 /* 浩煜 Haoyu — 全局基础样式 V2 */
 /* 深色科技背景 · 全屏自适应 · 柔和滚动条 */
+/* v0.2.6 Phase 0：新增 hy-mobile-safe-bottom 工具类 */
 
 :root {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif;
@@ -10,6 +11,10 @@
   background-color: #0a0e17;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
+  /* v0.2.6 Phase 0: 暖金色实用变量 (fallback) */
+  --hy-gold: #fbbf24;
+  --hy-gold-light: #fcd34d;
+  --hy-gold-dark: #f59e0b;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -255,6 +260,59 @@ a:hover {
 /* 卡片逐个淡入 */
 .task-card-anim {
   animation: cardFadeUp 0.45s ease both;
+}
+
+/* ====== v0.2.6 Phase 0: 更多工具类 ====== */
+
+/**
+ * hy-mobile-safe-bottom — 移动端底部安全间距
+ * 给内容容器添加底部 padding，避免 FAB / 底部导航遮挡
+ */
+.hy-mobile-safe-bottom {
+  padding-bottom: 0;
+}
+@media (max-width: 768px) {
+  .hy-mobile-safe-bottom {
+    padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/**
+ * hy-link — 内联链接
+ */
+.hy-link {
+  color: #818cf8;
+  text-decoration: none;
+  transition: color 0.2s;
+  cursor: pointer;
+}
+.hy-link:hover {
+  color: #a5b4fc;
+}
+
+/**
+ * hy-truncate — 文字截断（单行）
+ */
+.hy-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/**
+ * hy-text-muted — 柔和次要文字
+ */
+.hy-text-muted {
+  color: #64748b;
+}
+
+/**
+ * hy-flex-center — 居中对齐 flex
+ */
+.hy-flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* 尊重系统动画偏好 */

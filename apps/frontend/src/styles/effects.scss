@@ -1,7 +1,186 @@
 // 浩煜 Haoyu — 视觉效果系统 V2
 // 玻璃拟态 · 发光 · 渐变 · 榜单侧栏 · 状态流转
+// v0.2.6 Phase 0：新增 hy-* 通用工具类 · 灯火动画 · 暖金发光
 
-// === 玻璃拟态 ===
+// ==========================================
+// v0.2.6 Phase 0: 通用卡片 / 容器工具类
+// ==========================================
+
+/**
+ * hy-card — 标准卡片底座
+ * 使用场景：任何需要卡片容器的元素
+ * 用法：<div class="hy-card">...</div>
+ */
+.hy-card {
+  background: rgba(17, 24, 39, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  border-radius: 14px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+  transition: box-shadow 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
+  color: #f1f5f9;
+}
+
+/**
+ * hy-glass-card — 高透玻璃卡片
+ * 使用场景：hover 效显的主卡片、弹窗内卡片
+ */
+.hy-glass-card {
+  background: rgba(17, 24, 39, 0.55);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(148, 163, 184, 0.1);
+  border-radius: 14px;
+}
+
+/**
+ * hy-card-hover — 带悬浮效果的卡片
+ */
+.hy-card-hover {
+  background: rgba(17, 24, 39, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  border-radius: 14px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  color: #f1f5f9;
+  &:hover {
+    border-color: rgba(99, 102, 241, 0.3);
+    box-shadow: 0 8px 40px rgba(99, 102, 241, 0.08);
+    transform: translateY(-2px);
+  }
+}
+
+/**
+ * hy-card-layer-1/2/3 — 卡片层级阴影
+ * layer-1: 弱层级（表单内嵌）
+ * layer-2: 中层级（默认卡片）
+ * layer-3: 强层级（弹出卡片 / 模态内层）
+ */
+.hy-card-layer-1 {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+.hy-card-layer-2 {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+.hy-card-layer-3 {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+/**
+ * hy-section-title — 区块标题
+ * 用于 "热门需求" "完成榜" "信任引擎" 等 section 标题
+ */
+.hy-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/**
+ * hy-gold-text — 暖金色渐变文字
+ * 用于价格、高亮数值、CTA 文字
+ */
+.hy-gold-text {
+  background: var(--haoyu-gold-text);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/**
+ * hy-mobile-safe-bottom — 移动端底部安全间距
+ * 用于列表底部，避免 FAB / 底部导航遮挡
+ */
+.hy-mobile-safe-bottom {
+  @media (max-width: 768px) {
+    padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/**
+ * hy-glow-border — 顶部发光微光条
+ * 使用场景：卡片 hover 时的顶部品牌色线条
+ */
+.hy-glow-border {
+  position: relative;
+  overflow: hidden;
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #6366f1, #06b6d4, transparent);
+    opacity: 0;
+    transition: opacity 0.4s;
+  }
+  &:hover::after { opacity: 1; }
+}
+
+/**
+ * hy-city-skyline-divider — 城市天际线渐变分隔线
+ */
+.hy-city-skyline-divider {
+  height: 2px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(99, 102, 241, 0.3) 20%,
+    rgba(252, 211, 77, 0.5) 50%,
+    rgba(6, 182, 212, 0.3) 80%,
+    transparent 100%
+  );
+}
+
+// ==========================================
+// v0.2.6 Phase 0: 万家灯火动画
+// ==========================================
+
+@keyframes light-twinkle {
+  0%, 100% { opacity: 0.25; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.4); }
+}
+
+@keyframes light-twinkle-soft {
+  0%, 100% { opacity: 0.1; transform: scale(0.9); }
+  30% { opacity: 0.55; transform: scale(1.3); }
+  60% { opacity: 0.2; transform: scale(1); }
+}
+
+@keyframes gold-pulse {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(251, 191, 36, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(251, 191, 36, 0.5);
+  }
+}
+
+// ==========================================
+// v0.2.6 Phase 0: 暖金发光效果
+// ==========================================
+
+.glow-gold {
+  box-shadow: 0 0 16px rgba(251, 191, 36, 0.2);
+  border-color: rgba(251, 191, 36, 0.3);
+}
+
+.glow-gold-hover {
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+  &:hover {
+    box-shadow: 0 0 24px rgba(251, 191, 36, 0.25);
+    border-color: rgba(251, 191, 36, 0.4);
+  }
+}
+
+// === 玻璃拟态（旧名，保持向后兼容）=== 
 .glass-card {
   background: rgba(17, 24, 39, 0.7);
   backdrop-filter: blur(20px);

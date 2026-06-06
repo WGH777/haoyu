@@ -1,6 +1,10 @@
 // 浩煜 Haoyu — 多场景设计令牌系统 V2
 // 深色科技风格 · 金融科技质感 · 多场景统一
 
+// 浩煜 Haoyu — 多场景设计令牌系统 V2
+// 深色科技风格 · 金融科技质感 · 多场景统一
+// v0.2.6 Phase 0：新增暖金色系 · 灯火色 · 卡片层级 · 排版间距
+
 // ==== CSS 自定义属性（运行时可用）====
 :root {
   --haoyu-bg-primary: #0a0e17;
@@ -46,7 +50,59 @@
 
   --haoyu-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif;
   --haoyu-font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', 'JetBrains Mono', monospace;
+
+  // ---- v0.2.6 Phase 0: 暖金色系 ----
+  --haoyu-gold: #fbbf24;
+  --haoyu-gold-light: #fcd34d;
+  --haoyu-gold-dark: #f59e0b;
+  --haoyu-gold-glow: rgba(251, 191, 36, 0.3);
+  --haoyu-gold-text: linear-gradient(135deg, #fcd34d, #f59e0b);
+
+  // ---- 灯火 / 城市暖色 ----
+  --haoyu-warm-light: rgba(252, 211, 77, 0.08);
+  --haoyu-warm-glow: rgba(251, 191, 36, 0.15);
+  --haoyu-warm-gradient: linear-gradient(135deg, rgba(252, 211, 77, 0.12), rgba(245, 158, 11, 0.06));
+  --haoyu-city-light: linear-gradient(
+    180deg,
+    rgba(99, 102, 241, 0.08) 0%,
+    rgba(245, 158, 11, 0.04) 40%,
+    rgba(6, 182, 212, 0.02) 70%,
+    transparent 100%
+  );
+
+  // ---- 卡片层级 ----
+  --haoyu-card-layer-1: 0 2px 8px rgba(0, 0, 0, 0.2);
+  --haoyu-card-layer-2: 0 4px 16px rgba(0, 0, 0, 0.25);
+  --haoyu-card-layer-3: 0 8px 32px rgba(0, 0, 0, 0.3);
+  --haoyu-card-border-default: 1px solid rgba(148, 163, 184, 0.12);
+  --haoyu-card-border-hover: 1px solid rgba(148, 163, 184, 0.22);
+
+  // ---- 排版尺寸 ----
+  --haoyu-text-hero: 52px;
+  --haoyu-text-hero-mobile: 28px;
+  --haoyu-text-h2: 24px;
+  --haoyu-text-h2-mobile: 18px;
+  --haoyu-text-body: 15px;
+  --haoyu-text-small: 13px;
+  --haoyu-text-tiny: 11px;
+  --haoyu-font-weight-hero: 800;
+  --haoyu-font-weight-h2: 700;
+  --haoyu-font-weight-body: 400;
+
+  // ---- 间距（增大留白）----
+  --haoyu-space-section: 64px;
+  --haoyu-space-section-mobile: 32px;
+  --haoyu-space-block: 32px;
+  --haoyu-space-element: 16px;
+
+  // ---- 灯火光点 ----
+  --haoyu-light-dot-size-sm: 2px;
+  --haoyu-light-dot-size-md: 4px;
+  --haoyu-light-dot-size-lg: 6px;
+  --haoyu-light-duration: 3s;
+  --haoyu-light-delay-step: 0.35s;
 }
+
 
 // ==== SCSS 变量（编译时）====
 
@@ -106,3 +162,31 @@ $transition-slow: 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 // 字体
 $font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif;
 $font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', 'JetBrains Mono', monospace;
+
+// ---- v0.2.6 Phase 0: 暖金色系 SCSS ----
+$color-gold: #fbbf24;
+$color-gold-light: #fcd34d;
+$color-gold-dark: #f59e0b;
+$color-gold-glow: rgba(251, 191, 36, 0.3);
+$color-warm-light: rgba(252, 211, 77, 0.08);
+$color-warm-glow: rgba(251, 191, 36, 0.15);
+
+// 卡片层级阴影
+$shadow-layer-1: 0 2px 8px rgba(0, 0, 0, 0.2);
+$shadow-layer-2: 0 4px 16px rgba(0, 0, 0, 0.25);
+$shadow-layer-3: 0 8px 32px rgba(0, 0, 0, 0.3);
+
+// 排版
+$text-hero: 52px;
+$text-hero-mobile: 28px;
+$text-h2: 24px;
+$text-h2-mobile: 18px;
+$text-body: 15px;
+$text-small: 13px;
+$text-tiny: 11px;
+
+// 间距
+$space-section: 64px;
+$space-section-mobile: 32px;
+$space-block: 32px;
+$space-element: 16px;
