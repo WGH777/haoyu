@@ -1,0 +1,10 @@
+<svg width="1600" height="280" viewBox="0 0 1600 280" fill="none" xmlns="http://www.w3.org/2000/svg">
+<defs><linearGradient id="bg" x1="0" y1="0" x2="0" y2="280"><stop stop-color="#0a0e17" stop-opacity="0"/><stop offset="1" stop-color="#f59e0b" stop-opacity=".2"/></linearGradient><radialGradient id="glow" cx="50%" cy="65%" r="70%"><stop stop-color="#fbbf24" stop-opacity=".34"/><stop offset="1" stop-color="#0a0e17" stop-opacity="0"/></radialGradient></defs>
+<rect width="1600" height="280" fill="url(#bg)"/><ellipse cx="840" cy="245" rx="760" ry="170" fill="url(#glow)"/>
+<g stroke="#fbbf24" stroke-width="2" stroke-linecap="round" opacity=".42">
+<path d="M130 280C132 230 128 188 156 132"/><path d="M156 132L132 151M156 132L182 148M154 156L128 174M158 160L188 178"/>
+<path d="M540 280C548 226 542 174 580 104"/><path d="M580 104L546 130M580 104L612 128M575 144L540 170M585 146L624 174"/>
+<path d="M1110 280C1114 235 1115 194 1140 136"/><path d="M1140 136L1118 154M1140 136L1166 154M1138 162L1112 184M1144 164L1174 186"/>
+<path d="M1370 280C1378 226 1370 184 1410 112"/><path d="M1410 112L1378 134M1410 112L1442 136M1406 144L1372 170M1418 146L1450 172"/>
+</g>
+</svg>

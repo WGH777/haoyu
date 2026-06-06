@@ -1,0 +1,79 @@
+<template>
+  <section class="category-grid">
+    <h3 class="section-title"><span class="title-icon">🔖</span> 热门服务分类</h3>
+    <div class="cat-inner">
+      <div v-for="cat in categories" :key="cat.key" class="cat-item" @click="onSelect(cat.key)">
+        <img :src="cat.icon" :alt="cat.label" class="cat-icon" />
+        <span class="cat-label">{{ cat.label }}</span>
+      </div>
+    </div>
+  </section>
+</template>
+
+<script setup lang="ts">
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+
+const categories = [
+  { key: 'SKILL_SERVICE', label: '设计创作', icon: '@/assets/haoyu-v027/category-icons/icon-design.svg' },
+  { key: 'SKILL_SERVICE', label: '技术开发', icon: '@/assets/haoyu-v027/category-icons/icon-dev.svg' },
+  { key: 'LIFE_ASSISTANCE', label: '生活服务', icon: '@/assets/haoyu-v027/category-icons/icon-service.svg' },
+  { key: 'SKILL_SERVICE', label: '视频制作', icon: '@/assets/haoyu-v027/category-icons/icon-video.svg' },
+  { key: 'SKILL_SERVICE', label: '营销推广', icon: '@/assets/haoyu-v027/category-icons/icon-marketing.svg' },
+  { key: 'SKILL_SERVICE', label: '文案策划', icon: '@/assets/haoyu-v027/category-icons/icon-writing.svg' },
+  { key: 'LIFE_ASSISTANCE', label: '数据标注', icon: '@/assets/haoyu-v027/category-icons/icon-data.svg' },
+  { key: 'OTHER', label: '更多服务', icon: '@/assets/haoyu-v027/category-icons/icon-trust.svg' },
+]
+
+// Rewrite icon paths at runtime since Vite may not resolve @/ assets in data
+categories.forEach(c => {
+  c.icon = c.icon.replace('@/', '/src/')
+})
+
+const onSelect = (_key: string) => {
+  router.push('/task')
+}
+</script>
+
+<style scoped>
+.category-grid {
+  max-width: 1280px; margin: 0 auto 36px; padding: 0 24px;
+}
+.section-title {
+  font-size: 16px; font-weight: 700; color: #f1f5f9;
+  margin: 0 0 16px; display: flex; align-items: center; gap: 6px;
+}
+.title-icon { font-size: 16px; }
+.cat-inner {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 10px;
+}
+.cat-item {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 18px 8px;
+  background: rgba(17,24,39,0.5);
+  border: 1px solid rgba(148,163,184,0.1);
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.cat-item:hover {
+  border-color: rgba(99,102,241,0.3);
+  background: rgba(99,102,241,0.06);
+  transform: translateY(-2px);
+}
+.cat-icon {
+  width: 36px; height: 36px;
+  object-fit: contain;
+}
+.cat-label { font-size: 12px; color: #94a3b8; font-weight: 600; }
+@media (max-width: 900px) {
+  .cat-inner { grid-template-columns: repeat(4, 1fr); }
+}
+@media (max-width: 480px) {
+  .cat-inner { grid-template-columns: repeat(3, 1fr); }
+  .cat-item { padding: 12px 6px; }
+}
+</style>

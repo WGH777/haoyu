@@ -37,7 +37,17 @@
 
     <!-- 主区域 -->
     <main class="main-area">
-      <header class="topbar">
+      <!-- 桌面端顶部横向导航（v0.2.7 Phase 1-C） -->
+    <HomeTopNav
+      :is-login="isLogin"
+      :user="currentUser"
+      :wallet-balance="walletBalance"
+      :search-keyword="searchKeyword"
+      @update:search="searchKeyword = $event"
+      @logout="handleLogout"
+    />
+
+    <header class="topbar">
         <div class="topbar-left">
           <span class="topbar-brand-mark">煜</span>
           <span class="greeting">{{ isLogin && currentUser ? currentUser.nickname : '可信价值协作平台' }}</span>
@@ -185,7 +195,14 @@
           </div>
         </section>
 
-        <!-- 数据看板 -->
+        <!-- 桌面端新 Hero + 数据 + 流程（v0.2.7 Phase 1-C） -->
+        <HomeHero @publish="openCreateDialog" />
+        <HomeStatsStrip :stats="{ users: '5万', orders: '2万', rating: '98', funds: '500万' }" />
+        <HomeValueFlow />
+        <ServiceCategoryGrid />
+        <FeaturedTaskSection :tasks="tasks.slice(0, 6)" />
+
+        <!-- 数据看板（旧，移动端兼容）-->
         <section class="dashboard">
           <div class="stat-item">
             <span class="stat-number">{{ tasks.length }}</span>
@@ -466,6 +483,12 @@ import { getWallet } from '@/api/wallet'
 import CreateTaskDialog from '@/components/home/CreateTaskDialog.vue'
 import MobileBottomTabs from '@/components/home/MobileBottomTabs.vue'
 import MobileDrawerMenu from '@/components/home/MobileDrawerMenu.vue'
+import HomeTopNav from '@/components/home/HomeTopNav.vue'
+import HomeHero from '@/components/home/HomeHero.vue'
+import HomeStatsStrip from '@/components/home/HomeStatsStrip.vue'
+import HomeValueFlow from '@/components/home/HomeValueFlow.vue'
+import ServiceCategoryGrid from '@/components/home/ServiceCategoryGrid.vue'
+import FeaturedTaskSection from '@/components/home/FeaturedTaskSection.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -514,6 +537,9 @@ const goHome = () => {
   mobileDrawerOpen.value = false
   document.body.classList.remove('drawer-open')
   router.push('/task')
+}
+const handleLogout = () => {
+  logout()
 }
 const logout = () => {
   localStorage.removeItem('token')
@@ -1031,60 +1057,6 @@ onMounted(() => {
 }
 
 /* 上传按钮 */
-.upload-btn {
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.86), rgba(139, 92, 246, 0.86)) !important;
-  border: 1px solid rgba(129, 140, 248, 0.30) !important;
-  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.20) !important;
-}
-
-/* 图片预览 */
-.reference-preview {
-  width: 120px; height: 120px;
-  border-radius: 10px; overflow: hidden;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.1);
-  display: flex; align-items: center; justify-content: center;
-  margin-top: 8px;
-}
-.reference-preview-img {
-  width: 100%; height: 100%;
-  object-fit: cover; display: block;
-}
-.reference-preview-placeholder {
-  width: 120px; height: 120px;
-  border-radius: 10px;
-  background: rgba(255,255,255,0.04);
-  border: 1px dashed rgba(255,255,255,0.12);
-  display: flex; align-items: center; justify-content: center;
-  margin-top: 8px;
-}
-
-/* 发布弹窗标题 — 用 #header slot 接管，避免被全局 el-dialog__header 覆盖 */
-.publish-dialog-title {
-  margin: 0;
-  color: #ffffff !important;
-  font-size: 22px;
-  line-height: 1.3;
-  font-weight: 800;
-  letter-spacing: 0.02em;
-  text-shadow: 0 0 18px rgba(124, 92, 255, 0.28);
-}
-:deep(.publish-dialog .el-dialog__header) {
-  color: #ffffff !important;
-}
-.publish-form .el-form-item__label {
-  color: rgba(255,255,255,0.82) !important;
-  font-weight: 600 !important;
-}
-.publish-form .el-input__inner,
-.publish-form .el-textarea__inner {
-  color: rgba(255,255,255,0.92) !important;
-}
-.publish-form .el-input__inner::placeholder,
-.publish-form .el-textarea__inner::placeholder {
-  color: rgba(180,190,210,0.5) !important;
-}
-
 /* ==========================================
    市场布局（任务网格 + 榜单侧栏）
    ========================================== */
@@ -1164,13 +1136,7 @@ onMounted(() => {
   box-shadow: 0 10px 48px rgba(251,191,36,0.1);
 }
 
-/* v0.2.6-hotfix2: 移动端底部 Tab 默认隐藏（PC 不显示） */
-.mobile-bottom-tabs { display: none; }
-
-/* === 移动端浮动发布按钮 === */
-.mobile-fab {
-  display: none;
-}
+/* 移动端底部 Tab + FAB 样式已在 MobileBottomTabs.vue */
 
 /* === 信任机制 === */
 .trust-section {
