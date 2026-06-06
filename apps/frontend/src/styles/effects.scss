@@ -431,6 +431,7 @@
 
 // ==========================================
 // 高级任务卡片（协作市场专用）
+// v0.2.6 Phase 2: 增强 hover 上浮 + 暖金高预算 + 价格渐变
 // ==========================================
 .task-card-premium {
   background: rgba(17, 24, 39, 0.7);
@@ -456,12 +457,24 @@
   }
   &:hover {
     border-color: rgba(99, 102, 241, 0.3);
-    box-shadow: 0 8px 40px rgba(99, 102, 241, 0.08);
-    transform: translateY(-2px);
+    box-shadow: 0 10px 48px rgba(99, 102, 241, 0.1);
+    transform: translateY(-3px);
     &::before { opacity: 1; }
   }
   &:active {
-    transform: translateY(0);
+    transform: translateY(-1px);
+  }
+
+  // 高预算 — 暖金边框
+  &.high-budget {
+    border-color: rgba(251, 191, 36, 0.2);
+    &::before {
+      background: linear-gradient(90deg, transparent, rgba(251, 191, 36, 0.5), transparent);
+    }
+    &:hover {
+      border-color: rgba(251, 191, 36, 0.35);
+      box-shadow: 0 10px 48px rgba(251, 191, 36, 0.1);
+    }
   }
 
   .premium-card-top {
@@ -472,10 +485,14 @@
   }
   .premium-card-title {
     font-size: 16px;
-    font-weight: 600;
+    font-weight: 700;
     color: #f1f5f9;
     margin: 0 0 8px;
-    line-height: 1.4;
+    line-height: 1.45;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
   .premium-card-desc {
     font-size: 13px;
@@ -496,6 +513,10 @@
     font-size: 20px;
     font-weight: 800;
     font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
+    background: linear-gradient(135deg, #fcd34d, #f59e0b);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
   .premium-card-meta {
     display: flex;

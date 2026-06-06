@@ -290,10 +290,10 @@
 
                 <div class="premium-card-bottom">
                   <div class="mobile-bottom-row mobile-only">
-                    <span class="premium-card-price glow-amber">{{ formatYumiCompactFromCent(task.price) }}</span>
+                    <span class="premium-card-price">{{ formatYumiCompactFromCent(task.price) }}</span>
                     <span class="pcr-service">{{ task.serviceMode === 'OFFLINE' ? '📍线下' : task.serviceMode === 'BOTH' ? '🌐均' : '💻线上' }}</span>
                   </div>
-                  <span class="premium-card-price glow-amber desktop-only">{{ formatYumiCompactFromCent(task.price) }}</span>
+                  <span class="premium-card-price desktop-only">{{ formatYumiCompactFromCent(task.price) }}</span>
                   <span class="premium-card-meta">
                     <span class="desktop-only">{{ task.serviceMode === 'OFFLINE' ? '📍 线下' : task.serviceMode === 'BOTH' ? '🌐 均可' : '💻 线上' }}</span>
                     <span>👁 {{ task.views || 0 }}</span>
@@ -1176,10 +1176,10 @@ onMounted(() => {
 }
 .market-main { flex: 1; min-width: 0; }
 
-/* 任务卡片网格 */
+/* 任务卡片网格 — v0.2.6 Phase 2: PC 三列 + 间隙优化 */
 .task-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 20px;
 }
 
@@ -1230,21 +1230,21 @@ onMounted(() => {
   pointer-events: none;
 }
 .card-corner-badge.hot {
-  background: linear-gradient(135deg, rgba(245,158,11,0.2), rgba(251,191,36,0.1));
-  border: 1px solid rgba(245,158,11,0.3);
+  background: linear-gradient(135deg, rgba(251,191,36,0.2), rgba(245,158,11,0.1));
+  border: 1px solid rgba(251,191,36,0.3);
   color: #fcd34d;
 }
 .card-corner-badge.new {
-  background: linear-gradient(135deg, rgba(6,182,212,0.15), rgba(34,211,238,0.08));
-  border: 1px solid rgba(6,182,212,0.25);
-  color: #67e8f9;
+  background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(6,182,212,0.08));
+  border: 1px solid rgba(99,102,241,0.25);
+  color: #a5b4fc;
 }
 .task-card-premium.high-budget {
-  border-color: rgba(245,158,11,0.2);
+  border-color: rgba(251,191,36,0.25);
 }
 .task-card-premium.high-budget:hover {
-  border-color: rgba(245,158,11,0.4);
-  box-shadow: 0 8px 40px rgba(245,158,11,0.08);
+  border-color: rgba(251,191,36,0.4);
+  box-shadow: 0 10px 48px rgba(251,191,36,0.1);
 }
 
 /* === 移动端浮动发布按钮 === */
@@ -1674,7 +1674,10 @@ onMounted(() => {
     font-size: 18px;
     font-weight: 800;
     line-height: 1;
-    color: #fcd34d;
+    background: linear-gradient(135deg, #fcd34d, #f59e0b);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
   .pcr-service {
     font-size: 12px;
