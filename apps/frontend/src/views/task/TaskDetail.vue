@@ -1172,20 +1172,20 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* ====== 页面容器 ====== */
+/* ====== 页面容器 — v0.2.6 Phase 4: 间距优化 ====== */
 .task-detail-page {
   max-width: 1240px;
   margin: 0 auto;
-  padding: 24px 20px 60px;
+  padding: 24px 20px 80px;
   color: rgba(255, 255, 255, 0.92);
 }
 
-/* ====== Hero 头部 ====== */
+/* ====== Hero 头部 — v0.2.6 Phase 4: 暖金氛围增强 ====== */
 .task-detail-hero {
   margin-bottom: 28px;
-  padding: 24px 28px;
-  background: linear-gradient(135deg, rgba(124, 92, 255, 0.08), rgba(246, 183, 60, 0.04));
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 20px 28px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(251, 191, 36, 0.04));
+  border: 1px solid rgba(148, 163, 184, 0.1);
   border-radius: 18px;
 }
 
@@ -1203,7 +1203,7 @@ onMounted(() => {
   transition: color 0.2s;
 }
 .hero-back:hover {
-  color: #f6b73c;
+  color: #fbbf24;
 }
 .back-arrow {
   font-size: 16px;
@@ -1287,8 +1287,8 @@ onMounted(() => {
 }
 
 .hero-price {
-  background: linear-gradient(135deg, rgba(246, 183, 60, 0.12), rgba(246, 183, 60, 0.04));
-  border: 1px solid rgba(246, 183, 60, 0.18);
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.12), rgba(245, 158, 11, 0.04));
+  border: 1px solid rgba(251, 191, 36, 0.2);
   padding: 6px 14px;
   border-radius: 20px;
   margin-left: auto;
@@ -1296,11 +1296,14 @@ onMounted(() => {
 .price-value {
   font-size: 18px;
   font-weight: 800;
-  color: #f6b73c;
+  background: linear-gradient(135deg, #fcd34d, #f59e0b);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 .price-unit {
   font-size: 13px;
-  color: rgba(246, 183, 60, 0.7);
+  color: rgba(251, 191, 36, 0.6);
   margin-left: 2px;
 }
 
@@ -1322,10 +1325,12 @@ onMounted(() => {
 
 /* ====== 通用卡片 ====== */
 .detail-card {
-  background: rgba(255, 255, 255, 0.035);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(17, 24, 39, 0.55);
+  border: 1px solid rgba(148, 163, 184, 0.1);
   border-radius: 16px;
   padding: 22px 24px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .card-title {
@@ -1742,10 +1747,12 @@ onMounted(() => {
 }
 
 .aside-card {
-  background: rgba(255, 255, 255, 0.035);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(17, 24, 39, 0.55);
+  border: 1px solid rgba(148, 163, 184, 0.1);
   border-radius: 16px;
   padding: 20px 22px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 .aside-card-title {
   font-size: 15px;
@@ -1788,12 +1795,15 @@ onMounted(() => {
 .escrow-number {
   font-size: 32px;
   font-weight: 900;
-  color: #f6b73c;
+  background: linear-gradient(135deg, #fcd34d, #f59e0b);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   line-height: 1;
 }
 .escrow-unit {
   font-size: 14px;
-  color: rgba(246, 183, 60, 0.65);
+  color: rgba(251, 191, 36, 0.6);
   margin-left: 4px;
 }
 
@@ -1812,7 +1822,7 @@ onMounted(() => {
   gap: 8px;
   margin-top: 12px;
   padding: 10px 12px;
-  background: rgba(124, 92, 255, 0.06);
+  background: rgba(99, 102, 241, 0.06);
   border-radius: 10px;
   font-size: 12.5px;
   color: rgba(180, 190, 210, 0.55);
@@ -1888,23 +1898,27 @@ onMounted(() => {
   overflow: hidden;
 }
 
-/* ====== 移动端按钮层级 class ====== */
+/* ====== 按钮层级 class — v0.2.6 Phase 4: 主次分明 ====== */
 .mobile-primary-action {
-  min-height: 46px;
+  min-height: 44px;
   border-radius: 14px;
   font-weight: 700;
   width: 100%;
+  font-size: 15px;
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.2);
 }
 .mobile-secondary-action {
-  min-height: 42px;
+  min-height: 40px;
   border-radius: 12px;
   font-weight: 600;
+  font-size: 14px;
 }
 .mobile-small-action {
   min-height: 34px;
   padding: 0 12px;
   border-radius: 10px;
   font-size: 13px;
+  font-weight: 600;
 }
 .mobile-danger-action {
   min-height: 34px;
@@ -1920,13 +1934,19 @@ onMounted(() => {
 .text-center { text-align: center; }
 .action-btn-row {
   display: flex;
-  gap: 12px;
+  gap: 10px;
+}
+.action-btn-row .el-button--success {
+  box-shadow: 0 2px 12px rgba(16, 185, 129, 0.15);
+}
+.action-btn-row .el-button--danger {
+  box-shadow: 0 2px 12px rgba(239, 68, 68, 0.12);
 }
 
 /* ====== 移动端适配 ====== */
 @media (max-width: 900px) {
   .task-detail-page {
-    padding: 16px 14px 40px;
+    padding: 14px 12px calc(60px + env(safe-area-inset-bottom, 0px));
   }
 
   .task-detail-hero {
@@ -1965,10 +1985,13 @@ onMounted(() => {
     font-size: 26px;
   }
 
-  /* 操作按钮移动端点击区放大 */
+  /* 操作按钮移动端点击区放大 — v0.2.6 Phase 4: 按钮间距 + 安全区 */
   .aside-btn-full,
   .action-btn-row .el-button {
     min-height: 44px;
+  }
+  .action-btn-row {
+    gap: 8px;
   }
 
   /* 评论发送按钮 */
@@ -1989,7 +2012,7 @@ onMounted(() => {
   }
   .subtask-actions .el-button {
     font-size: 12px;
-    min-height: 34px;
+    min-height: 36px;
     padding: 0 14px;
     border-radius: 10px;
     flex: 1;
@@ -2017,7 +2040,7 @@ onMounted(() => {
     width: 100%;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
   }
   .add-subtask-input {
     width: 100%;
