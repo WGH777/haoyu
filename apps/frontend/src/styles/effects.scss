@@ -364,6 +364,7 @@
 
 // ==========================================
 // 榜单侧栏（Leaderboard Sidebar）
+// v0.2.6 Phase 5: 顶部微光条 + 圆角对齐
 // ==========================================
 .leaderboard-panel {
   background: rgba(17, 24, 39, 0.55);
@@ -373,6 +374,16 @@
   border-radius: 14px;
   padding: 20px;
   min-width: 200px;
+  position: relative;
+  overflow: hidden;
+  // 顶部微光条
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.2), transparent);
+  }
 }
 .leaderboard-title {
   font-size: 13px;

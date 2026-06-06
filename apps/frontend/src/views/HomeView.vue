@@ -374,8 +374,8 @@
 
         <!-- 信任机制区 -->
         <section class="trust-section">
-          <h3>🔒 浩煜信任引擎</h3>
-          <p style="font-size:13px;color:#64748b;margin-bottom:20px;">每一次协作都有据可查，每一笔资金都有保障</p>
+          <h3>🏮 万家灯火 · 浩煜信任引擎</h3>
+          <p style="font-size:13px;color:#64748b;margin-bottom:0;">每一次协作都有据可查，每一笔资金都有保障</p>
           <div class="trust-grid">
             <div class="trust-item"><span>💰</span> 资金托管</div>
             <div class="trust-item"><span>📝</span> 过程留痕</div>
@@ -387,11 +387,11 @@
         </section>
 
         <footer class="page-footer">
-          <span>浩煜 Haoyu — 可信价值协作平台</span>
+          <span>🏮 浩煜 Haoyu — 万家灯火</span>
           <span class="dot">·</span>
           <router-link to="/trust">信任与保障</router-link>
           <span class="dot">·</span>
-          <span>资金托管 · 信用沉淀 · 争议协调</span>
+          <span>资金托管 · 信用沉淀 · 争议仲裁</span>
         </footer>
 
         <!-- 移动端浮动发布按钮 -->
@@ -1086,9 +1086,21 @@ onMounted(() => {
   border-radius: 14px;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
 }
 .stat-item { flex: 1; text-align: center; padding: 0 16px; }
 .stat-divider { width: 1px; background: rgba(148,163,184,0.12); }
+/* v0.2.6 Phase 5: 数据指标暖金数字 */
+.stat-number {
+  font-size: 28px;
+  font-weight: 800;
+  font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
+  background: linear-gradient(135deg, #a5b4fc, #67e8f9);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  display: inline-block;
+}
 
 /* === 价值流转图（增强版） === */
 .value-flow-enhanced {
@@ -1254,31 +1266,43 @@ onMounted(() => {
 
 /* === 信任机制 === */
 .trust-section {
-  margin-bottom: 40px; padding: 32px;
+  margin-bottom: 40px; padding: 28px 32px 32px;
   background: rgba(17,24,39,0.35);
   border: 1px solid rgba(148,163,184,0.08);
   border-radius: 14px; text-align: center;
 }
-.trust-section h3 { font-size: 18px; color: #f1f5f9; margin-bottom: 8px; }
+.trust-section h3 {
+  font-size: 18px; color: #f1f5f9; margin-bottom: 6px;
+}
 .trust-grid {
-  display: flex; justify-content: center; gap: 24px; flex-wrap: wrap;
+  display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;
+  margin-top: 16px;
 }
 .trust-item {
   font-size: 14px; color: #94a3b8;
-  display: flex; align-items: center; gap: 6px;
-  padding: 8px 16px;
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 18px;
   background: rgba(17,24,39,0.5);
   border: 1px solid rgba(148,163,184,0.1);
-  border-radius: 8px;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+  cursor: default;
+}
+.trust-item:hover {
+  border-color: rgba(99, 102, 241, 0.2);
+  background: rgba(99, 102, 241, 0.04);
+  transform: translateY(-1px);
 }
 .trust-item span { font-size: 16px; }
 
-/* === 页脚 === */
+/* === 页脚 — v0.2.6 Phase 5: 暖金点缀 === */
 .page-footer {
   text-align: center; padding: 24px 0; font-size: 13px;
   color: #475569; display: flex; gap: 8px; justify-content: center;
+  flex-wrap: wrap;
 }
 .page-footer a { color: #818cf8; }
+.page-footer a:hover { color: #fbbf24; }
 .dot { color: #334155; }
 
 /* ==========================================
