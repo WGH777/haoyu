@@ -2,6 +2,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '@/views/HomeView.vue'
 import LandingHomeView from '@/views/LandingHomeView.vue'
+import DesktopLandingView from '@/views/DesktopLandingView.vue'
 import { getProfile } from '@/api/user'
 
 type Role = 'USER' | 'ADMIN' | 'SUPER_ADMIN'
@@ -39,7 +40,7 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
-      component: LandingHomeView,
+      component: DesktopLandingView,
       meta: { public: true },
     },
     /**
@@ -47,7 +48,8 @@ const router = createRouter({
      * 说明：这里把任务大厅/任务详情设计成“公开可访问”
      */
     {
-      path: '',
+      path: '/app',
+      name: 'app-layout',
       component: HomeView,
       children: [
         {
