@@ -1527,7 +1527,7 @@ onMounted(() => {
   .trust-item { font-size: 12px; padding: 6px 10px; }
   .balance-badge { display: none; }
 
-  /* 移动端 FAB */
+  /* 移动端 FAB — v0.2.6 Phase 3: 安全区 + 阴影增强 */
   .mobile-fab {
     display: flex !important;
     align-items: center; justify-content: center;
@@ -1536,8 +1536,8 @@ onMounted(() => {
     border-radius: 50%;
     background: linear-gradient(135deg, #6366f1, #8b5cf6);
     border: none;
-    box-shadow: 0 4px 24px rgba(99,102,241,0.4);
-    cursor: pointer; z-index: 850;
+    box-shadow: 0 4px 24px rgba(99,102,241,0.35);
+    cursor: pointer; z-index: 900;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
     -webkit-tap-highlight-color: transparent;
   }
@@ -1551,20 +1551,25 @@ onMounted(() => {
   }
 
   /* ===== 手机端任务卡片 — 信息流布局重构 ===== */
+  /* v0.2.6 Phase 3: 内间距微调 + 高预算暖金边框移动端适配 */
   .task-card-premium {
     display: flex;
     flex-direction: column;
     gap: 10px;
-    padding: 18px 16px;
+    padding: 16px;
     border-radius: 20px;
     background: linear-gradient(180deg, rgba(15,23,42,0.88), rgba(15,23,42,0.72));
     border: 1px solid rgba(148,163,184,0.14);
-    box-shadow: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     position: relative;
   }
   .task-card-premium:active {
-    transform: scale(0.992);
-    opacity: 0.96;
+    transform: scale(0.99);
+    opacity: 0.95;
+  }
+  /* 高预算卡片移动端暖金边框 */
+  .task-card-premium.high-budget {
+    border-color: rgba(251,191,36,0.25);
   }
 
   /* meta 行：左侧 tags + 右侧 badge */
@@ -1588,12 +1593,14 @@ onMounted(() => {
     background: rgba(148,163,184,0.08);
     color: #94a3b8;
     white-space: nowrap;
+    font-weight: 600;
   }
   .status-badge {
     font-size: 10px;
     padding: 2px 10px;
     border-radius: 999px;
     white-space: nowrap;
+    font-weight: 700;
   }
   .pct-badges.mobile-only-flow {
     display: flex;
@@ -1613,14 +1620,14 @@ onMounted(() => {
     line-height: 1;
   }
   .mobile-badge.hot {
-    background: linear-gradient(135deg, rgba(245,158,11,0.2), rgba(251,191,36,0.1));
-    border: 1px solid rgba(245,158,11,0.3);
+    background: linear-gradient(135deg, rgba(251,191,36,0.2), rgba(245,158,11,0.1));
+    border: 1px solid rgba(251,191,36,0.3);
     color: #fcd34d;
   }
   .mobile-badge.new {
-    background: linear-gradient(135deg, rgba(6,182,212,0.15), rgba(34,211,238,0.08));
-    border: 1px solid rgba(6,182,212,0.25);
-    color: #67e8f9;
+    background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(129,140,248,0.08));
+    border: 1px solid rgba(99,102,241,0.25);
+    color: #a5b4fc;
   }
 
   /* 标题 */
@@ -1651,13 +1658,17 @@ onMounted(() => {
     display: none;
   }
 
-  /* 迷你进度条 — 更细更淡 */
+  /* 迷你进度条 — v0.2.6 Phase 3: 稍粗提升可见性 */
   .progress-mini {
-    height: 3px;
-    margin: 0;
+    height: 4px;
+    margin: 2px 0;
+    border-radius: 2px;
+  }
+  .progress-mini .progress-fill {
+    border-radius: 2px;
   }
 
-  /* 底部信息区：两行布局 */
+  /* 底部信息区：两行布局 — v0.2.6 Phase 3: 价格/服务排列优化 */
   .premium-card-bottom {
     display: flex;
     flex-direction: column;
@@ -1668,7 +1679,7 @@ onMounted(() => {
   .mobile-bottom-row {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
   }
   .premium-card-price {
     font-size: 18px;
@@ -1718,6 +1729,12 @@ onMounted(() => {
     display: none;
   }
 
+  /* 移动端 meta 间距微调 */
+  .premium-card-meta {
+    gap: 8px;
+    font-size: 11px;
+  }
+
   /* 抽屉菜单项加大点击区 */
   .mdm-item {
     min-height: 48px;
@@ -1762,6 +1779,18 @@ onMounted(() => {
   }
   .task-card-premium {
     min-width: 0;
+  }
+  /* 两列时价格稍小，描述更紧凑 */
+  .premium-card-price {
+    font-size: 16px;
+  }
+  .premium-card-desc-mobile {
+    -webkit-line-clamp: 1;
+  }
+  .mobile-badge {
+    height: 20px;
+    font-size: 9px;
+    padding: 0 6px;
   }
 }
 
