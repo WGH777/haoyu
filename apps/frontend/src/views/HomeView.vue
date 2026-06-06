@@ -39,7 +39,8 @@
     <main class="main-area">
       <header class="topbar">
         <div class="topbar-left">
-          <span class="greeting">👋 {{ isLogin && currentUser ? currentUser.nickname : '可信价值协作平台' }}</span>
+          <span class="topbar-brand-mark">煜</span>
+          <span class="greeting">{{ isLogin && currentUser ? currentUser.nickname : '可信价值协作平台' }}</span>
         </div>
         <div class="topbar-right">
           <span v-if="isLogin && currentUser" class="balance-badge">💰 {{ formatYumiCompactFromCent(walletBalance) }}</span>
@@ -92,7 +93,7 @@
           <div class="hero-v2-content">
             <!-- 标签 -->
             <span class="hero-anim-tag hero-tag-v2">
-              <span class="tag-icon">🔒</span>资金托管 · 信用沉淀 · 智能仲裁
+              <span class="tag-icon">🏮</span>万家灯火 · 资金托管 · 信用沉淀
             </span>
 
             <!-- 标题 -->
@@ -102,13 +103,16 @@
 
             <!-- 副标题 -->
             <p class="hero-anim-sub hero-sub-v2">
-              可信价值协作平台 — 连接真实需求，激活真实能力，保障可信交付
+              让需求有着落，让协作有回响
+            </p>
+            <p class="hero-anim-sub hero-sub-v2-extra">
+              可信价值协作平台
             </p>
 
             <!-- CTA 按钮 -->
             <div class="hero-anim-actions hero-actions-v2">
-              <el-button type="primary" size="large" round @click="openCreateDialog" v-if="isLogin" class="btn-glow-v2">✨ 发布需求</el-button>
-              <el-button type="primary" size="large" round @click="$router.push('/register')" v-else class="btn-glow-v2">创建协作身份</el-button>
+              <el-button type="warning" size="large" round @click="openCreateDialog" v-if="isLogin" class="btn-warm-gold">✨ 发布需求</el-button>
+              <el-button type="warning" size="large" round @click="$router.push('/register')" v-else class="btn-warm-gold">创建协作身份</el-button>
               <el-button size="large" round class="btn-outline-v2" @click="$router.push('/task')">浏览任务</el-button>
               <el-button size="large" round class="btn-outline-v2 hide-mobile" @click="$router.push('/trust')">了解保障</el-button>
             </div>
@@ -897,6 +901,21 @@ onMounted(() => {
   border-bottom: 1px solid rgba(148, 163, 184, 0.1);
   display: flex; align-items: center; justify-content: space-between;
   padding: 0 24px; position: sticky; top: 0; z-index: 50;
+  /* v0.2.6 Phase 1: 顶栏底部微光 */
+  box-shadow: 0 1px 0 rgba(99, 102, 241, 0.06);
+}
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.topbar-brand-mark {
+  width: 28px; height: 28px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff; border-radius: 6px;
+  display: flex; align-items: center;
+  justify-content: center; font-size: 15px; font-weight: 700;
+  flex-shrink: 0;
 }
 .greeting { font-size: 14px; color: #94a3b8; }
 .topbar-right { display: flex; align-items: center; gap: 12px; }
@@ -949,16 +968,26 @@ onMounted(() => {
   position: absolute;
   border-radius: 50%;
   background: radial-gradient(circle, rgba(252,211,77,0.8) 0%, rgba(251,191,36,0.2) 50%, transparent 70%);
-  animation: twinkle 3s ease-in-out infinite;
+  animation: light-twinkle 3s ease-in-out infinite;
   filter: blur(1px);
 }
-/* 底色渐变 */
+/* 灯火光点分层：前景暖金，背景淡紫 */
+.hero-lights::after {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse at 30% 40%, rgba(99,102,241,0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 60%, rgba(251,191,36,0.03) 0%, transparent 50%);
+  pointer-events: none;
+}
+/* 底色渐变 — v0.2.6 Phase 1: 城市灯火氛围 */
 .hero-gradient {
   position: absolute; inset: 0;
   background:
-    radial-gradient(ellipse at 50% 0%, rgba(99,102,241,0.1) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 30%, rgba(245,158,11,0.06) 0%, transparent 45%),
-    radial-gradient(ellipse at 20% 60%, rgba(6,182,212,0.04) 0%, transparent 40%);
+    radial-gradient(ellipse at 50% 0%, rgba(99,102,241,0.12) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(245,158,11,0.08) 0%, transparent 45%),
+    radial-gradient(ellipse at 20% 60%, rgba(6,182,212,0.04) 0%, transparent 40%),
+    radial-gradient(ellipse at 50% 80%, rgba(251,191,36,0.04) 0%, transparent 50%);
   pointer-events: none; z-index: 0;
 }
 .hero-v2-content { position: relative; z-index: 1; }
@@ -974,8 +1003,11 @@ onMounted(() => {
 
 .hero-title-v2 {
   font-size: 46px; font-weight: 800; color: #f1f5f9;
-  margin: 0 0 14px; letter-spacing: -1.5px;
+  margin: 0 0 8px; letter-spacing: -1.5px;
   line-height: 1.15;
+}
+.hero-title-v2 .hero-sub-br {
+  display: block;
 }
 .glow-text-v2 {
   background: linear-gradient(135deg, #a5b4fc 0%, #fcd34d 50%, #67e8f9 100%);
@@ -985,8 +1017,15 @@ onMounted(() => {
 }
 
 .hero-sub-v2 {
-  font-size: 16px; color: #94a3b8; margin: 0 0 32px;
+  font-size: 18px; color: #e2e8f0; margin: 0 0 6px;
   max-width: 500px; margin-left: auto; margin-right: auto;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+.hero-sub-v2-extra {
+  font-size: 14px; color: #64748b; margin: 0 0 28px;
+  max-width: 500px; margin-left: auto; margin-right: auto;
+  font-weight: 400;
 }
 
 .hero-actions-v2 {
@@ -1003,6 +1042,18 @@ onMounted(() => {
 }
 .btn-glow-v2:hover {
   box-shadow: 0 6px 32px rgba(99,102,241,0.5);
+  transform: translateY(-2px);
+}
+
+/* v0.2.6 Phase 1: 暖金主按钮 */
+.btn-warm-gold {
+  font-weight: 700 !important;
+  font-size: 15px !important;
+  box-shadow: 0 4px 24px rgba(251, 191, 36, 0.35) !important;
+  transition: all 0.3s !important;
+}
+.btn-warm-gold:hover {
+  box-shadow: 0 6px 32px rgba(251, 191, 36, 0.5) !important;
   transform: translateY(-2px);
 }
 
@@ -1434,6 +1485,7 @@ onMounted(() => {
   }
   .topbar { padding: 0 12px !important; }
   .topbar .greeting { display: none !important; }
+  .topbar-brand-mark { display: none !important; }
   .content { padding: 0 12px 32px !important; max-width: 100vw; }
 
   /* Hero V2 移动端 */
@@ -1442,12 +1494,14 @@ onMounted(() => {
     min-height: auto;
   }
   .hero-title-v2 { font-size: 26px !important; }
-  .hero-sub-v2 { font-size: 14px !important; padding: 0 8px; }
+  .hero-sub-v2 { font-size: 16px !important; padding: 0 8px; }
+  .hero-sub-v2-extra { font-size: 13px !important; padding: 0 8px; }
   .hero-actions-v2 {
     flex-direction: column; align-items: center; gap: 10px;
     margin-bottom: 20px;
   }
   .hero-actions-v2 .el-button { width: 80%; min-height: 44px; }
+  .hero-actions-v2 .el-button--warning { width: 80%; min-height: 44px; }
   .hero-flow-v2 { padding: 0 4px; }
 
   /* 旧 Hero 兼容 */
