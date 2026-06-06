@@ -87,6 +87,17 @@
                 height: (3 + (i % 4)) + 'px'
               }"
             ></span>
+            <!-- v0.2.6-hotfix1: 手机端额外暖金光点（仅移动端可见）-->
+            <span class="light-dot mobile-extra-dot" v-for="i in 8" :key="'m'+i"
+              :style="{
+                left: (8 + Math.sin(i * 2.5 + 1) * 38 + 38) + '%',
+                top: (10 + Math.cos(i * 3.1 + 2) * 35 + 35) + '%',
+                animationDelay: (1.2 + i * 0.45) + 's',
+                animationDuration: (2.8 + (i % 3) * 1.2) + 's',
+                width: (4 + (i % 3) * 2) + 'px',
+                height: (4 + (i % 3) * 2) + 'px'
+              }"
+            ></span>
           </div>
           <div class="hero-gradient"></div>
 
@@ -964,6 +975,8 @@ onMounted(() => {
 .hero-lights {
   position: absolute; inset: 0; pointer-events: none; z-index: 0;
 }
+/* v0.2.6-hotfix1: PC 端隐藏手机端额外光点 */
+.mobile-extra-dot { display: none; }
 .light-dot {
   position: absolute;
   border-radius: 50%;
@@ -1510,6 +1523,10 @@ onMounted(() => {
   .topbar { padding: 0 12px !important; }
   .topbar .greeting { display: none !important; }
   .topbar-brand-mark { display: none !important; }
+  /* v0.2.6-hotfix1: 手机端额外光点可见 */
+  .mobile-extra-dot {
+    display: block !important;
+  }
   .content { padding: 0 12px 32px !important; max-width: 100vw; }
 
   /* Hero V2 移动端 */
@@ -1518,14 +1535,17 @@ onMounted(() => {
     min-height: auto;
   }
   .hero-title-v2 { font-size: 26px !important; }
-  .hero-sub-v2 { font-size: 16px !important; padding: 0 8px; }
+  .hero-sub-v2 { font-size: 20px !important; padding: 0 8px; text-shadow: 0 0 20px rgba(251,191,36,0.08); }
   .hero-sub-v2-extra { font-size: 13px !important; padding: 0 8px; }
   .hero-actions-v2 {
     flex-direction: column; align-items: center; gap: 10px;
     margin-bottom: 20px;
   }
   .hero-actions-v2 .el-button { width: 80%; min-height: 44px; }
-  .hero-actions-v2 .el-button--warning { width: 80%; min-height: 44px; }
+  .hero-actions-v2 .el-button--warning {
+    width: 80%; min-height: 44px;
+    animation: gold-pulse 3s ease-in-out infinite;
+  }
   .hero-flow-v2 { padding: 0 4px; }
 
   /* 旧 Hero 兼容 */
