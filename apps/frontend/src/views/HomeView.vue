@@ -37,17 +37,7 @@
 
     <!-- 主区域 -->
     <main class="main-area">
-      <!-- 桌面端顶部横向导航（v0.2.7 Phase 1-C） -->
-    <HomeTopNav
-      :is-login="isLogin"
-      :user="currentUser"
-      :wallet-balance="walletBalance"
-      :search-keyword="searchKeyword"
-      @update:search="searchKeyword = $event"
-      @logout="handleLogout"
-    />
-
-    <header class="topbar">
+      <header class="topbar">
         <div class="topbar-left">
           <span class="topbar-brand-mark">煜</span>
           <span class="greeting">{{ isLogin && currentUser ? currentUser.nickname : '可信价值协作平台' }}</span>
@@ -195,14 +185,7 @@
           </div>
         </section>
 
-        <!-- 桌面端新 Hero + 数据 + 流程（v0.2.7 Phase 1-C） -->
-        <HomeHero @publish="openCreateDialog" />
-        <HomeStatsStrip :stats="{ users: '5万', orders: '2万', rating: '98', funds: '500万' }" />
-        <HomeValueFlow />
-        <ServiceCategoryGrid />
-        <FeaturedTaskSection :tasks="tasks.slice(0, 6)" />
-
-        <!-- 数据看板（旧，移动端兼容）-->
+        <!-- 数据看板 -->
         <section class="dashboard">
           <div class="stat-item">
             <span class="stat-number">{{ tasks.length }}</span>
@@ -442,7 +425,23 @@
         </button>
 
         <!-- v0.2.6-hotfix2: 移动端底部 Tab + 中央发布入口视觉初版 -->
-        <MobileBottomTabs :is-login="isLogin" @publish="openCreateDialog" />
+        <nav class="mobile-bottom-tabs" aria-label="移动端底部导航">
+          <button class="mobile-tab-item active" @click="$router.push('/task')">
+            <span class="tab-icon">🏠</span><span>首页</span>
+          </button>
+          <button class="mobile-tab-item" @click="$router.push('/task')">
+            <span class="tab-icon">📋</span><span>任务</span>
+          </button>
+          <button class="mobile-tab-publish" @click="isLogin ? openCreateDialog() : $router.push('/login')" aria-label="发布需求">
+            <span>＋</span>
+          </button>
+          <button class="mobile-tab-item" @click="$router.push('/trust')">
+            <span class="tab-icon">🛡️</span><span>保障</span>
+          </button>
+          <button class="mobile-tab-item" @click="isLogin ? $router.push('/wallet') : $router.push('/login')">
+            <span class="tab-icon">👤</span><span>我的</span>
+          </button>
+        </nav>
       </div>
 
       <div class="content" v-else>
@@ -455,18 +454,132 @@
     </main>
 
     <!-- 发布弹窗 -->
-    <CreateTaskDialog v-model="showCreateDialog" @published="fetchData" />
+    <el-dialog v-model="showCreateDialog" width="560px" destroy-on-close class="publish-dialog">
+      <template #header>
+        <div class="publish-dialog-title">发布新需求</div>
+      </template>
+      <el-form :model="createForm" label-position="top" class="publish-form">
+        <el-form-item label="给这次协作起个清楚的名字" required>
+          <el-input v-model="createForm.title" placeholder="让人一眼知道你需要什么" maxlength="60" show-word-limit />
+        </el-form-item>
+        <el-form-item label="说说背景、目标和期望">
+          <el-input v-model="createForm.desc" type="textarea" :rows="3" placeholder="越具体，匹配到合适的人越快" />
+        </el-form-item>
+        <el-form-item label="你愿意为这个需求支付多少？（煜米）">
+          <el-input-number v-model="createForm.price" :min="1" :step="1" :precision="0" style="width:200px" />
+          <span style="font-size:12px;color:rgba(203,213,225,0.48);margin-left:8px;">1 煜米 = 1 RMB</span>
+        </el-form-item>
+        <el-form-item label="配图（可选）">
+          <el-upload :auto-upload="false" :show-file-list="false" accept="image/*" :on-change="handleImageChange">
+            <el-button type="primary" :loading="uploadingImg" class="upload-btn">
+              {{ previewImageUrl ? '已选图片' : '添加参考图' }}
+            </el-button>
+          </el-upload>
+          <p class="upload-hint" style="font-size:12px;color:rgba(203,213,225,0.48);margin-top:6px;">截图、样例图或补充说明都可以</p>
+          <div v-if="previewImageUrl" class="reference-preview">
+            <img :src="previewImageUrl" class="reference-preview-img" alt="参考图预览" />
+          </div>
+          <div v-else class="reference-preview-placeholder">
+            <span style="color:rgba(255,255,255,0.25);font-size:12px;">上传后将在此预览</span>
+          </div>
+        </el-form-item>
+        <el-form-item label="分类">
+          <el-select v-model="createForm.category" style="width:100%">
+            <el-option label="技能服务" value="SKILL_SERVICE" />
+            <el-option label="生活协助" value="LIFE_ASSISTANCE" />
+            <el-option label="家庭关怀" value="FAMILY_CARE" />
+            <el-option label="远程协助" value="REMOTE_ASSISTANCE" />
+            <el-option label="社区协作" value="COMMUNITY_COLLABORATION" />
+            <el-option label="公益互助" value="PUBLIC_WELFARE" />
+            <el-option label="其他" value="OTHER" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="服务方式">
+          <el-radio-group v-model="createForm.serviceMode">
+            <el-radio label="ONLINE">线上</el-radio>
+            <el-radio label="OFFLINE">线下</el-radio>
+            <el-radio label="BOTH">均可</el-radio>
+          </el-radio-group>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showCreateDialog = false">取消</el-button>
+        <el-button type="primary" @click="submitTask" :loading="submitting">确认发布</el-button>
+      </template>
+    </el-dialog>
   </div>
 
-  <!-- 移动端菜单 + 底部 Tab -->
-  <MobileDrawerMenu
-    :open="mobileDrawerOpen"
-    :is-login="isLogin"
-    :user="currentUser"
-    :title="mobileTitle"
-    :items="mobileMenuItems"
-    @update:open="mobileDrawerOpen = $event"
+  <!-- 移动端顶部 header -->
+  <header class="mobile-topbar">
+    <button class="mobile-menu-btn" @click="mobileDrawerOpen = true" aria-label="打开菜单">
+      <span></span><span></span><span></span>
+    </button>
+    <span class="mobile-page-title">{{ mobileTitle }}</span>
+    <div class="mobile-topbar-right">
+      <template v-if="isLogin && currentUser">
+        <button class="mobile-avatar-btn" aria-label="用户菜单" @click="showMobileUserSheet = true">
+          <span class="mobile-avatar">{{ currentUser?.nickname?.[0] || currentUser?.email?.[0]?.toUpperCase() || '?' }}</span>
+        </button>
+      </template>
+      <template v-else>
+        <el-button size="small" @click="$router.push('/login')">登录</el-button>
+      </template>
+    </div>
+  </header>
+
+  <!-- 移动端用户操作 ActionSheet -->
+  <van-action-sheet
+    v-model:show="showMobileUserSheet"
+    :actions="mobileUserSheetOptions"
+    cancel-text="取消"
+    close-on-click-action
+    @select="onMobileUserSheetSelect"
+    class="van-action-sheet-dark"
   />
+
+  <!-- 移动端遮罩 -->
+  <div v-if="mobileDrawerOpen" class="mobile-drawer-mask" @click="mobileDrawerOpen = false"></div>
+
+  <!-- 移动端抽屉菜单 -->
+  <aside class="mobile-drawer" :class="{ open: mobileDrawerOpen }">
+    <div class="mobile-drawer-header">
+      <div class="brand" @click="goHome()">
+        <span class="brand-logo">煜</span>
+        <span class="brand-name">浩煜</span>
+      </div>
+      <button class="drawer-close" @click="mobileDrawerOpen = false">✕</button>
+    </div>
+    <nav class="mobile-drawer-menu">
+      <a v-for="item in mobileMenuItems" :key="item.path"
+         class="mdm-item" :class="{ active: $route.path === item.path }"
+         :href="item.path"
+         @click.prevent="goMenu(item.path)"
+      >
+        <el-icon v-if="item.icon" style="font-size:18px;margin-right:10px;"><component :is="item.icon" /></el-icon>
+        <span>{{ item.label }}</span>
+        <span v-if="item.badge" class="mn-badge mdm-badge">{{ item.badge }}</span>
+      </a>
+    </nav>
+    <div class="mobile-drawer-footer">
+      <div class="mobile-drawer-user" v-if="isLogin && currentUser">
+        <span class="drawer-avatar">{{ currentUser?.nickname?.[0] || currentUser?.email?.[0]?.toUpperCase() || '?' }}</span>
+        <div class="drawer-user-info">
+          <span class="drawer-nickname">{{ currentUser?.nickname }}</span>
+          <span class="drawer-email">{{ currentUser?.email }}</span>
+        </div>
+      </div>
+      <div v-else class="mobile-drawer-user">
+        <span style="font-size:14px;color:rgba(255,255,255,0.5);">可信价值协作平台</span>
+      </div>
+      <template v-if="isLogin && currentUser">
+        <el-button size="small" plain @click="logout()" style="width:100%">退出登录</el-button>
+      </template>
+      <template v-else>
+        <el-button size="small" @click="goMenu('/login')">登录</el-button>
+        <el-button size="small" type="primary" @click="goMenu('/register')">注册</el-button>
+      </template>
+    </div>
+  </aside>
 </template>
 
 <script setup lang="ts">
@@ -476,19 +589,10 @@ import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Plus, Refresh, Search, CaretBottom, List, Checked, Wallet, User, Document, Bell, Setting, Lock, Tickets, Connection } from '@element-plus/icons-vue'
 import { ActionSheet } from 'vant'
-import { getTaskList, type Task } from '@/api/task'
+import { getTaskList, createTask, uploadTaskImage, type Task } from '@/api/task'
 import { getProfile, type UserProfile } from '@/api/user'
 import { notificationApi } from '@/api/notification'
 import { getWallet } from '@/api/wallet'
-import CreateTaskDialog from '@/components/home/CreateTaskDialog.vue'
-import MobileBottomTabs from '@/components/home/MobileBottomTabs.vue'
-import MobileDrawerMenu from '@/components/home/MobileDrawerMenu.vue'
-import HomeTopNav from '@/components/home/HomeTopNav.vue'
-import HomeHero from '@/components/home/HomeHero.vue'
-import HomeStatsStrip from '@/components/home/HomeStatsStrip.vue'
-import HomeValueFlow from '@/components/home/HomeValueFlow.vue'
-import ServiceCategoryGrid from '@/components/home/ServiceCategoryGrid.vue'
-import FeaturedTaskSection from '@/components/home/FeaturedTaskSection.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -498,6 +602,26 @@ const currentUser = ref<UserProfile | null>(null)
 const walletBalance = ref(0)
 const unreadCount = ref(0)
 const mobileDrawerOpen = ref(false)
+
+// Vant ActionSheet for mobile user menu
+const showMobileUserSheet = ref(false)
+const mobileUserSheetOptions = [
+  { name: '个人中心', key: 'profile' },
+  { name: '我的任务', key: 'my-task' },
+  { name: '钱包', key: 'wallet' },
+  { name: '退出登录', key: 'logout' },
+]
+
+const onMobileUserSheetSelect = (item: { key: string }) => {
+  if (item.key === 'logout') {
+    localStorage.removeItem('token')
+    localStorage.removeItem('currentUser')
+    ElMessage.success('已退出登录')
+    window.location.reload()
+  } else {
+    router.push('/' + item.key)
+  }
+}
 
 const routeTitleMap: Record<string, string> = {
   '/task': '任务大厅', '/': '任务大厅',
@@ -538,9 +662,6 @@ const goHome = () => {
   document.body.classList.remove('drawer-open')
   router.push('/task')
 }
-const handleLogout = () => {
-  logout()
-}
 const logout = () => {
   localStorage.removeItem('token')
   localStorage.removeItem('currentUser')
@@ -560,6 +681,14 @@ const tasks = ref<Task[]>([])
 const searchKeyword = ref('')
 const priceFilter = ref('all')
 const showCreateDialog = ref(false)
+const submitting = ref(false)
+const uploadingImg = ref(false)
+const selectedImageFile = ref<File | null>(null)
+const previewImageUrl = ref('')
+
+const createForm = reactive({
+  title: '', desc: '', price: 100, category: 'SKILL_SERVICE', serviceMode: 'ONLINE', image: ''
+})
 
 const canSeeUserManage = computed(() =>
   ['ADMIN', 'SUPER_ADMIN'].includes(currentUser.value?.role || '')
@@ -652,6 +781,63 @@ const fetchData = async () => {
 const openCreateDialog = () => {
   if (!isLogin.value) { router.push('/login'); return }
   showCreateDialog.value = true
+}
+
+const submitTask = async () => {
+  if (!createForm.title.trim()) { ElMessage.warning('请输入标题'); return }
+  submitting.value = true
+  try {
+    let imageUrl = createForm.image || ''
+    // 如果有本地选中文件，先上传获取 URL
+    if (selectedImageFile.value) {
+      uploadingImg.value = true
+      try {
+        const fd = new FormData(); fd.append('file', selectedImageFile.value)
+        const res: any = await uploadTaskImage(fd)
+        imageUrl = res?.url || ''
+      } catch { /* 上传失败但不阻止发布 */ }
+      finally { uploadingImg.value = false }
+    }
+    await createTask({
+      title: createForm.title,
+      description: createForm.desc,
+      price: Math.round(createForm.price * 100),
+      category: createForm.category,
+      serviceMode: createForm.serviceMode,
+      image: imageUrl || undefined
+    } as any)
+    ElMessage.success('需求已发布，等待合适的人来接单')
+    showCreateDialog.value = false
+    createForm.title = ''; createForm.desc = ''; createForm.price = 100; createForm.image = ''
+    previewImageUrl.value = ''; selectedImageFile.value = null
+    fetchData()
+  } catch (e: any) {
+    ElMessage.error(e?.response?.data?.message || '发布失败，请稍后重试')
+  } finally {
+    submitting.value = false
+  }
+}
+
+const handleImageChange = (uploadFile: any) => {
+  const raw = uploadFile?.raw || uploadFile
+  if (!(raw instanceof File)) return
+  selectedImageFile.value = raw
+  if (previewImageUrl.value) URL.revokeObjectURL(previewImageUrl.value)
+  previewImageUrl.value = URL.createObjectURL(raw)
+}
+
+const handleUpload = async (options: any) => {
+  uploadingImg.value = true
+  try {
+    const fd = new FormData(); fd.append('file', options.file)
+    const res: any = await uploadTaskImage(fd)
+    createForm.image = res?.url || ''
+    ElMessage.success('上传成功')
+  } catch {
+    ElMessage.error('上传失败')
+  } finally {
+    uploadingImg.value = false
+  }
 }
 
 // === 个人信息 ===
@@ -1057,6 +1243,60 @@ onMounted(() => {
 }
 
 /* 上传按钮 */
+.upload-btn {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.86), rgba(139, 92, 246, 0.86)) !important;
+  border: 1px solid rgba(129, 140, 248, 0.30) !important;
+  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.20) !important;
+}
+
+/* 图片预览 */
+.reference-preview {
+  width: 120px; height: 120px;
+  border-radius: 10px; overflow: hidden;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  display: flex; align-items: center; justify-content: center;
+  margin-top: 8px;
+}
+.reference-preview-img {
+  width: 100%; height: 100%;
+  object-fit: cover; display: block;
+}
+.reference-preview-placeholder {
+  width: 120px; height: 120px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.04);
+  border: 1px dashed rgba(255,255,255,0.12);
+  display: flex; align-items: center; justify-content: center;
+  margin-top: 8px;
+}
+
+/* 发布弹窗标题 — 用 #header slot 接管，避免被全局 el-dialog__header 覆盖 */
+.publish-dialog-title {
+  margin: 0;
+  color: #ffffff !important;
+  font-size: 22px;
+  line-height: 1.3;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-shadow: 0 0 18px rgba(124, 92, 255, 0.28);
+}
+:deep(.publish-dialog .el-dialog__header) {
+  color: #ffffff !important;
+}
+.publish-form .el-form-item__label {
+  color: rgba(255,255,255,0.82) !important;
+  font-weight: 600 !important;
+}
+.publish-form .el-input__inner,
+.publish-form .el-textarea__inner {
+  color: rgba(255,255,255,0.92) !important;
+}
+.publish-form .el-input__inner::placeholder,
+.publish-form .el-textarea__inner::placeholder {
+  color: rgba(180,190,210,0.5) !important;
+}
+
 /* ==========================================
    市场布局（任务网格 + 榜单侧栏）
    ========================================== */
@@ -1136,7 +1376,13 @@ onMounted(() => {
   box-shadow: 0 10px 48px rgba(251,191,36,0.1);
 }
 
-/* 移动端底部 Tab + FAB 样式已在 MobileBottomTabs.vue */
+/* v0.2.6-hotfix2: 移动端底部 Tab 默认隐藏（PC 不显示） */
+.mobile-bottom-tabs { display: none; }
+
+/* === 移动端浮动发布按钮 === */
+.mobile-fab {
+  display: none;
+}
 
 /* === 信任机制 === */
 .trust-section {

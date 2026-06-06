@@ -1,6 +1,7 @@
 // apps/frontend/src/router/index.ts
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '@/views/HomeView.vue'
+import LandingHomeView from '@/views/LandingHomeView.vue'
 import { getProfile } from '@/api/user'
 
 type Role = 'USER' | 'ADMIN' | 'SUPER_ADMIN'
@@ -38,70 +39,67 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
+      component: LandingHomeView,
+      meta: { public: true },
+    },
+    /**
+     * 主布局（HomeView 内部包含菜单与 Header）
+     * 说明：这里把任务大厅/任务详情设计成“公开可访问”
+     */
+    {
+      path: '',
       component: HomeView,
       children: [
-        // 任务大厅（游客可访问）
         {
           path: '/task',
           name: 'task',
           component: HomeView,
           meta: { public: true },
         },
-        // 任务详情（游客可访问）
         {
           path: '/task/:id',
           name: 'task-detail',
           component: () => import('@/views/task/TaskDetail.vue'),
           meta: { public: true },
         },
-        // 我的任务（必须登录）
         {
           path: '/my-task',
           name: 'my-task',
           component: () => import('@/views/task/MyTasks.vue'),
         },
-        // 我接的订单（必须登录）
         {
           path: '/my-orders',
           name: 'my-orders',
           component: () => import('@/views/order/ServiceOrders.vue'),
         },
-        // 通知中心（必须登录）
         {
           path: '/notifications',
           name: 'notifications',
           component: () => import('@/views/NotificationView.vue'),
         },
-        // 信任中心（公开）
         {
           path: '/trust',
           name: 'trust',
           component: () => import('@/views/TrustCenter.vue'),
           meta: { public: true },
         },
-        // 管理后台（仅 ADMIN / SUPER_ADMIN）
         {
           path: '/admin',
           name: 'admin',
           component: () => import('@/views/admin/AdminDashboard.vue'),
           meta: { roles: ['ADMIN', 'SUPER_ADMIN'] },
         },
-        // 钱包中心（必须登录）
         {
           path: '/wallet',
           name: 'wallet',
           component: () => import('@/views/Wallet.vue'),
         },
-        // 用户管理（仅 ADMIN / SUPER_ADMIN）
         {
           path: '/user',
           name: 'user-list',
           component: () => import('@/views/user/UserList.vue'),
-          meta: {
-            roles: ['ADMIN', 'SUPER_ADMIN'],
-          },
+          meta: { roles: ['ADMIN', 'SUPER_ADMIN'] },
         },
-        // 个人资料（必须登录）
         {
           path: '/profile',
           name: 'profile',

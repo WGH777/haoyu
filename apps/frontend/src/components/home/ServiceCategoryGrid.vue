@@ -2,7 +2,7 @@
   <section class="category-grid">
     <h3 class="section-title"><span class="title-icon">🔖</span> 热门服务分类</h3>
     <div class="cat-inner">
-      <div v-for="cat in categories" :key="cat.key" class="cat-item" @click="onSelect(cat.key)">
+      <div v-for="cat in categories" :key="cat.key" class="cat-item" @click="$router.push('/task')">
         <img :src="cat.icon" :alt="cat.label" class="cat-icon" />
         <span class="cat-label">{{ cat.label }}</span>
       </div>
@@ -11,29 +11,25 @@
 </template>
 
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
-
-const router = useRouter()
+import iconDesign from '@/assets/haoyu-v027/category-icons/icon-design.svg'
+import iconDev from '@/assets/haoyu-v027/category-icons/icon-dev.svg'
+import iconService from '@/assets/haoyu-v027/category-icons/icon-service.svg'
+import iconVideo from '@/assets/haoyu-v027/category-icons/icon-video.svg'
+import iconMarketing from '@/assets/haoyu-v027/category-icons/icon-marketing.svg'
+import iconWriting from '@/assets/haoyu-v027/category-icons/icon-writing.svg'
+import iconData from '@/assets/haoyu-v027/category-icons/icon-data.svg'
+import iconTrust from '@/assets/haoyu-v027/category-icons/icon-trust.svg'
 
 const categories = [
-  { key: 'SKILL_SERVICE', label: '设计创作', icon: '@/assets/haoyu-v027/category-icons/icon-design.svg' },
-  { key: 'SKILL_SERVICE', label: '技术开发', icon: '@/assets/haoyu-v027/category-icons/icon-dev.svg' },
-  { key: 'LIFE_ASSISTANCE', label: '生活服务', icon: '@/assets/haoyu-v027/category-icons/icon-service.svg' },
-  { key: 'SKILL_SERVICE', label: '视频制作', icon: '@/assets/haoyu-v027/category-icons/icon-video.svg' },
-  { key: 'SKILL_SERVICE', label: '营销推广', icon: '@/assets/haoyu-v027/category-icons/icon-marketing.svg' },
-  { key: 'SKILL_SERVICE', label: '文案策划', icon: '@/assets/haoyu-v027/category-icons/icon-writing.svg' },
-  { key: 'LIFE_ASSISTANCE', label: '数据标注', icon: '@/assets/haoyu-v027/category-icons/icon-data.svg' },
-  { key: 'OTHER', label: '更多服务', icon: '@/assets/haoyu-v027/category-icons/icon-trust.svg' },
+  { key: 'SKILL_SERVICE', label: '设计创作', icon: iconDesign },
+  { key: 'SKILL_SERVICE', label: '技术开发', icon: iconDev },
+  { key: 'LIFE_ASSISTANCE', label: '生活服务', icon: iconService },
+  { key: 'SKILL_SERVICE', label: '视频制作', icon: iconVideo },
+  { key: 'SKILL_SERVICE', label: '营销推广', icon: iconMarketing },
+  { key: 'SKILL_SERVICE', label: '文案策划', icon: iconWriting },
+  { key: 'LIFE_ASSISTANCE', label: '数据标注', icon: iconData },
+  { key: 'OTHER', label: '更多服务', icon: iconTrust },
 ]
-
-// Rewrite icon paths at runtime since Vite may not resolve @/ assets in data
-categories.forEach(c => {
-  c.icon = c.icon.replace('@/', '/src/')
-})
-
-const onSelect = (_key: string) => {
-  router.push('/task')
-}
 </script>
 
 <style scoped>
