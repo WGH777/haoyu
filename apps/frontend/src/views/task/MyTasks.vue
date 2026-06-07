@@ -29,104 +29,130 @@
               description="暂无符合条件的任务"
             />
 
-            <el-table
-              v-else
-              :data="filteredAssignedOrders"
-              stripe
-              style="width: 100%"
-            >
-              <el-table-column label="任务标题" min-width="180">
-                <template #default="scope">
-                  <el-link
-                    type="primary"
-                    @click="goToDetail(scope.row.taskId)"
-                  >
-                    {{ scope.row.task.title }}
-                  </el-link>
-                </template>
-              </el-table-column>
+            <template v-else>
+              <el-table
+                class="desktop-table"
+                :data="filteredAssignedOrders"
+                stripe
+                style="width: 100%"
+              >
+                <el-table-column label="任务标题" min-width="180">
+                  <template #default="scope">
+                    <el-link
+                      type="primary"
+                      @click="goToDetail(scope.row.taskId)"
+                    >
+                      {{ scope.row.task.title }}
+                    </el-link>
+                  </template>
+                </el-table-column>
 
-              <el-table-column label="发布人" width="120">
-                <template #default="scope">
-                  {{ scope.row.task.publisher?.nickname || 'N/A' }}
-                </template>
-              </el-table-column>
+                <el-table-column label="发布人" width="120">
+                  <template #default="scope">
+                    {{ scope.row.task.publisher?.nickname || 'N/A' }}
+                  </template>
+                </el-table-column>
 
-              <el-table-column label="赏金" width="100">
-                <template #default="scope">
-                  ¥ {{ (scope.row.task.price / 100).toFixed(2) }}
-                </template>
-              </el-table-column>
+                <el-table-column label="赏金" width="100">
+                  <template #default="scope">
+                    ¥ {{ (scope.row.task.price / 100).toFixed(2) }}
+                  </template>
+                </el-table-column>
 
-              <!-- 子任务进度 -->
-              <el-table-column label="进度" width="180">
-                <template #default="scope">
-                  <div class="progress-cell">
-                    <!-- 有子任务：显示进度条 + “已完成/总数” -->
-                    <template v-if="hasSubTasks(scope.row.task)">
-                      <el-progress
-                        :percentage="calcSubTaskProgress(scope.row.task)"
-                        :stroke-width="10"
-                        :show-text="false"
-                      />
-                      <span class="progress-text">
-                        {{ formatSubTaskFraction(scope.row.task) }}
-                      </span>
-                    </template>
+                <!-- 子任务进度 -->
+                <el-table-column label="进度" width="180">
+                  <template #default="scope">
+                    <div class="progress-cell">
+                      <!-- 有子任务：显示进度条 + “已完成/总数” -->
+                      <template v-if="hasSubTasks(scope.row.task)">
+                        <el-progress
+                          :percentage="calcSubTaskProgress(scope.row.task)"
+                          :stroke-width="10"
+                          :show-text="false"
+                        />
+                        <span class="progress-text">
+                          {{ formatSubTaskFraction(scope.row.task) }}
+                        </span>
+                      </template>
 
-                    <!-- 没有子任务：显示“未拆分” -->
-                    <template v-else>
-                      <span class="progress-none">未拆分</span>
-                    </template>
+                      <!-- 没有子任务：显示“未拆分” -->
+                      <template v-else>
+                        <span class="progress-none">未拆分</span>
+                      </template>
+                    </div>
+                  </template>
+                </el-table-column>
+
+                <el-table-column label="状态" width="120">
+                  <template #default="scope">
+                    <el-tag :type="getStatusTag(scope.row.status)">
+                      {{ getStatusText(scope.row.status) }}
+                    </el-tag>
+                  </template>
+                </el-table-column>
+
+                <el-table-column label="操作" width="180">
+                  <template #default="scope">
+                    <el-button
+                      v-if="scope.row.status === 'ASSIGNED'"
+                      type="success"
+                      size="small"
+                      @click="goToDetail(scope.row.taskId)"
+                    >
+                      去提交成果
+                    </el-button>
+                    <el-button
+                      v-else-if="scope.row.status === 'SUBMITTED'"
+                      type="warning"
+                      size="small"
+                      disabled
+                    >
+                      待验收
+                    </el-button>
+                    <el-button
+                      v-else-if="scope.row.status === 'COMPLETED'"
+                      type="info"
+                      size="small"
+                      disabled
+                    >
+                      已结算
+                    </el-button>
+                    <el-button
+                      v-else-if="scope.row.status === 'CANCELLED'"
+                      type="danger"
+                      size="small"
+                      disabled
+                    >
+                      已取消
+                    </el-button>
+                  </template>
+                </el-table-column>
+              </el-table>
+
+              <!-- 移动端卡片：我接取的任务 -->
+              <div class="mobile-task-cards mobile-only">
+                <div v-for="order in filteredAssignedOrders" :key="order.id" class="mtask-card" @click="goToDetail(order.taskId)">
+                  <div class="mtask-top">
+                    <span class="mtask-title">{{ order.task.title }}</span>
+                    <el-tag :type="getStatusTag(order.status)" size="small">{{ getStatusText(order.status) }}</el-tag>
                   </div>
-                </template>
-              </el-table-column>
-
-              <el-table-column label="状态" width="120">
-                <template #default="scope">
-                  <el-tag :type="getStatusTag(scope.row.status)">
-                    {{ getStatusText(scope.row.status) }}
-                  </el-tag>
-                </template>
-              </el-table-column>
-
-              <el-table-column label="操作" width="180">
-                <template #default="scope">
-                  <el-button
-                    v-if="scope.row.status === 'ASSIGNED'"
-                    type="success"
-                    size="small"
-                    @click="goToDetail(scope.row.taskId)"
-                  >
-                    去提交成果
-                  </el-button>
-                  <el-button
-                    v-else-if="scope.row.status === 'SUBMITTED'"
-                    type="warning"
-                    size="small"
-                    disabled
-                  >
-                    待验收
-                  </el-button>
-                  <el-button
-                    v-else-if="scope.row.status === 'COMPLETED'"
-                    type="info"
-                    size="small"
-                    disabled
-                  >
-                    已结算
-                  </el-button>
-                  <el-button
-                    v-else-if="scope.row.status === 'CANCELLED'"
-                    type="danger"
-                    size="small"
-                    disabled
-                  >
-                    已取消
-                  </el-button>
-                </template>
-              </el-table-column>
-            </el-table>
+                  <div class="mtask-mid">
+                    <span class="mtask-publisher">👤 {{ order.task.publisher?.nickname || 'N/A' }}</span>
+                    <span class="mtask-price">¥ {{ (order.task.price / 100).toFixed(2) }}</span>
+                  </div>
+                  <div class="mtask-bottom">
+                    <div class="mtask-progress">
+                      <template v-if="hasSubTasks(order.task)">
+                        <el-progress :percentage="calcSubTaskProgress(order.task)" :stroke-width="6" :show-text="false" />
+                        <span class="mtask-progress-text">{{ formatSubTaskFraction(order.task) }}</span>
+                      </template>
+                      <span v-else class="progress-none">未拆分</span>
+                    </div>
+                    <span class="mtask-action-link">{{ getActionText(order.status) }}</span>
+                  </div>
+                </div>
+              </div>
+            </template>
           </div>
         </el-tab-pane>
 
@@ -151,82 +177,108 @@
               description="暂无符合条件的任务"
             />
 
-            <el-table
-              v-else
-              :data="filteredPublishedTasks"
-              stripe
-              style="width: 100%"
-            >
-              <el-table-column label="任务标题" min-width="180">
-                <template #default="scope">
-                  <el-link type="primary" @click="goToDetail(scope.row.id)">
-                    {{ scope.row.title }}
-                  </el-link>
-                </template>
-              </el-table-column>
+            <template v-else>
+              <el-table
+                class="desktop-table"
+                :data="filteredPublishedTasks"
+                stripe
+                style="width: 100%"
+              >
+                <el-table-column label="任务标题" min-width="180">
+                  <template #default="scope">
+                    <el-link type="primary" @click="goToDetail(scope.row.id)">
+                      {{ scope.row.title }}
+                    </el-link>
+                  </template>
+                </el-table-column>
 
-              <el-table-column label="赏金" width="100">
-                <template #default="scope">
-                  ¥ {{ (scope.row.price / 100).toFixed(2) }}
-                </template>
-              </el-table-column>
+                <el-table-column label="赏金" width="100">
+                  <template #default="scope">
+                    ¥ {{ (scope.row.price / 100).toFixed(2) }}
+                  </template>
+                </el-table-column>
 
-              <!-- 子任务进度 -->
-              <el-table-column label="进度" width="180">
-                <template #default="scope">
-                  <div class="progress-cell">
-                    <template v-if="hasSubTasks(scope.row)">
-                      <el-progress
-                        :percentage="calcSubTaskProgress(scope.row)"
-                        :stroke-width="10"
-                        :show-text="false"
-                      />
-                      <span class="progress-text">
-                        {{ formatSubTaskFraction(scope.row) }}
-                      </span>
-                    </template>
-                    <template v-else>
-                      <span class="progress-none">未拆分</span>
-                    </template>
+                <!-- 子任务进度 -->
+                <el-table-column label="进度" width="180">
+                  <template #default="scope">
+                    <div class="progress-cell">
+                      <template v-if="hasSubTasks(scope.row)">
+                        <el-progress
+                          :percentage="calcSubTaskProgress(scope.row)"
+                          :stroke-width="10"
+                          :show-text="false"
+                        />
+                        <span class="progress-text">
+                          {{ formatSubTaskFraction(scope.row) }}
+                        </span>
+                      </template>
+                      <template v-else>
+                        <span class="progress-none">未拆分</span>
+                      </template>
+                    </div>
+                  </template>
+                </el-table-column>
+
+                <el-table-column label="状态" width="120">
+                  <template #default="scope">
+                    <el-tag :type="getStatusTag(scope.row.status)">
+                      {{ getStatusText(scope.row.status) }}
+                    </el-tag>
+                  </template>
+                </el-table-column>
+
+                <el-table-column label="发布时间" width="180">
+                  <template #default="scope">
+                    {{ new Date(scope.row.createdAt).toLocaleDateString() }}
+                  </template>
+                </el-table-column>
+
+                <el-table-column label="操作" width="180">
+                  <template #default="scope">
+                    <el-button
+                      v-if="scope.row.status === 'SUBMITTED'"
+                      type="danger"
+                      size="small"
+                      @click="goToDetail(scope.row.id)"
+                    >
+                      去验收
+                    </el-button>
+                    <el-button
+                      v-else
+                      type="info"
+                      size="small"
+                      @click="goToDetail(scope.row.id)"
+                    >
+                      查看详情
+                    </el-button>
+                  </template>
+                </el-table-column>
+              </el-table>
+
+              <!-- 移动端卡片：我发布的任务 -->
+              <div class="mobile-task-cards mobile-only">
+                <div v-for="task in filteredPublishedTasks" :key="task.id" class="mtask-card" @click="goToDetail(task.id)">
+                  <div class="mtask-top">
+                    <span class="mtask-title">{{ task.title }}</span>
+                    <el-tag :type="getStatusTag(task.status)" size="small">{{ getStatusText(task.status) }}</el-tag>
                   </div>
-                </template>
-              </el-table-column>
-
-              <el-table-column label="状态" width="120">
-                <template #default="scope">
-                  <el-tag :type="getStatusTag(scope.row.status)">
-                    {{ getStatusText(scope.row.status) }}
-                  </el-tag>
-                </template>
-              </el-table-column>
-
-              <el-table-column label="发布时间" width="180">
-                <template #default="scope">
-                  {{ new Date(scope.row.createdAt).toLocaleDateString() }}
-                </template>
-              </el-table-column>
-
-              <el-table-column label="操作" width="180">
-                <template #default="scope">
-                  <el-button
-                    v-if="scope.row.status === 'SUBMITTED'"
-                    type="danger"
-                    size="small"
-                    @click="goToDetail(scope.row.id)"
-                  >
-                    去验收
-                  </el-button>
-                  <el-button
-                    v-else
-                    type="info"
-                    size="small"
-                    @click="goToDetail(scope.row.id)"
-                  >
-                    查看详情
-                  </el-button>
-                </template>
-              </el-table-column>
-            </el-table>
+                  <div class="mtask-mid">
+                    <span class="mtask-publisher">📅 {{ new Date(task.createdAt).toLocaleDateString() }}</span>
+                    <span class="mtask-price">¥ {{ (task.price / 100).toFixed(2) }}</span>
+                  </div>
+                  <div class="mtask-bottom">
+                    <div class="mtask-progress">
+                      <template v-if="hasSubTasks(task)">
+                        <el-progress :percentage="calcSubTaskProgress(task)" :stroke-width="6" :show-text="false" />
+                        <span class="mtask-progress-text">{{ formatSubTaskFraction(task) }}</span>
+                      </template>
+                      <span v-else class="progress-none">未拆分</span>
+                    </div>
+                    <span class="mtask-action-link">{{ getPubActionText(task.status) }}</span>
+                  </div>
+                </div>
+              </div>
+            </template>
           </div>
         </el-tab-pane>
       </el-tabs>
@@ -392,6 +444,27 @@ const goToDetail = (taskId: number) => {
 onMounted(() => {
   fetchData()
 })
+
+// 移动端卡片操作文本 — 我接取的
+const getActionText = (status: string) => {
+  const map: Record<string, string> = {
+    ASSIGNED: '去提交成果 →',
+    SUBMITTED: '待验收',
+    COMPLETED: '已结算',
+    CANCELLED: '已取消',
+  }
+  return map[status] || '查看详情 →'
+}
+
+// 移动端卡片操作文本 — 我发布的
+const getPubActionText = (status: string) => {
+  const map: Record<string, string> = {
+    SUBMITTED: '去验收 →',
+    PENDING: '查看详情 →',
+    ASSIGNED: '查看详情 →',
+  }
+  return map[status] || '查看详情 →'
+}
 </script>
 
 <style scoped>
@@ -435,5 +508,115 @@ onMounted(() => {
 .progress-none {
   font-size: 12px;
   color: #64748b;
+}
+
+/* 移动端我的任务卡片 */
+.mobile-only { display: none; }
+
+@media (max-width: 768px) {
+  .desktop-table { display: none; }
+  .mobile-only { display: block; }
+
+  .my-tasks-container {
+    max-width: 100%;
+    margin: 0;
+    padding: 12px 14px calc(100px + env(safe-area-inset-bottom));
+  }
+  .box-card {
+    border-radius: 14px;
+  }
+  .card-header h2 {
+    font-size: 17px;
+  }
+
+  .filter-bar {
+    overflow-x: auto;
+    white-space: nowrap;
+    padding-bottom: 8px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .filter-bar::-webkit-scrollbar { display: none; }
+  .filter-label { display: none; }
+
+  .mobile-task-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .mtask-card {
+    padding: 14px;
+    background: rgba(17,24,39,0.5);
+    border: 1px solid rgba(148,163,184,0.08);
+    border-radius: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .mtask-card:active {
+    background: rgba(17,24,39,0.75);
+  }
+
+  .mtask-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+  }
+  .mtask-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #f1f5f9;
+    flex: 1;
+    margin-right: 8px;
+    line-height: 1.35;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mtask-mid {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .mtask-publisher {
+    font-size: 12px;
+    color: #94a3b8;
+  }
+  .mtask-price {
+    font-size: 17px;
+    font-weight: 700;
+    color: #fcd34d;
+  }
+
+  .mtask-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .mtask-progress {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+  }
+  .mtask-progress .el-progress {
+    flex: 1;
+    max-width: 100px;
+  }
+  .mtask-progress-text {
+    font-size: 11px;
+    color: #94a3b8;
+    min-width: 30px;
+    white-space: nowrap;
+  }
+  .mtask-action-link {
+    font-size: 12px;
+    color: #818cf8;
+    font-weight: 500;
+    white-space: nowrap;
+    margin-left: 8px;
+  }
 }
 </style>
