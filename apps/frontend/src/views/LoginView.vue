@@ -250,9 +250,17 @@ const handleLogin = async () => {
 
 /* 移动端适配 */
 @media (max-width: 768px) {
+  .login-page {
+    background: #0a0e17 url('/assets/haoyu/mobile/vertical_backgrounds_02_mobile_city_lantern_bg.webp') no-repeat 50% 0 / cover;
+  }
   .login-box {
-    padding: 32px 24px 28px;
+    padding: 28px 20px 24px;
     border-radius: 16px;
+    width: calc(100% - 28px);
+    max-width: 400px;
+  }
+  .login-header {
+    margin-bottom: 24px;
   }
   .login-header h1 {
     font-size: 20px;
@@ -261,6 +269,24 @@ const handleLogin = async () => {
     width: 44px;
     height: 44px;
     font-size: 22px;
+    margin-bottom: 12px;
+  }
+  .login-header p {
+    font-size: 12px;
+  }
+  .login-btn {
+    height: 48px;
+    font-size: 16px;
+  }
+  .login-footer {
+    font-size: 13px;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 20px;
+  }
+  .login-bottom-text {
+    margin-top: 24px;
+    padding: 0 16px;
   }
 }
 </style>

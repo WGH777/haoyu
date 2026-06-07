@@ -255,9 +255,17 @@ const handleRegister = async () => {
 
 /* 移动端适配 */
 @media (max-width: 768px) {
+  .register-page {
+    background: #0a0e17 url('/assets/haoyu/mobile/vertical_backgrounds_02_mobile_city_lantern_bg.webp') no-repeat 50% 0 / cover;
+  }
   .register-box {
-    padding: 32px 24px 28px;
+    padding: 28px 20px 24px;
     border-radius: 16px;
+    width: calc(100% - 28px);
+    max-width: 400px;
+  }
+  .register-header {
+    margin-bottom: 24px;
   }
   .register-header h1 {
     font-size: 20px;
@@ -266,6 +274,24 @@ const handleRegister = async () => {
     width: 44px;
     height: 44px;
     font-size: 22px;
+    margin-bottom: 12px;
+  }
+  .register-header p {
+    font-size: 12px;
+  }
+  .register-btn {
+    height: 48px;
+    font-size: 16px;
+  }
+  .register-footer {
+    font-size: 13px;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 20px;
+  }
+  .register-bottom-text {
+    margin-top: 24px;
+    padding: 0 16px;
   }
 }
 </style>
