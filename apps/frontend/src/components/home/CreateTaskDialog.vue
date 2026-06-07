@@ -125,6 +125,7 @@
         <label class="pm-label">配图（可选）</label>
         <el-upload :auto-upload="false" :show-file-list="false" accept="image/*" :on-change="handleImageChange">
           <el-button type="primary" :loading="uploadingImg" class="pm-upload-btn">
+            <img src="/assets/haoyu/mobile/icons_08_add_button_glow.webp" alt="" class="pm-upload-icon" />
             {{ previewImageUrl ? '已选图片' : '添加参考图' }}
           </el-button>
         </el-upload>
@@ -376,6 +377,12 @@ const handleImageChange = (uploadFile: any) => {
     background: linear-gradient(135deg, rgba(99,102,241,0.86), rgba(139,92,246,0.86)) !important;
     border: 1px solid rgba(129,140,248,0.3) !important;
     box-shadow: 0 8px 20px rgba(99,102,241,0.2) !important;
+  }
+  .pm-upload-icon {
+    width: 18px;
+    height: 18px;
+    margin-right: 6px;
+    vertical-align: middle;
   }
   .pm-preview {
     width: 80px; height: 80px;

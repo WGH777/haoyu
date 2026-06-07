@@ -41,6 +41,8 @@
       <!-- B. Hero 首屏 -->
       <section class="dl-hero">
         <div class="dl-hero-bg">
+          <!-- WebP 实感背景层（新增） -->
+          <img src="/assets/haoyu/desktop/hero_banners_01_desktop_dark_bridge_banner.webp" alt="" class="dl-hero-bg-real" aria-hidden="true" />
           <img :src="cityLights" alt="" class="dl-hero-bg-img" aria-hidden="true" />
           <img :src="lanterns" alt="" class="dl-hero-lanterns" aria-hidden="true" />
           <div class="dl-hero-radial"></div>
@@ -344,6 +346,15 @@ html, body, #app { max-width: 100%; overflow-x: hidden; }
 }
 .dl-hero-bg { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
 .dl-hero-bg-img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 28%; }
+.dl-hero-bg-real {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.25;
+  z-index: 0;
+}
 .dl-hero-lanterns { position: absolute; top: 1%; right: 4%; width: 35%; max-width: 320px; height: auto; pointer-events: none; opacity: 0.8; }
 .dl-hero-radial {
   position: absolute; top: 0; right: 0; width: 70%; height: 70%;

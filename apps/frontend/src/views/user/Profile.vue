@@ -210,6 +210,8 @@
     <!-- ====== 移动端用户中心聚合页 ====== -->
     <div class="profile-mobile" v-loading="loadingProfile">
       <div class="uc-profile-section">
+        <!-- 移动端背景装饰 -->
+        <img src="/assets/haoyu/mobile/vertical_backgrounds_02_mobile_city_lantern_bg.webp" alt="" class="uc-bg-deco" aria-hidden="true" />
         <div class="uc-avatar">
           <el-image
             v-if="profile?.avatar"
@@ -609,9 +611,25 @@ onMounted(() => {
   .profile-mobile { display: block; padding-bottom: calc(100px + env(safe-area-inset-bottom)); }
 
   .uc-profile-section {
+    position: relative;
+    overflow: hidden;
     display: flex; align-items: center; gap: 14px; padding: 20px 14px; height: 120px;
     background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(251,191,36,0.04));
     border-bottom: 1px solid rgba(148,163,184,0.06);
+  }
+  .uc-bg-deco {
+    position: absolute;
+    top: 0; right: 0;
+    height: 100%;
+    width: auto;
+    opacity: 0.15;
+    pointer-events: none;
+    z-index: 0;
+    object-fit: cover;
+  }
+  .uc-profile-section > *:not(.uc-bg-deco) {
+    position: relative;
+    z-index: 1;
   }
   .uc-avatar { width: 58px; height: 58px; border-radius: 50%; overflow: hidden; flex-shrink: 0; background: linear-gradient(135deg,#6366f1,#818cf8); }
   .uc-avatar-img { width: 100%; height: 100%; object-fit: cover; display: block; }

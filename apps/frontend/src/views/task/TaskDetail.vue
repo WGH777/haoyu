@@ -100,7 +100,7 @@
           <!-- 空状态 -->
           <div v-if="!hasSubTasks && !canEditSubTasks" class="subtask-empty">
             <div class="empty-graphic">
-              <span class="empty-icon">📋</span>
+              <img src="/assets/haoyu/mobile/illustrations_01_clipboard_empty_state.webp" alt="" class="empty-state-img" />
             </div>
             <p class="empty-title">还没有子任务</p>
             <p class="empty-desc">可以把大需求拆成多个可验收的小步骤。</p>
@@ -109,7 +109,7 @@
           <!-- 发布者但无子任务：占位 + 输入框 -->
           <div v-else-if="!hasSubTasks && canEditSubTasks" class="subtask-empty">
             <div class="empty-graphic">
-              <span class="empty-icon">📋</span>
+              <img src="/assets/haoyu/mobile/illustrations_01_clipboard_empty_state.webp" alt="" class="empty-state-img" />
             </div>
             <p class="empty-title">还没有子任务</p>
             <p class="empty-desc">可以把大需求拆成多个可验收的小步骤。</p>
@@ -1502,6 +1502,12 @@ onMounted(() => {
 }
 .empty-graphic {
   margin-bottom: 12px;
+}
+.empty-state-img {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  opacity: 0.5;
 }
 .empty-icon {
   font-size: 40px;
