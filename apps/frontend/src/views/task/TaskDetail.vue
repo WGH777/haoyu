@@ -558,6 +558,34 @@
       </template>
     </el-dialog>
 
+    <!-- ====== 移动端吸底操作栏 ====== -->
+    <div v-if="$route.meta?.public || true" class="mobile-action-sticky">
+      <!-- 未登录 + PENDING：去登录 -->
+      <template v-if="!isLogin && task?.status === 'PENDING'">
+        <el-button class="sticky-btn-primary" type="primary" size="large" @click="goLogin">去登录接单</el-button>
+      </template>
+
+      <!-- 游客 + PENDING：立即接单 -->
+      <template v-else-if="canRobOrder">
+        <el-button class="sticky-btn-primary" type="primary" size="large" :loading="opLoading" @click="handleAssign">🚀 立即接单</el-button>
+      </template>
+
+      <!-- 执行者 + ASSIGNED：提交成果 -->
+      <template v-else-if="viewMode === 'worker' && isOrderAssigned">
+        <el-button class="sticky-btn-primary" type="primary" size="large" @click="openSubmitDialog">
+          {{ hasSubmissionHistory ? '🔄 重新提交成果' : '🏁 提交任务成果' }}
+        </el-button>
+      </template>
+
+      <!-- 发布者 + SUBMITTED：通过 / 驳回 -->
+      <template v-else-if="viewMode === 'publisher' && task?.status === 'SUBMITTED' && publisherOrder">
+        <div class="sticky-dual-row">
+          <el-button class="sticky-btn-accept" type="success" size="large" :loading="opLoading" @click="handleAccept">✅ 通过</el-button>
+          <el-button class="sticky-btn-reject" type="danger" size="large" :loading="opLoading" @click="handleReject">❌ 驳回</el-button>
+        </div>
+      </template>
+    </div>
+
     <!-- ====== 图片预览弹窗 ====== -->
     <el-dialog v-model="imagePreviewVisible" title="参考图" width="80%" destroy-on-close>
       <img v-if="task?.image" :src="getFullUrl(task.image)" alt="参考图" class="preview-full-img" />
@@ -1562,6 +1590,37 @@ onMounted(() => {
 @media (min-width: 901px) {
   .add-subtask-btn-desktop { display: inline-flex !important; }
 }
+@media (max-width: 375px) {
+  .task-detail-page {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  .task-detail-hero {
+    padding: 14px;
+  }
+  .hero-title {
+    font-size: 17px;
+  }
+  .hero-price .price-value {
+    font-size: 24px;
+  }
+  .detail-card,
+  .aside-card {
+    padding: 14px;
+  }
+}
+@media (min-width: 391px) and (max-width: 430px) {
+  .task-detail-page {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+  .hero-title {
+    font-size: 20px;
+  }
+  .hero-price .price-value {
+    font-size: 28px;
+  }
+}
 .subtask-input-row {
   border: none;
   background: none;
@@ -1946,35 +2005,58 @@ onMounted(() => {
 /* ====== 移动端适配 ====== */
 @media (max-width: 900px) {
   .task-detail-page {
-    padding: 14px 12px calc(60px + env(safe-area-inset-bottom, 0px));
+    padding: 12px 14px calc(100px + env(safe-area-inset-bottom, 0px));
   }
 
   .task-detail-hero {
-    padding: 18px 20px;
+    padding: 16px;
   }
 
   .hero-title {
-    font-size: 22px;
+    font-size: 18px;
+    margin-bottom: 12px;
   }
 
   .hero-meta {
     flex-direction: column;
     align-items: flex-start;
-    gap: 10px;
+    gap: 8px;
   }
 
   .hero-price {
     margin-left: 0;
   }
+  .hero-price .price-value {
+    font-size: 26px;
+  }
+
+  .task-detail-page .task-detail-hero {
+    margin-bottom: 16px;
+  }
+
+  .task-detail-main {
+    gap: 12px;
+  }
 
   .task-detail-grid {
     grid-template-columns: 1fr;
-    gap: 16px;
+    gap: 14px;
   }
 
   .task-detail-aside {
     position: static;
     gap: 12px;
+  }
+
+  /* 卡片内边距统一 16px */
+  .detail-card {
+    padding: 16px;
+  }
+  .aside-card {
+    padding: 16px;
+  }
+  .card-title {
+    margin-bottom: 12px;
   }
 
   .cover-frame {
@@ -1985,7 +2067,7 @@ onMounted(() => {
     font-size: 26px;
   }
 
-  /* 操作按钮移动端点击区放大 — v0.2.6 Phase 4: 按钮间距 + 安全区 */
+  /* 操作按钮移动端点击区放大 */
   .aside-btn-full,
   .action-btn-row .el-button {
     min-height: 44px;
@@ -2076,6 +2158,47 @@ onMounted(() => {
   }
   .subtask-input-row {
     padding: 10px 0;
+  }
+}
+
+/* ====== 移动端吸底操作栏 ====== */
+.mobile-action-sticky {
+  display: none;
+}
+@media (max-width: 900px) {
+  .mobile-action-sticky {
+    display: block;
+    position: fixed;
+    left: 14px;
+    right: 14px;
+    bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+    z-index: 930;
+  }
+  .sticky-btn-primary {
+    width: 100%;
+    min-height: 48px;
+    border-radius: 14px;
+    font-weight: 700;
+    font-size: 16px;
+    box-shadow: 0 6px 24px rgba(99, 102, 241, 0.3);
+  }
+  .sticky-dual-row {
+    display: flex;
+    gap: 10px;
+  }
+  .sticky-btn-accept,
+  .sticky-btn-reject {
+    flex: 1;
+    min-height: 48px;
+    border-radius: 14px;
+    font-weight: 700;
+    font-size: 15px;
+  }
+  .sticky-btn-accept {
+    box-shadow: 0 4px 16px rgba(16, 185, 129, 0.25);
+  }
+  .sticky-btn-reject {
+    box-shadow: 0 4px 16px rgba(239, 68, 68, 0.2);
   }
 }
 

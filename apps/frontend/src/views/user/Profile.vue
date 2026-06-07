@@ -1,5 +1,7 @@
 <template>
   <div class="profile-page">
+    <!-- ====== 桌面端布局 ====== -->
+    <div class="profile-desktop">
     <el-row :gutter="20" class="profile-layout">
       <!-- 左边：账号信息 + 编辑资料 -->
       <el-col :xs="24" :sm="10">
@@ -203,12 +205,94 @@
         </el-card>
       </el-col>
     </el-row>
+    </div><!-- /.profile-desktop -->
+
+    <!-- ====== 移动端用户中心聚合页 ====== -->
+    <div class="profile-mobile" v-loading="loadingProfile">
+      <div class="uc-profile-section">
+        <div class="uc-avatar">
+          <el-image
+            v-if="profile?.avatar"
+            :src="profile.avatar"
+            fit="cover"
+            class="uc-avatar-img"
+          >
+            <template #error>
+              <span class="uc-avatar-fallback">{{ profile?.nickname?.[0] || profile?.email?.[0]?.toUpperCase() || '煜' }}</span>
+            </template>
+          </el-image>
+          <span v-else class="uc-avatar-fallback">{{ profile?.nickname?.[0] || profile?.email?.[0]?.toUpperCase() || '煜' }}</span>
+        </div>
+        <div class="uc-profile-info">
+          <div class="uc-nickname">{{ profile?.nickname || profile?.email?.split('@')[0] || '用户' }}</div>
+          <div class="uc-role">{{ profile?.email || '' }}</div>
+        </div>
+      </div>
+
+      <div class="uc-stats-bar">
+        <div class="uc-stat-item">
+          <span class="uc-stat-num">{{ taskStats.total }}</span>
+          <span class="uc-stat-label">全部任务</span>
+        </div>
+        <div class="uc-stat-item">
+          <span class="uc-stat-num">{{ taskStats.rate }}</span>
+          <span class="uc-stat-label">好评率</span>
+        </div>
+        <div class="uc-stat-item">
+          <span class="uc-stat-num">{{ formatYumiCompactFromCent(profile?.wallet?.available ?? 0) }}</span>
+          <span class="uc-stat-label">余额</span>
+        </div>
+        <div class="uc-stat-item">
+          <span class="uc-stat-num">—</span>
+          <span class="uc-stat-label">信用分</span>
+        </div>
+      </div>
+
+      <section class="uc-management-section">
+        <h3 class="uc-section-title">📌 管理中心</h3>
+        <div class="uc-management-grid">
+          <div v-for="item in managementLinks" :key="item.label" class="uc-mgmt-card" @click="$router.push(item.path)">
+            <span class="uc-mgmt-icon">{{ item.icon }}</span>
+            <div class="uc-mgmt-info">
+              <span class="uc-mgmt-label">{{ item.label }}</span>
+              <span class="uc-mgmt-desc">{{ item.desc }}</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="uc-task-section">
+        <h3 class="uc-section-title">📋 任务概况</h3>
+        <div class="uc-task-cards">
+          <div class="uc-task-card" @click="$router.push('/my-task?status=PENDING')">
+            <span class="uc-task-count pending-count">{{ taskStats.pending }}</span>
+            <span class="uc-task-label">待接单</span>
+            <span class="uc-task-status">等待服务者领取</span>
+          </div>
+          <div class="uc-task-card" @click="$router.push('/my-task?status=IN_PROGRESS')">
+            <span class="uc-task-count active-count">{{ taskStats.active }}</span>
+            <span class="uc-task-label">进行中</span>
+            <span class="uc-task-status">服务中或待验收</span>
+          </div>
+          <div class="uc-task-card" @click="$router.push('/my-task?status=COMPLETED')">
+            <span class="uc-task-count done-count">{{ taskStats.done }}</span>
+            <span class="uc-task-label">已完成</span>
+            <span class="uc-task-status">交易成功已结算</span>
+          </div>
+          <div class="uc-task-card" @click="$router.push('/my-task?status=CANCELLED')">
+            <span class="uc-task-count cancel-count">{{ taskStats.cancelled }}</span>
+            <span class="uc-task-label">已取消</span>
+            <span class="uc-task-status">已关闭或争议</span>
+          </div>
+        </div>
+      </section>
+    </div><!-- /.profile-mobile -->
   </div>
 </template>
 
 <script setup lang="ts">
 import { onMounted, reactive, ref, computed } from 'vue'
-import { formatYumiFromCent } from '@/utils/money'
+import { formatYumiFromCent, formatYumiCompactFromCent } from '@/utils/money'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
 import http from '@/api/http'
@@ -263,6 +347,24 @@ const profileRules: FormRules<typeof profileForm> = {
 
 const passwordFormRef = ref<FormInstance>()
 const submitting = ref(false)
+
+// ====== 移动端用户中心数据 ======
+const managementLinks = [
+  { icon: '📋', label: '我的任务', desc: '查看与管理的任务', path: '/my-task' },
+  { icon: '💰', label: '钱包', desc: '余额与交易记录', path: '/wallet' },
+  { icon: '🛡️', label: '信任中心', desc: '信用记录与保障', path: '/trust' },
+  { icon: '⚙️', label: '个人设置', desc: '编辑资料与密码', path: '/profile' },
+]
+
+// 任务统计（UI 展示用，后续可对接后端统计接口）
+const taskStats = {
+  total: '—',
+  rate: '—',
+  pending: '—',
+  active: '—',
+  done: '—',
+  cancelled: '—',
+}
 
 const passwordForm = reactive({
   oldPassword: '',
@@ -445,6 +547,8 @@ onMounted(() => {
 <style scoped>
 .profile-page {
   padding: 16px;
+  min-height: 100vh;
+  background: #05070d;
 }
 
 .card-header {
@@ -492,49 +596,74 @@ onMounted(() => {
 }
 
 @media (max-width: 992px) {
-  .profile-page {
-    padding: 8px;
-  }
+  .profile-desktop { padding: 8px; }
 }
 
-/* 移动端全宽修复 */
+/* 移动端用户中心 — 桌面端隐藏 */
+.profile-mobile { display: none; }
+
+/* ====== 移动端用户中心 ====== */
 @media (max-width: 768px) {
-  .profile-page {
-    padding: 0 !important;
-    max-width: 100vw;
-    overflow-x: hidden;
+  .profile-page { padding: 0; max-width: 100vw; overflow-x: hidden; background: #05070d; }
+  .profile-desktop { display: none; }
+  .profile-mobile { display: block; padding-bottom: calc(100px + env(safe-area-inset-bottom)); }
+
+  .uc-profile-section {
+    display: flex; align-items: center; gap: 14px; padding: 20px 14px; height: 120px;
+    background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(251,191,36,0.04));
+    border-bottom: 1px solid rgba(148,163,184,0.06);
   }
-  .profile-layout .el-col {
-    margin-bottom: 12px;
-  }
-  .profile-page .el-descriptions {
-    width: 100% !important;
-  }
-  .profile-page .el-descriptions__label {
-    width: 80px !important;
-    min-width: 80px !important;
-    white-space: nowrap !important;
-  }
-  .profile-page .el-form-item__label {
-    display: block !important;
-    width: 100% !important;
-    text-align: left !important;
-    margin-bottom: 6px !important;
-    float: none !important;
-  }
-  .profile-page .el-form-item__content {
-    margin-left: 0 !important;
-    width: 100% !important;
-  }
-  .profile-page .el-input {
-    width: 100% !important;
-  }
-  .profile-page .el-button--primary {
-    width: 100% !important;
-    margin-bottom: 8px;
-  }
-  .profile-page .el-card {
-    max-width: 100% !important;
-  }
+  .uc-avatar { width: 58px; height: 58px; border-radius: 50%; overflow: hidden; flex-shrink: 0; background: linear-gradient(135deg,#6366f1,#818cf8); }
+  .uc-avatar-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .uc-avatar-fallback { width: 58px; height: 58px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 22px; font-weight: 700; }
+  .uc-profile-info { display: flex; flex-direction: column; gap: 4px; }
+  .uc-nickname { font-size: 19px; font-weight: 700; color: #f1f5f9; }
+  .uc-role { font-size: 12px; color: rgba(255,255,255,0.5); }
+
+  .uc-stats-bar { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; padding: 16px 14px 0; }
+  .uc-stat-item { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 4px; background: rgba(17,24,39,0.5); border: 1px solid rgba(148,163,184,0.08); border-radius: 14px; }
+  .uc-stat-num { font-size: 19px; font-weight: 900; background: linear-gradient(135deg,#a5b4fc,#67e8f9); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1; }
+  .uc-stat-label { font-size: 10px; color: #64748b; }
+
+  .uc-section-title { font-size: 17px; font-weight: 700; color: #f1f5f9; margin: 0 0 12px; padding: 0; }
+
+  .uc-management-section { padding: 18px 14px 0; }
+  .uc-management-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .uc-mgmt-card { display: flex; align-items: center; gap: 10px; padding: 14px; background: rgba(17,24,39,0.55); border: 1px solid rgba(148,163,184,0.08); border-radius: 16px; min-height: 68px; cursor: pointer; transition: all 0.2s; }
+  .uc-mgmt-card:active { background: rgba(17,24,39,0.75); border-color: rgba(251,191,36,0.15); }
+  .uc-mgmt-icon { font-size: 22px; flex-shrink: 0; }
+  .uc-mgmt-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .uc-mgmt-label { font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.85); }
+  .uc-mgmt-desc { font-size: 11px; color: rgba(180,190,210,0.4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .uc-task-section { padding: 18px 14px 0; }
+  .uc-task-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .uc-task-card { padding: 14px; border-radius: 16px; background: rgba(17,24,39,0.5); border: 1px solid rgba(148,163,184,0.08); min-height: 100px; display: flex; flex-direction: column; justify-content: center; gap: 4px; cursor: pointer; transition: all 0.2s; }
+  .uc-task-card:active { background: rgba(17,24,39,0.75); }
+  .uc-task-count { font-size: 24px; font-weight: 900; line-height: 1; }
+  .pending-count { color: #a78bfa; }
+  .active-count { color: #fbbf24; }
+  .done-count { color: #4ade80; }
+  .cancel-count { color: #94a3b8; }
+  .uc-task-label { font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.65); }
+  .uc-task-status { font-size: 11px; color: rgba(180,190,210,0.35); }
+}
+
+@media (max-width: 375px) {
+  .uc-avatar { width: 54px; height: 54px; }
+  .uc-avatar-fallback { width: 54px; height: 54px; font-size: 20px; }
+  .uc-nickname { font-size: 17px; }
+  .uc-stat-num { font-size: 17px; }
+  .uc-mgmt-card { min-height: 64px; padding: 12px; }
+  .uc-task-count { font-size: 22px; }
+}
+
+@media (min-width: 391px) and (max-width: 430px) {
+  .uc-avatar { width: 62px; height: 62px; }
+  .uc-avatar-fallback { width: 62px; height: 62px; font-size: 24px; }
+  .uc-nickname { font-size: 20px; }
+  .uc-stat-num { font-size: 20px; }
+  .uc-mgmt-card { min-height: 72px; }
+  .uc-task-count { font-size: 24px; }
 }
 </style>

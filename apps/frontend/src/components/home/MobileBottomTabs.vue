@@ -12,7 +12,7 @@
     <button class="mobile-tab-item" @click="$router.push('/trust')">
       <span class="tab-icon">🛡️</span><span>保障</span>
     </button>
-    <button class="mobile-tab-item" @click="isLogin ? $router.push('/wallet') : $router.push('/login')">
+    <button class="mobile-tab-item" @click="isLogin ? $router.push('/profile') : $router.push('/login')">
       <span class="tab-icon">👤</span><span>我的</span>
     </button>
   </nav>
@@ -33,9 +33,9 @@ defineEmits<{ publish: [] }>()
     grid-template-columns: 1fr 1fr 74px 1fr 1fr;
     align-items: center;
     position: fixed;
-    left: 12px; right: 12px;
+    left: 14px; right: 14px;
     bottom: calc(10px + env(safe-area-inset-bottom, 0px));
-    height: 64px;
+    height: 68px;
     padding: 6px 8px;
     border-radius: 24px;
     background: rgba(10,14,23,0.92);
@@ -63,7 +63,7 @@ defineEmits<{ publish: [] }>()
     min-width: 0;
   }
   .mobile-tab-item.active { color: #fcd34d; }
-  .tab-icon { font-size: 17px; line-height: 1; }
+  .tab-icon { font-size: 20px; line-height: 1; }
   .mobile-tab-publish {
     width: 58px; height: 58px;
     border-radius: 50%;
