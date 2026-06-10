@@ -100,7 +100,7 @@
           <!-- 空状态 -->
           <div v-if="!hasSubTasks && !canEditSubTasks" class="subtask-empty">
             <div class="empty-graphic">
-              <span class="empty-icon">📋</span>
+              <img src="/assets/haoyu/mobile/illustrations_01_clipboard_empty_state.webp" alt="" class="empty-state-img" />
             </div>
             <p class="empty-title">还没有子任务</p>
             <p class="empty-desc">可以把大需求拆成多个可验收的小步骤。</p>
@@ -109,7 +109,7 @@
           <!-- 发布者但无子任务：占位 + 输入框 -->
           <div v-else-if="!hasSubTasks && canEditSubTasks" class="subtask-empty">
             <div class="empty-graphic">
-              <span class="empty-icon">📋</span>
+              <img src="/assets/haoyu/mobile/illustrations_01_clipboard_empty_state.webp" alt="" class="empty-state-img" />
             </div>
             <p class="empty-title">还没有子任务</p>
             <p class="empty-desc">可以把大需求拆成多个可验收的小步骤。</p>
@@ -123,12 +123,21 @@
                   <el-button
                     type="primary"
                     :loading="creatingSubTask"
+                    class="add-subtask-btn-desktop"
                     @click="handleCreateSubTask"
                   >
                     添加
                   </el-button>
                 </template>
               </el-input>
+              <el-button
+                type="primary"
+                :loading="creatingSubTask"
+                class="add-subtask-btn-mobile"
+                @click="handleCreateSubTask"
+              >
+                添加子任务
+              </el-button>
             </div>
           </div>
 
@@ -169,28 +178,32 @@
 
               <div v-if="canEditSubTasks" class="subtask-actions">
                 <template v-if="editingSubTaskId === sub.id">
-                  <el-button type="primary" link size="small" :disabled="updatingSubTask" @click="handleSaveSubTaskTitle(sub)">保存</el-button>
-                  <el-button type="info" link size="small" :disabled="updatingSubTask" @click="cancelEditSubTask">取消</el-button>
+                  <el-button size="small" plain :disabled="updatingSubTask" @click="handleSaveSubTaskTitle(sub)">保存</el-button>
+                  <el-button size="small" plain :disabled="updatingSubTask" @click="cancelEditSubTask">取消</el-button>
                 </template>
                 <template v-else>
-                  <el-button type="primary" link size="small" :disabled="updatingSubTask" @click="startEditSubTask(sub)">编辑</el-button>
-                  <el-button type="danger" link size="small" :disabled="updatingSubTask" @click="handleDeleteSubTask(sub)">删除</el-button>
+                  <el-button size="small" plain :disabled="updatingSubTask" @click="startEditSubTask(sub)">编辑</el-button>
+                  <el-button size="small" type="danger" plain :disabled="updatingSubTask" @click="handleDeleteSubTask(sub)">删除</el-button>
                 </template>
               </div>
             </li>
 
             <!-- 发布者可在列表底部新增 -->
             <li v-if="canEditSubTasks && hasSubTasks" class="subtask-item subtask-input-row">
-              <el-input
-                v-model="newSubTaskTitle"
-                size="small"
-                placeholder="输入新子任务标题，回车添加"
-                @keyup.enter="handleCreateSubTask"
-              >
-                <template #append>
-                  <el-button type="primary" size="small" :loading="creatingSubTask" @click="handleCreateSubTask">添加</el-button>
-                </template>
-              </el-input>
+              <div class="add-subtask-row">
+                <el-input
+                  v-model="newSubTaskTitle"
+                  size="small"
+                  placeholder="输入新子任务标题，回车添加"
+                  class="add-subtask-input"
+                  @keyup.enter="handleCreateSubTask"
+                >
+                  <template #append>
+                    <el-button type="primary" size="small" class="add-subtask-btn-desktop" :loading="creatingSubTask" @click="handleCreateSubTask">添加</el-button>
+                  </template>
+                </el-input>
+                <el-button type="primary" size="small" class="add-subtask-btn-mobile" :loading="creatingSubTask" @click="handleCreateSubTask">添加子任务</el-button>
+              </div>
             </li>
           </ul>
         </article>
@@ -311,7 +324,7 @@
 
             <el-button
               v-if="canRobOrder"
-              class="aside-btn-full mt-12"
+              class="aside-btn-full mt-12 mobile-primary-action"
               type="primary"
               size="large"
               :loading="opLoading"
@@ -356,7 +369,7 @@
                 show-icon
                 class="mt-12"
               />
-              <el-button class="aside-btn-full mt-12" type="primary" size="large" @click="openSubmitDialog">
+              <el-button class="aside-btn-full mt-12 mobile-primary-action" type="primary" size="large" @click="openSubmitDialog">
                 {{ hasSubmissionHistory ? '🔄 重新提交成果' : '🏁 提交任务成果' }}
               </el-button>
             </template>
@@ -426,11 +439,11 @@
               </div>
 
               <div class="mt-12 action-btn-row">
-                <el-button type="success" class="flex-1" :loading="opLoading" @click="handleAccept">✅ 通过</el-button>
-                <el-button type="danger" class="flex-1" :loading="opLoading" @click="handleReject">❌ 驳回</el-button>
+                <el-button type="success" class="flex-1 mobile-secondary-action" :loading="opLoading" @click="handleAccept">✅ 通过</el-button>
+                <el-button type="danger" class="flex-1 mobile-secondary-action" :loading="opLoading" @click="handleReject">❌ 驳回</el-button>
               </div>
               <div class="mt-8 text-center">
-                <el-button type="warning" plain size="small" @click="showDisputeDialog = true">⚡ 发起争议</el-button>
+                <el-button type="warning" plain size="small" class="mobile-small-action" @click="showDisputeDialog = true">⚡ 发起争议</el-button>
               </div>
             </template>
 
@@ -545,10 +558,52 @@
       </template>
     </el-dialog>
 
+    <!-- ====== 移动端吸底操作栏 ====== -->
+    <div v-if="$route.meta?.public || true" class="mobile-action-sticky">
+      <!-- 未登录 + PENDING：去登录 -->
+      <template v-if="!isLogin && task?.status === 'PENDING'">
+        <el-button class="sticky-btn-primary" type="primary" size="large" @click="goLogin">去登录接单</el-button>
+      </template>
+
+      <!-- 游客 + PENDING：立即接单 -->
+      <template v-else-if="canRobOrder">
+        <el-button class="sticky-btn-primary" type="primary" size="large" :loading="opLoading" @click="handleAssign">🚀 立即接单</el-button>
+      </template>
+
+      <!-- 执行者 + ASSIGNED：提交成果 -->
+      <template v-else-if="viewMode === 'worker' && isOrderAssigned">
+        <el-button class="sticky-btn-primary" type="primary" size="large" @click="openSubmitDialog">
+          {{ hasSubmissionHistory ? '🔄 重新提交成果' : '🏁 提交任务成果' }}
+        </el-button>
+      </template>
+
+      <!-- 发布者 + SUBMITTED：通过 / 驳回 -->
+      <template v-else-if="viewMode === 'publisher' && task?.status === 'SUBMITTED' && publisherOrder">
+        <div class="sticky-dual-row">
+          <el-button class="sticky-btn-accept" type="success" size="large" :loading="opLoading" @click="handleAccept">✅ 通过</el-button>
+          <el-button class="sticky-btn-reject" type="danger" size="large" :loading="opLoading" @click="handleReject">❌ 驳回</el-button>
+        </div>
+      </template>
+    </div>
+
     <!-- ====== 图片预览弹窗 ====== -->
     <el-dialog v-model="imagePreviewVisible" title="参考图" width="80%" destroy-on-close>
       <img v-if="task?.image" :src="getFullUrl(task.image)" alt="参考图" class="preview-full-img" />
     </el-dialog>
+
+    <!-- 移动端子任务删除确认弹窗 -->
+    <van-dialog
+      v-model:show="showSubtaskDeleteDialog"
+      title="确认删除"
+      show-cancel-button
+      confirm-button-text="确认删除"
+      cancel-button-text="取消"
+      @confirm="confirmDeleteSubTask"
+      class="van-dialog-dark"
+      :close-on-click-overlay="false"
+    >
+      <p style="padding:16px;margin:0;color:#e2e8f0;font-size:14px;text-align:center;">确定要删除该子任务吗？此操作不可恢复。</p>
+    </van-dialog>
   </section>
 </template>
 
@@ -556,6 +611,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Dialog } from 'vant'
 
 import {
   findTaskDetail,
@@ -678,6 +734,10 @@ const submitForm = reactive({ content: '', image: '' })
 const imagePreviewVisible = ref(false)
 
 // 争议
+// Vant dialog for mobile subtask delete
+const showSubtaskDeleteDialog = ref(false)
+const pendingDeleteSubtask = ref<SubTask | null>(null)
+
 const showDisputeDialog = ref(false)
 const disputeReason = ref('')
 const disputeLoading = ref(false)
@@ -967,11 +1027,30 @@ const handleToggleSubTask = async (subTask: SubTask, value: boolean) => {
 
 const handleDeleteSubTask = async (subTask: SubTask) => {
   if (!task.value) return
+  // 移动端使用 van-dialog，桌面端使用 ElMessageBox
+  if (window.innerWidth <= 768) {
+    pendingDeleteSubtask.value = subTask
+    showSubtaskDeleteDialog.value = true
+    return
+  }
   try {
     await ElMessageBox.confirm('确定要删除该子任务吗？此操作不可恢复。', '提示', { type: 'warning' })
   } catch {
     return
   }
+  doDeleteSubTask(subTask)
+}
+
+const confirmDeleteSubTask = async () => {
+  const subTask = pendingDeleteSubtask.value
+  if (!subTask || !task.value) return
+  showSubtaskDeleteDialog.value = false
+  pendingDeleteSubtask.value = null
+  doDeleteSubTask(subTask)
+}
+
+const doDeleteSubTask = async (subTask: SubTask) => {
+  if (!task.value) return
   updatingSubTask.value = true
   try {
     await deleteSubTask(task.value.id, subTask.id)
@@ -1121,20 +1200,20 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* ====== 页面容器 ====== */
+/* ====== 页面容器 — v0.2.6 Phase 4: 间距优化 ====== */
 .task-detail-page {
   max-width: 1240px;
   margin: 0 auto;
-  padding: 24px 20px 60px;
+  padding: 24px 20px 80px;
   color: rgba(255, 255, 255, 0.92);
 }
 
-/* ====== Hero 头部 ====== */
+/* ====== Hero 头部 — v0.2.6 Phase 4: 暖金氛围增强 ====== */
 .task-detail-hero {
   margin-bottom: 28px;
-  padding: 24px 28px;
-  background: linear-gradient(135deg, rgba(124, 92, 255, 0.08), rgba(246, 183, 60, 0.04));
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 20px 28px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(251, 191, 36, 0.04));
+  border: 1px solid rgba(148, 163, 184, 0.1);
   border-radius: 18px;
 }
 
@@ -1152,7 +1231,7 @@ onMounted(() => {
   transition: color 0.2s;
 }
 .hero-back:hover {
-  color: #f6b73c;
+  color: #fbbf24;
 }
 .back-arrow {
   font-size: 16px;
@@ -1236,8 +1315,8 @@ onMounted(() => {
 }
 
 .hero-price {
-  background: linear-gradient(135deg, rgba(246, 183, 60, 0.12), rgba(246, 183, 60, 0.04));
-  border: 1px solid rgba(246, 183, 60, 0.18);
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.12), rgba(245, 158, 11, 0.04));
+  border: 1px solid rgba(251, 191, 36, 0.2);
   padding: 6px 14px;
   border-radius: 20px;
   margin-left: auto;
@@ -1245,11 +1324,14 @@ onMounted(() => {
 .price-value {
   font-size: 18px;
   font-weight: 800;
-  color: #f6b73c;
+  background: linear-gradient(135deg, #fcd34d, #f59e0b);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 .price-unit {
   font-size: 13px;
-  color: rgba(246, 183, 60, 0.7);
+  color: rgba(251, 191, 36, 0.6);
   margin-left: 2px;
 }
 
@@ -1271,10 +1353,12 @@ onMounted(() => {
 
 /* ====== 通用卡片 ====== */
 .detail-card {
-  background: rgba(255, 255, 255, 0.035);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(17, 24, 39, 0.55);
+  border: 1px solid rgba(148, 163, 184, 0.1);
   border-radius: 16px;
   padding: 22px 24px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .card-title {
@@ -1419,6 +1503,12 @@ onMounted(() => {
 .empty-graphic {
   margin-bottom: 12px;
 }
+.empty-state-img {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  opacity: 0.5;
+}
 .empty-icon {
   font-size: 40px;
   opacity: 0.35;
@@ -1498,6 +1588,44 @@ onMounted(() => {
 }
 .subtask-input {
   margin-top: 12px;
+}
+/* 添加子任务按钮 — 手机/桌面切换 */
+.add-subtask-btn-mobile {
+  display: none;
+}
+@media (min-width: 901px) {
+  .add-subtask-btn-desktop { display: inline-flex !important; }
+}
+@media (max-width: 375px) {
+  .task-detail-page {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  .task-detail-hero {
+    padding: 14px;
+  }
+  .hero-title {
+    font-size: 17px;
+  }
+  .hero-price .price-value {
+    font-size: 24px;
+  }
+  .detail-card,
+  .aside-card {
+    padding: 14px;
+  }
+}
+@media (min-width: 391px) and (max-width: 430px) {
+  .task-detail-page {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+  .hero-title {
+    font-size: 20px;
+  }
+  .hero-price .price-value {
+    font-size: 28px;
+  }
 }
 .subtask-input-row {
   border: none;
@@ -1684,10 +1812,12 @@ onMounted(() => {
 }
 
 .aside-card {
-  background: rgba(255, 255, 255, 0.035);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(17, 24, 39, 0.55);
+  border: 1px solid rgba(148, 163, 184, 0.1);
   border-radius: 16px;
   padding: 20px 22px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 .aside-card-title {
   font-size: 15px;
@@ -1730,12 +1860,15 @@ onMounted(() => {
 .escrow-number {
   font-size: 32px;
   font-weight: 900;
-  color: #f6b73c;
+  background: linear-gradient(135deg, #fcd34d, #f59e0b);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   line-height: 1;
 }
 .escrow-unit {
   font-size: 14px;
-  color: rgba(246, 183, 60, 0.65);
+  color: rgba(251, 191, 36, 0.6);
   margin-left: 4px;
 }
 
@@ -1754,7 +1887,7 @@ onMounted(() => {
   gap: 8px;
   margin-top: 12px;
   padding: 10px 12px;
-  background: rgba(124, 92, 255, 0.06);
+  background: rgba(99, 102, 241, 0.06);
   border-radius: 10px;
   font-size: 12.5px;
   color: rgba(180, 190, 210, 0.55);
@@ -1830,6 +1963,34 @@ onMounted(() => {
   overflow: hidden;
 }
 
+/* ====== 按钮层级 class — v0.2.6 Phase 4: 主次分明 ====== */
+.mobile-primary-action {
+  min-height: 44px;
+  border-radius: 14px;
+  font-weight: 700;
+  width: 100%;
+  font-size: 15px;
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.2);
+}
+.mobile-secondary-action {
+  min-height: 40px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 14px;
+}
+.mobile-small-action {
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.mobile-danger-action {
+  min-height: 34px;
+  border-radius: 10px;
+  font-size: 13px;
+}
+
 /* ====== 工具类 ====== */
 .mt-8 { margin-top: 8px; }
 .mt-12 { margin-top: 12px; }
@@ -1838,41 +1999,70 @@ onMounted(() => {
 .text-center { text-align: center; }
 .action-btn-row {
   display: flex;
-  gap: 12px;
+  gap: 10px;
+}
+.action-btn-row .el-button--success {
+  box-shadow: 0 2px 12px rgba(16, 185, 129, 0.15);
+}
+.action-btn-row .el-button--danger {
+  box-shadow: 0 2px 12px rgba(239, 68, 68, 0.12);
 }
 
 /* ====== 移动端适配 ====== */
 @media (max-width: 900px) {
   .task-detail-page {
-    padding: 16px 14px 40px;
+    padding: 12px 14px calc(100px + env(safe-area-inset-bottom, 0px));
   }
 
   .task-detail-hero {
-    padding: 18px 20px;
+    padding: 16px;
   }
 
   .hero-title {
-    font-size: 22px;
+    font-size: 18px;
+    margin-bottom: 12px;
   }
 
   .hero-meta {
     flex-direction: column;
     align-items: flex-start;
-    gap: 10px;
+    gap: 8px;
   }
 
   .hero-price {
     margin-left: 0;
   }
+  .hero-price .price-value {
+    font-size: 26px;
+  }
+
+  .task-detail-page .task-detail-hero {
+    margin-bottom: 16px;
+  }
+
+  .task-detail-main {
+    gap: 12px;
+  }
 
   .task-detail-grid {
     grid-template-columns: 1fr;
-    gap: 16px;
+    gap: 14px;
   }
 
   .task-detail-aside {
     position: static;
     gap: 12px;
+  }
+
+  /* 卡片内边距统一 16px */
+  .detail-card {
+    padding: 16px;
+  }
+  .aside-card {
+    padding: 16px;
+  }
+  .card-title {
+    margin-bottom: 12px;
   }
 
   .cover-frame {
@@ -1882,5 +2072,176 @@ onMounted(() => {
   .escrow-number {
     font-size: 26px;
   }
+
+  /* 操作按钮移动端点击区放大 */
+  .aside-btn-full,
+  .action-btn-row .el-button {
+    min-height: 44px;
+  }
+  .action-btn-row {
+    gap: 8px;
+  }
+
+  /* 评论发送按钮 */
+  .comment-input .el-button {
+    min-height: 44px;
+    padding: 0 18px;
+  }
+
+  /* ====== 子任务区移动端调整 ====== */
+  /* 子任务操作按钮 — 统一尺寸层级 */
+  .subtask-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-left: 0;
+    margin-top: 8px;
+    width: 100%;
+  }
+  .subtask-actions .el-button {
+    font-size: 12px;
+    min-height: 36px;
+    padding: 0 14px;
+    border-radius: 10px;
+    flex: 1;
+    max-width: 120px;
+  }
+  /* 编辑 — 次级轻描边 */
+  .subtask-actions .el-button:not(.el-button--danger) {
+    color: #94a3b8 !important;
+    border-color: rgba(148, 163, 184, 0.18) !important;
+  }
+  /* 删除 — 红色轻背景危险按钮 */
+  .subtask-actions .el-button--danger.is-plain {
+    color: #fca5a5 !important;
+    border-color: rgba(239, 68, 68, 0.25) !important;
+    background: rgba(239, 68, 68, 0.06) !important;
+  }
+  /* 子任务行内保存/取消 — 中号次级 */
+  .subtask-actions .el-button:first-child {
+    border-radius: 10px;
+    min-height: 34px;
+  }
+
+  /* 移动端添加子任务 — 上下布局 */
+  .add-subtask-row {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .add-subtask-input {
+    width: 100%;
+  }
+  .add-subtask-btn-desktop {
+    display: none !important;
+  }
+  .add-subtask-btn-mobile {
+    display: block !important;
+    width: 100%;
+    min-height: 44px;
+  }
+
+  /* 子任务输入框 */
+  .subtask-input .el-input {
+    width: 100%;
+  }
+  .subtask-input .add-subtask-btn-mobile {
+    margin-top: 8px;
+    width: 100%;
+    min-height: 44px;
+  }
+
+  /* 子任务列表项 — 每项更清晰 */
+  .subtask-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    padding: 10px 12px;
+  }
+  .subtask-main {
+    width: 100%;
+  }
+  .subtask-input-row {
+    padding: 10px 0;
+  }
+}
+
+/* ====== 移动端吸底操作栏 ====== */
+.mobile-action-sticky {
+  display: none;
+}
+@media (max-width: 900px) {
+  .mobile-action-sticky {
+    display: block;
+    position: fixed;
+    left: 14px;
+    right: 14px;
+    bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+    z-index: 930;
+  }
+  .sticky-btn-primary {
+    width: 100%;
+    min-height: 48px;
+    border-radius: 14px;
+    font-weight: 700;
+    font-size: 16px;
+    box-shadow: 0 6px 24px rgba(99, 102, 241, 0.3);
+  }
+  .sticky-dual-row {
+    display: flex;
+    gap: 10px;
+  }
+  .sticky-btn-accept,
+  .sticky-btn-reject {
+    flex: 1;
+    min-height: 48px;
+    border-radius: 14px;
+    font-weight: 700;
+    font-size: 15px;
+  }
+  .sticky-btn-accept {
+    box-shadow: 0 4px 16px rgba(16, 185, 129, 0.25);
+  }
+  .sticky-btn-reject {
+    box-shadow: 0 4px 16px rgba(239, 68, 68, 0.2);
+  }
+}
+
+/* ====== van-dialog 暗色主题适配 ====== */
+:deep(.van-dialog-dark) {
+  background: #1e293b !important;
+}
+:deep(.van-dialog-dark .van-dialog__header) {
+  color: #f1f5f9 !important;
+  font-size: 16px !important;
+  padding-top: 20px !important;
+}
+:deep(.van-dialog-dark .van-dialog__message) {
+  color: #e2e8f0 !important;
+  font-size: 14px !important;
+}
+:deep(.van-dialog-dark .van-button--default) {
+  background: transparent !important;
+  border-top: 1px solid rgba(255,255,255,0.08) !important;
+  color: #94a3b8 !important;
+  font-size: 15px !important;
+  min-height: 48px;
+}
+:deep(.van-dialog-dark .van-button--primary) {
+  background: transparent !important;
+  border-top: 1px solid rgba(255,255,255,0.08) !important;
+  color: #ef4444 !important;
+  font-size: 15px !important;
+  min-height: 48px;
+}
+:deep(.van-dialog-dark .van-button--primary:active) {
+  background: rgba(239,68,68,0.08) !important;
+}
+:deep(.van-dialog-dark .van-button--default:active) {
+  background: rgba(255,255,255,0.06) !important;
+}
+:deep(.van-dialog-dark .van-hairline--top) {
+  border-color: rgba(255,255,255,0.08) !important;
 }
 </style>

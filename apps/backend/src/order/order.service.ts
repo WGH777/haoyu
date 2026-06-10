@@ -643,8 +643,8 @@ export class OrderService {
       // 直接走结算流程会因 frozen < totalCost 失败
       const legacyIssue = this.checkLegacyOrder(order);
       if (legacyIssue) {
-        this.logger.warn(`Skip legacy order #${order.id}: ${legacyIssue}`);
-        return order;
+        this.logger.log(`⏭️ 跳过 legacy 订单 #${order.id}: ${legacyIssue}`);
+        return null;
       }
 
       const updated = await tx.order.updateMany({

@@ -1,0 +1,8 @@
+<svg width="900" height="520" viewBox="0 0 900 520" fill="none" xmlns="http://www.w3.org/2000/svg">
+<defs><radialGradient id="g" cx="50%" cy="50%" r="50%"><stop stop-color="#fff7cc"/><stop offset=".35" stop-color="#fbbf24"/><stop offset="1" stop-color="#f97316" stop-opacity="0"/></radialGradient><filter id="b"><feGaussianBlur stdDeviation="8"/></filter></defs>
+<g opacity=".95">
+<g transform="translate(670 70)"><path d="M-14-18Q0-34 14-18L11 20Q0 35-11 20Z" fill="#fbbf24" opacity=".72"/><ellipse rx="42" ry="52" fill="url(#g)" filter="url(#b)" opacity=".5"/></g>
+<g transform="translate(760 190) scale(.72)"><path d="M-14-18Q0-34 14-18L11 20Q0 35-11 20Z" fill="#fbbf24" opacity=".55"/><ellipse rx="40" ry="48" fill="url(#g)" filter="url(#b)" opacity=".38"/></g>
+<g transform="translate(545 165) scale(.52)"><path d="M-14-18Q0-34 14-18L11 20Q0 35-11 20Z" fill="#fbbf24" opacity=".55"/><ellipse rx="36" ry="46" fill="url(#g)" filter="url(#b)" opacity=".32"/></g>
+</g>
+</svg>

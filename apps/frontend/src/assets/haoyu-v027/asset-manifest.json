@@ -1,0 +1,13 @@
+{
+  "name": "haoyu-v027-desktop-assets",
+  "target": "apps/frontend/src/assets/haoyu-v027",
+  "version": "0.2.7-phase1",
+  "asset_count": 18,
+  "usage": {
+    "heroBg": "@/assets/haoyu-v027/hero-city-lights.svg",
+    "lanternLayer": "@/assets/haoyu-v027/hero-lanterns.svg",
+    "wheatBand": "@/assets/haoyu-v027/wheat-glow-band.svg",
+    "taskCovers": "@/assets/haoyu-v027/task-covers/*.svg",
+    "categoryIcons": "@/assets/haoyu-v027/category-icons/*.svg"
+  }
+}

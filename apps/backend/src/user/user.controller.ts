@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
   UseGuards,
   Req,
   ParseIntPipe,
@@ -17,6 +18,7 @@ import {
   ApiBody,
   ApiOperation,
   ApiParam,
+  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 
@@ -28,6 +30,7 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { AdminAuditService } from '../admin/admin-audit.service';
 
 type RoleStr = 'USER' | 'ADMIN' | 'SUPER_ADMIN';
 const ROLE_ALLOWLIST: RoleStr[] = ['USER', 'ADMIN', 'SUPER_ADMIN'];
@@ -35,7 +38,10 @@ const ROLE_ALLOWLIST: RoleStr[] = ['USER', 'ADMIN', 'SUPER_ADMIN'];
 @ApiTags('用户管理')
 @Controller('user')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly audit: AdminAuditService,
+  ) {}
 
   /**
    * （超级管理员）创建用户
@@ -74,15 +80,35 @@ export class UserController {
   }
 
   /**
-   * （管理员）查询所有用户
+   * （管理员）查询所有用户（支持分页和筛选）
    */
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'SUPER_ADMIN')
   @Get()
   @ApiBearerAuth()
-  @ApiOperation({ summary: '（管理员）获取用户列表' })
-  findAll() {
-    return this.userService.findAll();
+  @ApiOperation({ summary: '（管理员）获取用户列表（分页+筛选）' })
+  @ApiQuery({ name: 'page', required: false, description: '页码，默认 1' })
+  @ApiQuery({ name: 'pageSize', required: false, description: '每页条数，默认 20，最大 100' })
+  @ApiQuery({ name: 'email', required: false, description: '按邮箱模糊搜索' })
+  @ApiQuery({ name: 'nickname', required: false, description: '按昵称模糊搜索' })
+  @ApiQuery({ name: 'role', required: false, description: '按角色筛选：USER | ADMIN | SUPER_ADMIN' })
+  @ApiQuery({ name: 'status', required: false, description: '按状态筛选：ACTIVE | SUSPENDED' })
+  findAll(
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+    @Query('email') email?: string,
+    @Query('nickname') nickname?: string,
+    @Query('role') role?: string,
+    @Query('status') status?: string,
+  ) {
+    return this.userService.findAll({
+      page: page ? parseInt(page, 10) : undefined,
+      pageSize: pageSize ? parseInt(pageSize, 10) : undefined,
+      email,
+      nickname,
+      role,
+      status,
+    });
   }
 
   /**
@@ -134,7 +160,9 @@ export class UserController {
   }
 
   /**
-   * ★ 修改用户角色（仅 SUPER_ADMIN）
+   * ★ 调整用户角色（仅 SUPER_ADMIN）
+   * 只允许 USER ↔ ADMIN 之间切换
+   * 禁止调整 SUPER_ADMIN，禁止设目标为 SUPER_ADMIN
    */
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SUPER_ADMIN')
@@ -144,32 +172,63 @@ export class UserController {
   @ApiBody({
     schema: {
       type: 'object',
+      required: ['role', 'reason'],
       properties: {
         role: {
           type: 'string',
-          enum: ['USER', 'ADMIN', 'SUPER_ADMIN'],
+          enum: ['USER', 'ADMIN'],
           example: 'ADMIN',
+          description: '目标角色（仅 USER 或 ADMIN）',
+        },
+        reason: {
+          type: 'string',
+          example: '该用户经审核具备管理员能力',
+          description: '操作原因（必填）',
         },
       },
-      required: ['role'],
     },
   })
-  @ApiOperation({ summary: '（超级管理员）修改用户角色' })
-  changeRole(
+  @ApiOperation({ summary: '（超级管理员）调整用户角色（仅 USER ↔ ADMIN）' })
+  async changeRole(
     @Req() req: any,
     @Param('id', ParseIntPipe) id: number,
-    @Body() body: { role: RoleStr },
+    @Body() body: { role: string; reason: string },
   ) {
-    if (!body?.role || !ROLE_ALLOWLIST.includes(body.role)) {
-      throw new BadRequestException(
-        `role 非法，可选值：${ROLE_ALLOWLIST.join(', ')}`,
-      );
+    const adminId = Number(req?.user?.id);
+    const targetRole = body?.role;
+    const reason = (body?.reason || '').trim();
+
+    // 规则 0: reason 必填
+    if (!reason) {
+      throw new BadRequestException('操作原因不能为空');
     }
-    // 规则 1: 禁止修改自己的角色
-    if (req.user.id === id) {
+
+    // 规则 1: 仅允许 USER / ADMIN
+    if (!targetRole || !['USER', 'ADMIN'].includes(targetRole)) {
+      throw new BadRequestException('目标角色仅支持 USER 或 ADMIN，不允许设为 SUPER_ADMIN');
+    }
+
+    // 规则 2: 禁止修改自己的角色
+    if (adminId === id) {
       throw new ForbiddenException('不能修改自己的角色');
     }
-    return this.userService.changeRole(id, body.role);
+
+    const result = await this.userService.changeRole(id, targetRole);
+
+    // 审计日志
+    await this.audit.log({
+      adminId,
+      action: 'CHANGE_USER_ROLE',
+      targetType: 'USER',
+      targetId: id,
+      reason,
+      detail: {
+        fromRole: result.previousRole,
+        toRole: targetRole,
+      },
+    });
+
+    return { message: '角色已更新', userId: id, previousRole: result.previousRole, newRole: targetRole };
   }
 
   /**

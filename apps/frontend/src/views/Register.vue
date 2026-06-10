@@ -268,4 +268,121 @@ const handleRegister = async () => {
     font-size: 22px;
   }
 }
+
+.register-page {
+  padding: 32px 18px;
+  color: #fff2d6;
+  background:
+    radial-gradient(circle at 18% 8%, rgba(206, 142, 54, .18), transparent 26%),
+    radial-gradient(circle at 80% 0%, rgba(117, 74, 24, .24), transparent 32%),
+    linear-gradient(145deg, #040911 0%, #07111e 45%, #160f09 100%);
+}
+
+.register-page::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle, rgba(247, 185, 90, .46) 0 1px, transparent 2px),
+    linear-gradient(110deg, transparent 0 18%, rgba(236, 160, 73, .08) 18.2%, transparent 18.6% 100%);
+  background-size: 150px 150px, 360px 360px;
+  opacity: .28;
+}
+
+.register-bg-glow {
+  background:
+    radial-gradient(ellipse 54% 44% at 50% 28%, rgba(245, 184, 91, .12) 0%, transparent 62%),
+    radial-gradient(ellipse 42% 34% at 18% 72%, rgba(76, 101, 132, .12) 0%, transparent 52%),
+    radial-gradient(ellipse 36% 30% at 82% 18%, rgba(126, 84, 35, .14) 0%, transparent 54%);
+}
+
+.register-box {
+  background:
+    radial-gradient(circle at 92% 12%, rgba(239, 163, 60, .16), transparent 30%),
+    linear-gradient(145deg, rgba(255, 255, 255, .08), rgba(255, 255, 255, .026));
+  border-color: rgba(255, 214, 145, .18);
+  box-shadow:
+    0 28px 70px rgba(0, 0, 0, .44),
+    0 0 40px rgba(196, 125, 43, .16),
+    0 0 0 1px rgba(255, 240, 205, .07) inset;
+}
+
+.register-box:focus-within {
+  border-color: rgba(243, 180, 78, .45);
+  box-shadow:
+    0 28px 76px rgba(0, 0, 0, .48),
+    0 0 48px rgba(236, 163, 62, .2),
+    0 0 0 1px rgba(255, 240, 205, .08) inset;
+}
+
+.logo-mark {
+  color: #241307;
+  font-weight: 900;
+  background: linear-gradient(145deg, #ffe6a9, #d58a30 58%, #7058b6);
+  box-shadow: 0 0 28px rgba(231, 155, 57, .34);
+}
+
+.register-header h1 {
+  color: #ffe4b5;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.register-header p,
+.register-footer {
+  color: rgba(255, 232, 196, .62);
+}
+
+:deep(.register-box .el-form-item__label) {
+  color: rgba(255, 232, 196, .76);
+  font-weight: 700;
+}
+
+:deep(.register-box .el-input__wrapper) {
+  border-radius: 12px;
+  background: rgba(4, 9, 17, .58);
+  box-shadow: 0 0 0 1px rgba(255, 214, 145, .16) inset;
+}
+
+:deep(.register-box .el-input__wrapper:hover) {
+  box-shadow: 0 0 0 1px rgba(243, 180, 78, .35) inset;
+}
+
+:deep(.register-box .el-input__wrapper.is-focus) {
+  box-shadow: 0 0 0 1px rgba(255, 216, 139, .58) inset, 0 0 0 3px rgba(243, 180, 78, .10);
+}
+
+:deep(.register-box .el-input__inner) {
+  color: #fff2d6;
+}
+
+:deep(.register-box .el-input__inner::placeholder) {
+  color: rgba(255, 232, 196, .38);
+}
+
+.register-btn {
+  color: #241307 !important;
+  font-weight: 800;
+  background: linear-gradient(135deg, #ffe8ae, #f2b34d) !important;
+  box-shadow: 0 14px 30px rgba(235, 164, 69, .3);
+}
+
+.register-btn:hover {
+  background: linear-gradient(135deg, #fff0bd, #d89a37 54%, #7c65d8) !important;
+  box-shadow: 0 18px 38px rgba(235, 164, 69, .38);
+}
+
+.register-footer a {
+  color: #ffd16e;
+  font-weight: 700;
+}
+
+.register-footer a:hover {
+  color: #ffe8ae;
+}
+
+.register-bottom-text {
+  color: rgba(148, 170, 196, .6);
+}
 </style>

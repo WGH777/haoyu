@@ -109,4 +109,67 @@ onMounted(async () => {
 .ledger-amount.IN { color: #6ee7b7; }
 .ledger-amount.OUT { color: #fca5a5; }
 .ledger-time { font-size: 11px; color: #64748b; }
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .wallet-page {
+    padding: 14px;
+    max-width: 100%;
+    position: relative;
+  }
+  .wallet-page::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: url('/assets/haoyu/mobile/vertical_backgrounds_03_mobile_light_trail_bg.webp') no-repeat 50% 0 / cover;
+    opacity: 0.08;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .wallet-page > * { position: relative; z-index: 1; }
+
+  .wallet-page h2 { font-size: 18px; margin-bottom: 16px; }
+
+  .balance-cards {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  .bal-card {
+    padding: 16px;
+    border-radius: 14px;
+  }
+  .bal-card.total {
+    grid-column: 1 / -1;
+  }
+  .bal-amount { font-size: 22px; }
+  .bal-label { font-size: 12px; margin-bottom: 4px; }
+  .bal-hint { font-size: 10px; }
+
+  .ledger-section h3 { font-size: 15px; margin-bottom: 10px; }
+  .ledger-item {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    padding: 14px;
+  }
+  .ledger-left {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .ledger-right {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-align: left;
+  }
+  .ledger-amount {
+    font-size: 17px;
+    display: inline;
+  }
+  .ledger-time { font-size: 11px; }
+  .ledger-remark { font-size: 12px; }
+}
 </style>

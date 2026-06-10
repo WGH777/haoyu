@@ -1,332 +1,207 @@
 <template>
-  <div class="app-shell" :class="{ 'is-drawer-open': mobileDrawerOpen }">
-    <!-- 侧边栏 -->
-    <aside class="sidebar">
-      <div class="logo" @click="$router.push('/task')">
-        <span class="logo-mark">煜</span>
-        <span class="logo-text">浩煜</span>
-      </div>
-      <nav class="nav">
-        <router-link to="/task" class="nav-item" :class="{ active: $route.path === '/task' || $route.path === '/' }">
-          <el-icon><List /></el-icon><span>任务大厅</span>
-        </router-link>
-        <template v-if="isLogin">
-          <router-link to="/my-task" class="nav-item" :class="{ active: $route.path === '/my-task' }">
-            <el-icon><Tickets /></el-icon><span>我的任务</span>
-          </router-link>
-          <router-link to="/my-orders" class="nav-item" :class="{ active: $route.path === '/my-orders' }">
-            <el-icon><Connection /></el-icon><span>我接的订单</span>
-          </router-link>
-          <router-link to="/notifications" class="nav-item" :class="{ active: $route.path === '/notifications' }">
-            <el-icon><Bell /></el-icon><span>通知</span>
-            <span v-if="unreadCount" class="badge">{{ unreadCount }}</span>
-          </router-link>
-          <router-link to="/wallet" class="nav-item" :class="{ active: $route.path === '/wallet' }">
-            <el-icon><Wallet /></el-icon><span>钱包</span>
-          </router-link>
-        </template>
-      </nav>
-      <div class="sidebar-footer">
-        <router-link to="/trust" class="nav-item small">信任中心</router-link>
-        <template v-if="isLogin && canSeeUserManage">
-          <router-link to="/user" class="nav-item small">用户管理</router-link>
-          <router-link to="/admin" class="nav-item small">管理后台</router-link>
-        </template>
-      </div>
-    </aside>
+  <div class="haoyu-page">
+    <DesktopLandingView
+      v-if="isHome"
+      class="desktop-landing-only"
+      :tasks="visibleTasks"
+      :loading="loading"
+      :current-user="currentUser"
+      :is-login="isLogin"
+      :unread-count="unreadCount"
+      :user-initial="userInitial"
+      @open-create="openCreateDialog"
+      @task-click="(task: Task) => router.push(`/task/${task.id}`)"
+      @route-to="(path: string) => router.push(path)"
+      @search="handleDesktopSearch"
+      @set-price-filter="priceFilter = $event"
+      @set-category-filter="categoryFilter = $event"
+      @refresh="fetchData"
+    />
 
-    <!-- 主区域 -->
-    <main class="main-area">
-      <header class="topbar">
-        <div class="topbar-left">
-          <span class="greeting">👋 {{ isLogin && currentUser ? currentUser.nickname : '可信价值协作平台' }}</span>
-        </div>
-        <div class="topbar-right">
-          <span v-if="isLogin && currentUser" class="balance-badge">💰 {{ formatYumiCompactFromCent(walletBalance) }}</span>
-          <template v-if="isLogin">
-            <el-avatar
-              :size="34"
-              :src="currentUser?.avatar ? getFullUrl(currentUser.avatar!) : undefined"
-              :style="!currentUser?.avatar ? { backgroundColor: '#6366f1', color: '#fff', fontSize: '14px' } : {}"
-            >
-              {{ currentUser?.email?.[0]?.toUpperCase() || '?' }}
+    <main class="desktop-frame" :class="{ 'legacy-mobile-shell': isHome }">
+      <header class="top-nav">
+        <button class="brand" @click="router.push('/task')" aria-label="回到首页">
+          <span class="brand-mark"><img :src="brandLogoSrc" alt="" /></span>
+          <span>浩煜·万家灯火</span>
+        </button>
+
+        <nav class="nav-links" aria-label="主导航">
+          <router-link to="/task" :class="{ active: isHome }">首页</router-link>
+          <router-link to="/task">任务市场</router-link>
+          <button @click="openCreateDialog">发布需求</button>
+          <router-link to="/trust">解决方案</router-link>
+          <router-link to="/trust">服务保障</router-link>
+          <router-link to="/trust">关于我们</router-link>
+        </nav>
+
+        <div class="nav-tools">
+          <div class="search-pill">
+            <el-icon><Search /></el-icon>
+            <input v-model="searchKeyword" placeholder="搜索任务、技能或需求" @keyup.enter="fetchData" />
+          </div>
+          <button class="icon-btn" aria-label="消息"><el-icon><Message /></el-icon></button>
+          <button class="icon-btn notice" aria-label="通知" @click="router.push('/notifications')">
+            <el-icon><Bell /></el-icon>
+            <span v-if="unreadCount">{{ unreadCount }}</span>
+          </button>
+          <template v-if="isLogin && currentUser">
+            <el-avatar :size="30" :src="currentUser.avatar ? getFullUrl(currentUser.avatar) : defaultAvatarSrc">
+              {{ userInitial }}
             </el-avatar>
             <el-dropdown trigger="click" @command="handleCommand">
-              <span class="dropdown-trigger">{{ currentUser?.nickname }} <el-icon><CaretBottom /></el-icon></span>
+              <button class="user-menu">
+                {{ currentUser.nickname || '夜色信赖' }}
+                <el-icon><CaretBottom /></el-icon>
+              </button>
               <template #dropdown>
                 <el-dropdown-menu>
                   <el-dropdown-item command="profile">个人资料</el-dropdown-item>
+                  <el-dropdown-item command="wallet">钱包中心</el-dropdown-item>
+                  <el-dropdown-item v-if="canSeeUserManage" command="admin">管理后台</el-dropdown-item>
                   <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
           </template>
           <template v-else>
-            <el-button size="small" @click="$router.push('/login')">登录</el-button>
-            <el-button size="small" type="primary" @click="$router.push('/register')">注册</el-button>
+            <button class="ghost-login" @click="router.push('/login')">登录</button>
           </template>
         </div>
       </header>
 
-      <div class="content" v-if="$route.path === '/' || $route.path === '/task'">
-        <!-- Hero -->
-        <section class="hero">
-          <div class="hero-bg"></div>
-          <div class="hero-content">
-            <span class="hero-tag">🔒 资金托管 · 信用沉淀 · 智能仲裁</span>
-            <h1>浩煜<span class="glow-text"> Haoyu</span></h1>
-            <p class="hero-subtitle">可信价值协作平台 — 连接真实需求，激活真实能力，保障可信交付</p>
+      <template v-if="isHome">
+        <section class="hero" :style="{ backgroundImage: `linear-gradient(90deg, rgba(5,10,20,.98) 0%, rgba(5,10,20,.72) 42%, rgba(5,10,20,.30) 100%), url(${heroBgSrc})` }">
+          <div class="hero-copy">
+            <h1>浩煜 · 万家灯火，总有你的一颗</h1>
+            <p>万家灯火因你而亮，专业协作让每一份热爱落地生花</p>
             <div class="hero-actions">
-              <el-button type="primary" size="large" round @click="openCreateDialog" v-if="isLogin" class="btn-glow">✨ 发布需求</el-button>
-              <el-button size="large" round @click="$router.push('/register')" v-else class="btn-glow">创建协作身份</el-button>
-              <el-button size="large" round class="btn-outline" @click="$router.push('/trust')">了解保障</el-button>
+              <button class="primary-cta" @click="openCreateDialog">
+                发布需求 <el-icon><ArrowRight /></el-icon>
+              </button>
+              <button class="secondary-cta" @click="scrollToTasks">
+                探索任务 <el-icon><Compass /></el-icon>
+              </button>
             </div>
           </div>
         </section>
 
-        <!-- 数据看板 -->
-        <section class="dashboard">
-          <div class="stat-item">
-            <span class="stat-number">{{ tasks.length }}</span>
-            <span class="stat-label">开放需求</span>
-          </div>
-          <div class="stat-divider"></div>
-          <div class="stat-item">
-            <span class="stat-number">0%</span>
-            <span class="stat-label">服务费率（前30单）</span>
-          </div>
-          <div class="stat-divider"></div>
-          <div class="stat-item">
-            <span class="stat-number">🔒</span>
-            <span class="stat-label">资金托管保障</span>
-          </div>
-          <div class="stat-divider"></div>
-          <div class="stat-item">
-            <span class="stat-number">⚡</span>
-            <span class="stat-label">智能调度匹配</span>
+        <section class="stats-bar" aria-label="平台数据">
+          <div v-for="item in stats" :key="item.label" class="stat-item">
+            <el-icon><component :is="item.icon" /></el-icon>
+            <strong>{{ item.value }}</strong>
+            <span>{{ item.label }}</span>
           </div>
         </section>
 
-        <!-- 价值流转图 -->
-        <section class="value-flow-enhanced">
-          <div class="flow-step-dot done">
-            <span class="flow-icon">📝</span>
-            <span class="dot"></span>
-            <span>需求发布</span>
+        <section class="process">
+          <div class="section-title">
+            <span>✦</span>
+            <h2>信任，让协作更简单</h2>
+            <span>✦</span>
           </div>
-          <div class="flow-step-connector done"></div>
-          <div class="flow-step-dot active">
-            <span class="flow-icon">🔒</span>
-            <span class="dot"></span>
-            <span>资金托管</span>
-          </div>
-          <div class="flow-step-connector"></div>
-          <div class="flow-step-dot">
-            <span class="flow-icon">🤝</span>
-            <span class="dot"></span>
-            <span>协作执行</span>
-          </div>
-          <div class="flow-step-connector"></div>
-          <div class="flow-step-dot">
-            <span class="flow-icon">✅</span>
-            <span class="dot"></span>
-            <span>成果验收</span>
-          </div>
-          <div class="flow-step-connector"></div>
-          <div class="flow-step-dot">
-            <span class="flow-icon">💰</span>
-            <span class="dot"></span>
-            <span>价值结算</span>
-          </div>
-          <div class="flow-step-connector"></div>
-          <div class="flow-step-dot">
-            <span class="flow-icon">⭐</span>
-            <span class="dot"></span>
-            <span>信用沉淀</span>
+          <p>五步流程，保障每一次合作安心高效</p>
+          <div class="process-line">
+            <article v-for="step in processSteps" :key="step.title" class="process-card">
+              <div class="step-icon"><el-icon><component :is="step.icon" /></el-icon></div>
+              <div class="step-title"><b>{{ step.no }}</b>{{ step.title }}</div>
+              <span>{{ step.desc }}</span>
+            </article>
           </div>
         </section>
 
-        <!-- 搜索与筛选 -->
-        <div class="filter-row">
-          <el-input
-            v-model="searchKeyword"
-            placeholder="找需求、找能力、找协作机会"
-            :prefix-icon="Search"
-            clearable
-            size="large"
-            class="search-input"
-          />
-          <el-select v-model="priceFilter" size="large" class="filter-select">
-            <el-option label="全部赏金" value="all" />
-            <el-option label="100煜米以下" value="low" />
-            <el-option label="100 – 500煜米" value="mid" />
-            <el-option label="500煜米以上" value="high" />
-          </el-select>
-          <el-button size="large" @click="fetchData" :icon="Refresh" class="btn-outline">刷新</el-button>
-        </div>
-
-        <!-- 主内容区（任务网格 + 榜单侧栏） -->
-        <div class="market-layout">
-          <!-- 左侧：任务卡片网格 -->
-          <div class="market-main" v-loading="loading">
-            <el-empty v-if="!loading && !tasks.length" description="这里暂时安静，新的需求可能正在路上 ✨">
-              <el-button type="primary" round @click="openCreateDialog">发布第一个需求</el-button>
-            </el-empty>
-
-            <div class="task-grid">
-              <div
-                v-for="task in tasks"
-                :key="task.id"
-                class="task-card-premium"
-                @click="$router.push(`/task/${task.id}`)"
-              >
-                <div class="premium-card-top">
-                  <span class="premium-card-category">
-                    {{ categoryLabel(task.category || '') }}
-                    <span v-if="task.isPublicWelfare" class="welfare-badge">公益</span>
-                  </span>
-                  <span :class="['status-badge', statusClass(task.status)]">
-                    {{ statusLabel(task.status) }}
-                  </span>
-                </div>
-
-                <h3 class="premium-card-title">{{ task.title }}</h3>
-                <p class="premium-card-desc">{{ truncate(task.description, 80) }}</p>
-
-                <!-- 迷你进度条 -->
-                <div class="progress-mini" style="margin-bottom: 12px;">
-                  <div class="progress-fill" :style="{ width: progressPercent(task.status) }"></div>
-                </div>
-
-                <div class="premium-card-bottom">
-                  <span class="premium-card-price glow-amber">{{ formatYumiCompactFromCent(task.price) }}</span>
-                  <span class="premium-card-meta">
-                    <span>{{ task.serviceMode === 'OFFLINE' ? '📍 线下' : task.serviceMode === 'BOTH' ? '🌐 均可' : '💻 线上' }}</span>
-                    <span>👁 {{ task.views || 0 }}</span>
-                  </span>
-                </div>
-              </div>
+        <section id="task-section" class="tasks-section">
+          <div class="tasks-head">
+            <div class="tabs">
+              <h2>精选任务</h2>
+              <button class="active">推荐</button>
+              <button @click="priceFilter = 'high'">高预算</button>
+              <button>最新发布</button>
+            </div>
+            <div class="task-controls">
+              <button v-for="cat in categories" :key="cat.value" :class="{ active: categoryFilter === cat.value }" @click="categoryFilter = cat.value">
+                {{ cat.label }}
+              </button>
+              <button class="filter-btn" @click="fetchData">
+                <el-icon><Filter /></el-icon> 默认排序
+              </button>
             </div>
           </div>
 
-          <!-- 右侧：榜单侧栏 -->
-          <aside class="leaderboard-sidebar">
-            <!-- 热门需求 -->
-            <div class="leaderboard-panel">
-              <div class="leaderboard-title">
-                <span>🔥</span> 热门需求
+          <div class="task-grid" v-loading="loading">
+            <article v-for="task in visibleTasks" :key="task.id" class="task-card" @click="router.push(`/task/${task.id}`)">
+              <div class="card-glow"></div>
+              <div class="task-card-top">
+                <span class="tag" :class="tagClass(task)">{{ taskTag(task) }}</span>
+                <span class="price">{{ formatMoney(task.price) }}</span>
               </div>
-              <div v-if="tasks.length" class="leaderboard-list">
-                <div
-                  v-for="(t, idx) in tasks.slice(0, 5)"
-                  :key="'hot-' + t.id"
-                  class="leaderboard-item"
-                  @click="$router.push(`/task/${t.id}`)"
-                  style="cursor: pointer;"
-                >
-                  <span class="leaderboard-rank" :class="'top-' + (idx + 1)" v-if="idx < 3">{{ idx + 1 }}</span>
-                  <span class="leaderboard-rank" v-else>{{ idx + 1 }}</span>
-                  <span class="leaderboard-name">{{ truncate(t.title, 16) }}</span>
-                  <span class="leaderboard-value">{{ formatYumiCompactFromCent(t.price) }}</span>
-                </div>
+              <h3>{{ task.title }}</h3>
+              <p>{{ truncate(task.description, 44) }}</p>
+              <div class="chips">
+                <span>{{ categoryLabel(task.category || '') }}</span>
+                <span>{{ serviceModeLabel(task.serviceMode || 'ONLINE') }}</span>
+                <span>{{ statusLabel(task.status) }}</span>
               </div>
-              <div v-else style="font-size: 12px; color: #64748b; text-align: center; padding: 12px 0;">
-                暂无需求
-              </div>
-            </div>
-
-            <!-- 完成榜 -->
-            <div class="leaderboard-panel" style="margin-top: 16px;">
-              <div class="leaderboard-title">
-                <span>🏆</span> 完成榜
-              </div>
-              <div style="font-size: 12px; color: #64748b; text-align: center; padding: 20px 0;">
-                协作完成后上榜
-              </div>
-            </div>
-
-            <!-- 信用榜 -->
-            <div class="leaderboard-panel" style="margin-top: 16px;">
-              <div class="leaderboard-title">
-                <span>⭐</span> 信用榜
-              </div>
-              <div style="font-size: 12px; color: #64748b; text-align: center; padding: 20px 0;">
-                信用分达标后上榜
-              </div>
-            </div>
-
-            <!-- 最新加入 -->
-            <div class="leaderboard-panel" style="margin-top: 16px;">
-              <div class="leaderboard-title">
-                <span>🆕</span> 最新加入
-              </div>
-              <div style="font-size: 12px; color: #64748b; text-align: center; padding: 20px 0;">
-                新用户加入后展示
-              </div>
-            </div>
-          </aside>
-        </div>
-
-        <!-- 信任机制区 -->
-        <section class="trust-section">
-          <h3>🔒 浩煜信任引擎</h3>
-          <p style="font-size:13px;color:#64748b;margin-bottom:20px;">每一次协作都有据可查，每一笔资金都有保障</p>
-          <div class="trust-grid">
-            <div class="trust-item"><span>💰</span> 资金托管</div>
-            <div class="trust-item"><span>📝</span> 过程留痕</div>
-            <div class="trust-item"><span>⭐</span> 信用沉淀</div>
-            <div class="trust-item"><span>⚖️</span> 争议仲裁</div>
-            <div class="trust-item"><span>🔍</span> 风控审计</div>
-            <div class="trust-item"><span>🤖</span> AI 调度</div>
+              <footer>
+                <span class="publisher">
+                  <span class="avatar-dot">{{ publisherInitial(task) }}</span>
+                  发布者：{{ task.publisher?.nickname || '星海设计' }}
+                </span>
+                <span>{{ relativeTime(task.createdAt) }}</span>
+              </footer>
+            </article>
           </div>
+
+          <button class="more-btn" @click="fetchData">查看全部任务</button>
         </section>
+      </template>
 
-        <footer class="page-footer">
-          <span>浩煜 Haoyu — 可信价值协作平台</span>
-          <span class="dot">·</span>
-          <router-link to="/trust">信任与保障</router-link>
-          <span class="dot">·</span>
-          <span>资金托管 · 信用沉淀 · 争议协调</span>
-        </footer>
-      </div>
-
-      <div class="content" v-else>
+      <section v-else class="route-content">
         <router-view />
-      </div>
+      </section>
     </main>
 
-    <!-- 发布弹窗 -->
-    <el-dialog v-model="showCreateDialog" width="560px" destroy-on-close class="publish-dialog">
+    <nav class="mobile-bottom" aria-label="移动端导航">
+      <button :class="{ active: isHome }" @click="router.push('/task')"><el-icon><House /></el-icon><span>首页</span></button>
+      <button @click="router.push('/my-orders')"><el-icon><Tickets /></el-icon><span>任务市场</span></button>
+      <button @click="router.push('/notifications')"><el-icon><Bell /></el-icon><span>消息</span></button>
+      <button @click="router.push('/profile')"><el-icon><User /></el-icon><span>我的</span></button>
+    </nav>
+
+    <button class="mobile-fab" @click="openCreateDialog">
+      <img :src="addButtonSrc" alt="" />
+      <span>发布需求</span>
+    </button>
+
+    <el-dialog
+      v-model="showCreateDialog"
+      width="560px"
+      destroy-on-close
+      class="haoyu-dialog"
+      modal-class="haoyu-dialog-modal"
+    >
       <template #header>
-        <div class="publish-dialog-title">发布新需求</div>
+        <div class="dialog-title">发布新的协作需求</div>
       </template>
       <el-form :model="createForm" label-position="top" class="publish-form">
-        <el-form-item label="给这次协作起个清楚的名字" required>
-          <el-input v-model="createForm.title" placeholder="让人一眼知道你需要什么" maxlength="60" show-word-limit />
+        <el-form-item label="需求标题" required>
+          <el-input v-model="createForm.title" placeholder="例如：品牌官网视觉设计升级" maxlength="60" show-word-limit />
         </el-form-item>
-        <el-form-item label="说说背景、目标和期望">
-          <el-input v-model="createForm.desc" type="textarea" :rows="3" placeholder="越具体，匹配到合适的人越快" />
+        <el-form-item label="需求描述">
+          <el-input v-model="createForm.desc" type="textarea" :rows="4" placeholder="说明背景、目标、交付物和验收标准" />
         </el-form-item>
-        <el-form-item label="你愿意为这个需求支付多少？（煜米）">
-          <el-input-number v-model="createForm.price" :min="1" :step="1" :precision="0" style="width:200px" />
-          <span style="font-size:12px;color:rgba(203,213,225,0.48);margin-left:8px;">1 煜米 = 1 RMB</span>
+        <el-form-item label="预算金额（元）">
+          <el-input-number v-model="createForm.price" :min="1" :step="100" :precision="0" />
         </el-form-item>
-        <el-form-item label="配图（可选）">
+        <el-form-item label="参考图片">
           <el-upload :auto-upload="false" :show-file-list="false" accept="image/*" :on-change="handleImageChange">
-            <el-button type="primary" :loading="uploadingImg" class="upload-btn">
-              {{ previewImageUrl ? '已选图片' : '添加参考图' }}
-            </el-button>
+            <el-button :loading="uploadingImg">{{ previewImageUrl ? '重新选择图片' : '添加参考图' }}</el-button>
           </el-upload>
-          <p class="upload-hint" style="font-size:12px;color:rgba(203,213,225,0.48);margin-top:6px;">截图、样例图或补充说明都可以</p>
           <div v-if="previewImageUrl" class="reference-preview">
-            <img :src="previewImageUrl" class="reference-preview-img" alt="参考图预览" />
-          </div>
-          <div v-else class="reference-preview-placeholder">
-            <span style="color:rgba(255,255,255,0.25);font-size:12px;">上传后将在此预览</span>
+            <img :src="previewImageUrl" alt="参考图预览" />
           </div>
         </el-form-item>
-        <el-form-item label="分类">
-          <el-select v-model="createForm.category" style="width:100%">
+        <el-form-item label="需求分类">
+          <el-select v-model="createForm.category" popper-class="haoyu-select-popper" style="width: 100%">
             <el-option label="技能服务" value="SKILL_SERVICE" />
             <el-option label="生活协助" value="LIFE_ASSISTANCE" />
             <el-option label="家庭关怀" value="FAMILY_CARE" />
@@ -346,81 +221,41 @@
       </el-form>
       <template #footer>
         <el-button @click="showCreateDialog = false">取消</el-button>
-        <el-button type="primary" @click="submitTask" :loading="submitting">确认发布</el-button>
+        <el-button type="primary" :loading="submitting" @click="submitTask">确认发布</el-button>
       </template>
     </el-dialog>
   </div>
-
-  <!-- 移动端顶部 header -->
-  <header class="mobile-topbar">
-    <button class="mobile-menu-btn" @click="mobileDrawerOpen = true" aria-label="打开菜单">
-      <span></span><span></span><span></span>
-    </button>
-    <span class="mobile-page-title">{{ mobileTitle }}</span>
-    <div class="mobile-topbar-right">
-      <template v-if="isLogin && currentUser">
-        <button class="mobile-avatar-btn" @click="goMenu('/profile')">
-          <span class="mobile-avatar">{{ currentUser?.nickname?.[0] || currentUser?.email?.[0]?.toUpperCase() || '?' }}</span>
-        </button>
-      </template>
-      <template v-else>
-        <el-button size="small" @click="$router.push('/login')">登录</el-button>
-      </template>
-    </div>
-  </header>
-
-  <!-- 移动端遮罩 -->
-  <div v-if="mobileDrawerOpen" class="mobile-drawer-mask" @click="mobileDrawerOpen = false"></div>
-
-  <!-- 移动端抽屉菜单 -->
-  <aside class="mobile-drawer" :class="{ open: mobileDrawerOpen }">
-    <div class="mobile-drawer-header">
-      <div class="brand" @click="goHome()">
-        <span class="brand-logo">煜</span>
-        <span class="brand-name">浩煜</span>
-      </div>
-      <button class="drawer-close" @click="mobileDrawerOpen = false">✕</button>
-    </div>
-    <nav class="mobile-drawer-menu">
-      <a v-for="item in mobileMenuItems" :key="item.path"
-         class="mdm-item" :class="{ active: $route.path === item.path }"
-         :href="item.path"
-         @click.prevent="goMenu(item.path)"
-      >
-        <el-icon v-if="item.icon" style="font-size:18px;margin-right:10px;"><component :is="item.icon" /></el-icon>
-        <span>{{ item.label }}</span>
-        <span v-if="item.badge" class="mn-badge mdm-badge">{{ item.badge }}</span>
-      </a>
-    </nav>
-    <div class="mobile-drawer-footer">
-      <div class="mobile-drawer-user" v-if="isLogin && currentUser">
-        <span class="drawer-avatar">{{ currentUser?.nickname?.[0] || currentUser?.email?.[0]?.toUpperCase() || '?' }}</span>
-        <div class="drawer-user-info">
-          <span class="drawer-nickname">{{ currentUser?.nickname }}</span>
-          <span class="drawer-email">{{ currentUser?.email }}</span>
-        </div>
-      </div>
-      <div v-else class="mobile-drawer-user">
-        <span style="font-size:14px;color:rgba(255,255,255,0.5);">可信价值协作平台</span>
-      </div>
-      <template v-if="isLogin && currentUser">
-        <el-button size="small" plain @click="logout()" style="width:100%">退出登录</el-button>
-      </template>
-      <template v-else>
-        <el-button size="small" @click="goMenu('/login')">登录</el-button>
-        <el-button size="small" type="primary" @click="goMenu('/register')">注册</el-button>
-      </template>
-    </div>
-  </aside>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed, watch } from 'vue'
-import { formatYumiFromCent, formatYumiCompactFromCent, yumiToCent } from '@/utils/money'
-import { useRouter, useRoute } from 'vue-router'
+import { computed, onMounted, reactive, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Plus, Refresh, Search, CaretBottom, List, Checked, Wallet, User, Document, Bell, Setting, Lock, Tickets, Connection } from '@element-plus/icons-vue'
-import { getTaskList, createTask, uploadTaskImage, type Task } from '@/api/task'
+import DesktopLandingView from './DesktopLandingView.vue'
+import {
+  ArrowRight,
+  Bell,
+  Briefcase,
+  CaretBottom,
+  CircleCheck,
+  Compass,
+  Connection,
+  Filter,
+  House,
+  Lock,
+  Medal,
+  Message,
+  Search,
+  Star,
+  Tickets,
+  User,
+  WalletFilled,
+} from '@element-plus/icons-vue'
+import heroBg from '@/assets/haoyu-desktop/hero_banners/hero_banners_05_city_waterfront_banner.webp'
+import brandLogo from '@/assets/haoyu-desktop/icons/icons_18_brand_leaf_logo.webp'
+import addButton from '@/assets/haoyu-desktop/icons/icons_09_add_button_glow.webp'
+import defaultAvatar from '@/assets/haoyu-desktop/avatars/avatars_02_female_avatar_portrait.webp'
+import { createTask, getTaskList, uploadTaskImage, type Task } from '@/api/task'
 import { getProfile, type UserProfile } from '@/api/user'
 import { notificationApi } from '@/api/notification'
 import { getWallet } from '@/api/wallet'
@@ -428,70 +263,18 @@ import { getWallet } from '@/api/wallet'
 const router = useRouter()
 const route = useRoute()
 
-const isLogin = computed(() => !!localStorage.getItem('token'))
 const currentUser = ref<UserProfile | null>(null)
+const heroBgSrc = heroBg
+const brandLogoSrc = brandLogo
+const addButtonSrc = addButton
+const defaultAvatarSrc = defaultAvatar
 const walletBalance = ref(0)
 const unreadCount = ref(0)
-const mobileDrawerOpen = ref(false)
-
-const routeTitleMap: Record<string, string> = {
-  '/task': '任务大厅', '/': '任务大厅',
-  '/my-task': '我的任务', '/my-orders': '我接的订单',
-  '/notifications': '通知中心', '/wallet': '钱包',
-  '/trust': '信任中心', '/user': '用户管理',
-  '/admin': '管理后台', '/profile': '个人资料',
-}
-const mobileTitle = computed(() => routeTitleMap[route.path] || '浩煜')
-
-const mobileMenuItems = computed(() => {
-  const items: any[] = [
-    { label: '任务大厅', path: '/task', icon: 'List' },
-  ]
-  if (isLogin.value) {
-    items.push(
-      { label: '我的任务', path: '/my-task', icon: 'Tickets' },
-      { label: '我接的订单', path: '/my-orders', icon: 'Connection' },
-      { label: '通知', path: '/notifications', icon: 'Bell', badge: unreadCount.value },
-      { label: '钱包', path: '/wallet', icon: 'Wallet' },
-    )
-  }
-  items.push({ label: '信任中心', path: '/trust', icon: 'Lock' })
-  if (isLogin.value && canSeeUserManage.value) {
-    items.push({ label: '用户管理', path: '/user', icon: 'User' })
-    items.push({ label: '管理后台', path: '/admin', icon: 'Setting' })
-  }
-  return items
-})
-
-const goMenu = (path: string) => {
-  mobileDrawerOpen.value = false
-  document.body.classList.remove('drawer-open')
-  router.push(path)
-}
-const goHome = () => {
-  mobileDrawerOpen.value = false
-  document.body.classList.remove('drawer-open')
-  router.push('/task')
-}
-const logout = () => {
-  localStorage.removeItem('token')
-  localStorage.removeItem('currentUser')
-  mobileDrawerOpen.value = false
-  document.body.classList.remove('drawer-open')
-  window.location.reload()
-}
-
-// watch drawer open state to toggle body scroll
-import { watch } from 'vue'
-watch(mobileDrawerOpen, (val) => {
-  if (val) document.body.classList.add('drawer-open')
-  else document.body.classList.remove('drawer-open')
-})
-
 const loading = ref(false)
 const tasks = ref<Task[]>([])
 const searchKeyword = ref('')
 const priceFilter = ref('all')
+const categoryFilter = ref('all')
 const showCreateDialog = ref(false)
 const submitting = ref(false)
 const uploadingImg = ref(false)
@@ -499,68 +282,105 @@ const selectedImageFile = ref<File | null>(null)
 const previewImageUrl = ref('')
 
 const createForm = reactive({
-  title: '', desc: '', price: 100, category: 'SKILL_SERVICE', serviceMode: 'ONLINE', image: ''
+  title: '',
+  desc: '',
+  price: 1000,
+  category: 'SKILL_SERVICE',
+  serviceMode: 'ONLINE',
+  image: '',
 })
 
-const canSeeUserManage = computed(() =>
-  ['ADMIN', 'SUPER_ADMIN'].includes(currentUser.value?.role || '')
-)
+const demoTasks: Task[] = [
+  demoTask(90001, '品牌官网视觉设计升级', '为高端家居品牌打造全新视觉体验', 3800000, 'SKILL_SERVICE', '星海设计', 'PENDING'),
+  demoTask(90002, '智能家居小程序开发', '支持设备控制与场景联动', 2800000, 'REMOTE_ASSISTANCE', '未来科技', 'PENDING'),
+  demoTask(90003, '产品宣传片制作', '时长 3-5 分钟，突出产品亮点', 5600000, 'SKILL_SERVICE', '光影映画', 'ASSIGNED'),
+  demoTask(90004, '品牌全案策划', '从定位到传播的一站式方案', 2500000, 'OTHER', '辰光咨询', 'PENDING'),
+  demoTask(90005, '电商详情页设计', '高转化详情页视觉设计', 800000, 'SKILL_SERVICE', '松禾视觉', 'PENDING'),
+  demoTask(90006, '数据可视化大屏开发', '可视化大屏与数据接口交互', 3200000, 'REMOTE_ASSISTANCE', '数境工坊', 'SUBMITTED'),
+]
 
-// === 工具函数 ===
-const categoryLabel = (c: string) => {
-  const m: Record<string, string> = {
-    SKILL_SERVICE: '技能', LIFE_ASSISTANCE: '生活', FAMILY_CARE: '家庭',
-    REMOTE_ASSISTANCE: '远程', COMMUNITY_COLLABORATION: '社区',
-    PUBLIC_WELFARE: '公益', OTHER: '其他'
+const isLogin = computed(() => Boolean(localStorage.getItem('token')))
+const isHome = computed(() => route.path === '/' || route.path === '/task')
+const userInitial = computed(() => currentUser.value?.nickname?.[0] || currentUser.value?.email?.[0]?.toUpperCase() || '浩')
+const canSeeUserManage = computed(() => ['ADMIN', 'SUPER_ADMIN'].includes(currentUser.value?.role || ''))
+
+const stats = computed(() => [
+  { icon: User, value: '10万+', label: '注册用户' },
+  { icon: Briefcase, value: '3万+', label: '完成任务' },
+  { icon: Star, value: '98.6%', label: '好评率' },
+  { icon: WalletFilled, value: formatLargeMoney(walletBalance.value || 120000000), label: '托管资金(元)' },
+  { icon: Lock, value: '平台资金托管', label: '安全 · 透明 · 可追溯' },
+])
+
+const processSteps = [
+  { no: 1, icon: Briefcase, title: '发布需求', desc: '清晰描述需求，设置预算与周期' },
+  { no: 2, icon: WalletFilled, title: '资金托管', desc: '平台托管资金，保障双方权益' },
+  { no: 3, icon: Connection, title: '协作交付', desc: '在线协作沟通，按计划推进项目' },
+  { no: 4, icon: CircleCheck, title: '验收确认', desc: '确认成果验收，资金安全结算' },
+  { no: 5, icon: Medal, title: '信用沉淀', desc: '评价与信用累积，解锁更多机会' },
+]
+
+const categories = [
+  { label: '全部', value: 'all' },
+  { label: '设计创意', value: 'SKILL_SERVICE' },
+  { label: '开发技术', value: 'REMOTE_ASSISTANCE' },
+  { label: '文案策划', value: 'OTHER' },
+  { label: '生活协助', value: 'LIFE_ASSISTANCE' },
+]
+
+const visibleTasks = computed(() => {
+  let list = tasks.value.length ? tasks.value : demoTasks
+  if (searchKeyword.value.trim()) {
+    const kw = searchKeyword.value.trim().toLowerCase()
+    list = list.filter((task) =>
+      `${task.title} ${task.description}`.toLowerCase().includes(kw),
+    )
   }
-  return m[c] || c
+  if (categoryFilter.value !== 'all') {
+    list = list.filter((task) => task.category === categoryFilter.value)
+  }
+  if (priceFilter.value === 'high') {
+    list = list.filter((task) => task.price >= 5000000)
+  }
+  return list.slice(0, 6)
+})
+
+function demoTask(
+  id: number,
+  title: string,
+  description: string,
+  price: number,
+  category: string,
+  nickname: string,
+  status: string,
+): Task {
+  const now = new Date().toISOString()
+  return {
+    id,
+    title,
+    description,
+    price,
+    status,
+    category,
+    serviceMode: 'ONLINE',
+    createdAt: now,
+    updatedAt: now,
+    publisherId: id,
+    publisher: {
+      id,
+      email: '',
+      nickname,
+      role: 'USER',
+      avatar: '',
+    } as any,
+  }
 }
 
-const statusLabel = (s: string) => {
-  const m: Record<string, string> = {
-    PENDING: '待接单', ASSIGNED: '进行中', IN_PROGRESS: '服务中',
-    SUBMITTED: '待验收', COMPLETED: '已完成', CANCELLED: '已取消', DISPUTED: '争议中'
-  }
-  return m[s] || s
-}
-
-const statusClass = (s: string) => {
-  const m: Record<string, string> = {
-    PENDING: 'pending', ASSIGNED: 'active', IN_PROGRESS: 'active',
-    SUBMITTED: 'active', COMPLETED: 'done', CANCELLED: 'danger', DISPUTED: 'danger'
-  }
-  return m[s] || 'pending'
-}
-
-const progressPercent = (s: string) => {
-  const m: Record<string, string> = {
-    PENDING: '0%', ASSIGNED: '25%', IN_PROGRESS: '50%',
-    SUBMITTED: '75%', COMPLETED: '100%', CANCELLED: '100%', DISPUTED: '100%'
-  }
-  return m[s] || '0%'
-}
-
-const truncate = (text: string, len: number) =>
-  text && text.length > len ? text.slice(0, len) + '...' : text || ''
-
-const getFullUrl = (path: string) =>
-  path ? (path.startsWith('http') ? path : `http://localhost:3000${path}`) : ''
-
-// === 数据请求 ===
 const fetchData = async () => {
   loading.value = true
   try {
-    const res: any = await getTaskList()
-    let list = Array.isArray(res) ? res : res?.data || []
-    if (searchKeyword.value) {
-      list = list.filter((t: any) =>
-        t.title?.includes(searchKeyword.value) || t.description?.includes(searchKeyword.value)
-      )
-    }
-    if (priceFilter.value === 'low') list = list.filter((t: any) => t.price <= 9900)
-    else if (priceFilter.value === 'mid') list = list.filter((t: any) => t.price >= 10000 && t.price <= 49900)
-    else if (priceFilter.value === 'high') list = list.filter((t: any) => t.price >= 50000)
-    tasks.value = list
+    const res = await getTaskList()
+    tasks.value = Array.isArray(res) ? res : []
   } catch {
     tasks.value = []
   } finally {
@@ -568,41 +388,86 @@ const fetchData = async () => {
   }
 }
 
+const fetchProfile = async () => {
+  if (!isLogin.value) return
+  try {
+    const res = await getProfile()
+    currentUser.value = res
+    localStorage.setItem('currentUser', JSON.stringify(res))
+  } catch {
+    currentUser.value = null
+  }
+}
+
+const fetchUnreadCount = async () => {
+  if (!isLogin.value) return
+  try {
+    const res: any = await notificationApi.unreadCount()
+    unreadCount.value = res?.count ?? Number(res || 0)
+  } catch {
+    unreadCount.value = 0
+  }
+}
+
+const fetchWalletBalance = async () => {
+  if (!isLogin.value) return
+  try {
+    const wallet: any = await getWallet()
+    walletBalance.value = wallet?.available ?? 0
+  } catch {
+    walletBalance.value = 0
+  }
+}
+
 const openCreateDialog = () => {
-  if (!isLogin.value) { router.push('/login'); return }
+  if (!isLogin.value) {
+    router.push('/login')
+    return
+  }
   showCreateDialog.value = true
 }
 
 const submitTask = async () => {
-  if (!createForm.title.trim()) { ElMessage.warning('请输入标题'); return }
+  if (!createForm.title.trim()) {
+    ElMessage.warning('请输入需求标题')
+    return
+  }
+
   submitting.value = true
   try {
     let imageUrl = createForm.image || ''
-    // 如果有本地选中文件，先上传获取 URL
     if (selectedImageFile.value) {
       uploadingImg.value = true
       try {
-        const fd = new FormData(); fd.append('file', selectedImageFile.value)
-        const res: any = await uploadTaskImage(fd)
+        const fd = new FormData()
+        fd.append('file', selectedImageFile.value)
+        const res = await uploadTaskImage(fd)
         imageUrl = res?.url || ''
-      } catch { /* 上传失败但不阻止发布 */ }
-      finally { uploadingImg.value = false }
+      } finally {
+        uploadingImg.value = false
+      }
     }
+
     await createTask({
       title: createForm.title,
       description: createForm.desc,
       price: Math.round(createForm.price * 100),
       category: createForm.category,
       serviceMode: createForm.serviceMode,
-      image: imageUrl || undefined
+      image: imageUrl || undefined,
     } as any)
+
     ElMessage.success('需求已发布，等待合适的人来接单')
     showCreateDialog.value = false
-    createForm.title = ''; createForm.desc = ''; createForm.price = 100; createForm.image = ''
-    previewImageUrl.value = ''; selectedImageFile.value = null
-    fetchData()
-  } catch (e: any) {
-    ElMessage.error(e?.response?.data?.message || '发布失败，请稍后重试')
+    createForm.title = ''
+    createForm.desc = ''
+    createForm.price = 1000
+    createForm.image = ''
+    selectedImageFile.value = null
+    previewImageUrl.value = ''
+    await fetchData()
+  } catch (error: any) {
+    ElMessage.error(error?.response?.data?.message || '发布失败，请稍后重试')
   } finally {
     submitting.value = false
   }
@@ -616,57 +481,92 @@ const handleImageChange = (uploadFile: any) => {
   previewImageUrl.value = URL.createObjectURL(raw)
 }
 
-const handleUpload = async (options: any) => {
-  uploadingImg.value = true
-  try {
-    const fd = new FormData(); fd.append('file', options.file)
-    const res: any = await uploadTaskImage(fd)
-    createForm.image = res?.url || ''
-    ElMessage.success('上传成功')
-  } catch {
-    ElMessage.error('上传失败')
-  } finally {
-    uploadingImg.value = false
-  }
-}
-
-// === 个人信息 ===
-const fetchProfile = async () => {
-  try {
-    if (isLogin.value) {
-      const res = await getProfile()
-      currentUser.value = res as any
-      localStorage.setItem('currentUser', JSON.stringify(res))
-    }
-  } catch {
-    currentUser.value = null
-  }
-}
-
-const fetchUnreadCount = async () => {
-  if (!isLogin.value) return
-  try {
-    const r: any = await notificationApi.unreadCount()
-    unreadCount.value = r?.count ?? r ?? 0
-  } catch {}
-}
-
-const fetchWalletBalance = async () => {
-  if (!isLogin.value) return
-  try {
-    const w: any = await getWallet()
-    walletBalance.value = w?.available ?? 0
-  } catch {}
-}
-
 const handleCommand = (cmd: string) => {
   if (cmd === 'profile') router.push('/profile')
+  if (cmd === 'wallet') router.push('/wallet')
+  if (cmd === 'admin') router.push('/admin')
   if (cmd === 'logout') {
     localStorage.clear()
     ElMessage.success('已退出登录')
-    // 直接跳转首页，让 Vue 重新初始化，避免状态残留
     window.location.href = '/task'
   }
+}
+
+const scrollToTasks = () => {
+  document.getElementById('task-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
+const handleDesktopSearch = (keyword: string) => {
+  searchKeyword.value = keyword
+  fetchData()
+}
+
+const formatMoney = (cent?: number | null) => {
+  const yuan = Math.round(Number(cent || 0) / 100)
+  return `￥ ${yuan.toLocaleString('zh-CN')}`
+}
+
+const formatLargeMoney = (cent: number) => {
+  const yuan = cent / 100
+  if (yuan >= 100000000) return `${(yuan / 100000000).toFixed(2)}亿+`
+  if (yuan >= 10000) return `${Math.round(yuan / 10000)}万+`
+  return `${Math.round(yuan).toLocaleString('zh-CN')}`
+}
+
+const categoryLabel = (category: string) => ({
+  SKILL_SERVICE: '品牌设计',
+  LIFE_ASSISTANCE: '生活协助',
+  FAMILY_CARE: '家庭关怀',
+  REMOTE_ASSISTANCE: '开发技术',
+  COMMUNITY_COLLABORATION: '社区协作',
+  PUBLIC_WELFARE: '公益互助',
+  OTHER: '方案策划',
+}[category] || '综合任务')
+
+const serviceModeLabel = (mode: string) => ({
+  ONLINE: '线上协作',
+  OFFLINE: '线下服务',
+  BOTH: '均可',
+}[mode] || '线上协作')
+
+const statusLabel = (status: string) => ({
+  PENDING: '待接单',
+  ASSIGNED: '协作中',
+  IN_PROGRESS: '服务中',
+  SUBMITTED: '待验收',
+  COMPLETED: '已完成',
+  CANCELLED: '已取消',
+  DISPUTED: '争议中',
+}[status] || status)
+
+const truncate = (text: string, max: number) =>
+  text && text.length > max ? `${text.slice(0, max)}...` : text || '需求方暂未填写详细说明'
+
+const publisherInitial = (task: Task) =>
+  task.publisher?.nickname?.[0] || task.publisher?.email?.[0]?.toUpperCase() || '浩'
+
+const taskTag = (task: Task) => {
+  if (task.price >= 5000000) return '高预算'
+  if (task.status === 'PENDING') return '最新'
+  return statusLabel(task.status)
+}
+
+const tagClass = (task: Task) => {
+  if (task.price >= 5000000) return 'premium'
+  if (task.status === 'PENDING') return 'fresh'
+  return 'normal'
+}
+
+const relativeTime = (date?: string) => {
+  if (!date) return '刚刚'
+  const diff = Date.now() - new Date(date).getTime()
+  const hours = Math.max(1, Math.round(diff / 3600000))
+  return `${hours}小时前`
+}
+
+const getFullUrl = (path: string) => {
+  if (!path) return ''
+  return path.startsWith('http') ? path : `http://localhost:3000${path}`
 }
 
 onMounted(() => {
@@ -674,492 +574,1157 @@ onMounted(() => {
   fetchUnreadCount()
   fetchWalletBalance()
   fetchData()
-  window.addEventListener('notification-read', fetchUnreadCount as any)
 })
 </script>
 
 <style scoped>
-/* ==========================================
-   布局
-   ========================================== */
-.app-shell { display: flex; min-height: 100vh; }
-
-/* === 侧边栏 === */
-.sidebar {
-  width: 200px; background: rgba(10, 14, 23, 0.95); backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-right: 1px solid rgba(148, 163, 184, 0.1);
-  display: flex; flex-direction: column;
-  position: fixed; top: 0; bottom: 0; z-index: 100;
-}
-.logo { display: flex; align-items: center; gap: 8px; padding: 20px 16px; cursor: pointer; }
-.logo-mark {
-  width: 32px; height: 32px; background: linear-gradient(135deg, #6366f1, #8b5cf6);
-  color: #fff; border-radius: 8px; display: flex; align-items: center;
-  justify-content: center; font-size: 18px; font-weight: 700;
-}
-.logo-text { font-size: 18px; font-weight: 700; color: #f1f5f9; }
-.nav { flex: 1; padding: 8px; display: flex; flex-direction: column; gap: 2px; }
-.nav-item {
-  display: flex; align-items: center; gap: 10px; padding: 10px 12px;
-  border-radius: 8px; color: #94a3b8; text-decoration: none; font-size: 14px;
-  transition: all 0.2s; position: relative;
-}
-.nav-item:hover { background: rgba(99, 102, 241, 0.08); color: #f1f5f9; }
-.nav-item.active { background: rgba(99, 102, 241, 0.12); color: #a5b4fc; font-weight: 600; }
-.nav-item.small { font-size: 12px; padding: 6px 12px; }
-.badge {
-  position: absolute; right: 10px; background: #ef4444; color: #fff;
-  font-size: 11px; min-width: 18px; height: 18px; border-radius: 9px;
-  display: flex; align-items: center; justify-content: center;
-}
-.sidebar-footer { padding: 8px; border-top: 1px solid rgba(148, 163, 184, 0.1); }
-
-/* === 顶栏 === */
-.topbar {
-  height: 56px; background: rgba(10, 14, 23, 0.8); backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0 24px; position: sticky; top: 0; z-index: 50;
-}
-.greeting { font-size: 14px; color: #94a3b8; }
-.topbar-right { display: flex; align-items: center; gap: 12px; }
-.balance-badge {
-  background: rgba(16, 185, 129, 0.1);
-  border: 1px solid rgba(16, 185, 129, 0.25);
-  color: #6ee7b7; padding: 4px 12px; border-radius: 20px;
-  font-size: 13px; font-weight: 600;
-}
-.dropdown-trigger {
-  cursor: pointer; font-size: 14px; color: #cbd5e1;
-  display: flex; align-items: center; gap: 4px;
-}
-
-/* === 主区域 === */
-.main-area { flex: 1; margin-left: 200px; background: #0a0e17; min-height: 100vh; }
-.content { max-width: 1200px; margin: 0 auto; padding: 0 24px 40px; }
-
-/* === Hero === */
-.hero {
-  position: relative; overflow: hidden; padding: 64px 0 48px; text-align: center;
-}
-.hero-bg {
-  position: absolute; inset: 0;
+.haoyu-page {
+  min-height: 100vh;
+  padding: 28px 42px 44px;
+  color: #fff2d6;
   background:
-    radial-gradient(ellipse at 50% 0%, rgba(99,102,241,0.08) 0%, transparent 60%),
-    radial-gradient(ellipse at 80% 50%, rgba(6,182,212,0.04) 0%, transparent 50%);
-}
-.hero-content { position: relative; z-index: 1; }
-.hero-tag {
-  display: inline-block; padding: 4px 16px; border-radius: 20px;
-  background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.2);
-  color: #a5b4fc; font-size: 12px; font-weight: 600;
-  margin-bottom: 16px; letter-spacing: 0.5px;
-}
-.hero h1 {
-  font-size: 40px; font-weight: 800; color: #f1f5f9;
-  margin: 0 0 12px; letter-spacing: -1px;
-}
-.hero-subtitle { font-size: 16px; color: #94a3b8; margin: 0 0 28px; }
-.hero-actions { display: flex; gap: 12px; justify-content: center; }
-.btn-glow {
-  background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
-  border: none !important;
-  color: #ffffff !important;
-  font-weight: 700 !important;
-  box-shadow: 0 4px 20px rgba(99,102,241,0.3);
-}
-.btn-glow:hover {
-  box-shadow: 0 6px 30px rgba(99,102,241,0.5);
-  transform: translateY(-1px);
-}
-.btn-outline {
-  background: transparent !important;
-  border: 1px solid rgba(148,163,184,0.2) !important;
-  color: #94a3b8 !important;
-}
-.btn-outline:hover {
-  border-color: #6366f1 !important;
-  color: #a5b4fc !important;
+    radial-gradient(circle at 18% 8%, rgba(206, 142, 54, .18), transparent 26%),
+    radial-gradient(circle at 80% 0%, rgba(117, 74, 24, .24), transparent 32%),
+    linear-gradient(145deg, #040911 0%, #07111e 45%, #160f09 100%);
+  position: relative;
+  overflow-x: hidden;
 }
 
-/* === 数据看板 === */
-.dashboard {
-  display: flex; justify-content: center; gap: 0; margin-bottom: 32px;
-  padding: 24px;
-  background: rgba(17,24,39,0.45);
-  border: 1px solid rgba(148,163,184,0.1);
-  border-radius: 14px;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-.stat-item { flex: 1; text-align: center; padding: 0 16px; }
-.stat-divider { width: 1px; background: rgba(148,163,184,0.12); }
-
-/* === 价值流转图（增强版） === */
-.value-flow-enhanced {
-  display: flex; align-items: flex-start; justify-content: center;
-  margin-bottom: 32px; padding: 20px 24px;
-  background: rgba(17,24,39,0.3);
-  border: 1px solid rgba(148,163,184,0.08);
-  border-radius: 14px;
-  overflow-x: auto;
-}
-.value-flow-enhanced .flow-icon { font-size: 18px; margin-bottom: 4px; }
-
-/* === 筛选行 === */
-.filter-row {
-  display: flex; gap: 12px; align-items: center; margin-bottom: 24px;
-}
-.search-input { max-width: 380px; }
-.filter-select { width: 170px; }
-.filter-select .el-input__wrapper {
-  background: rgba(255, 255, 255, 0.02) !important;
-  border: 1px solid rgba(255, 255, 255, 0.06) !important;
-  box-shadow: none !important;
+.desktop-landing-only {
+  display: block;
 }
 
-/* 上传按钮 */
-.upload-btn {
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.86), rgba(139, 92, 246, 0.86)) !important;
-  border: 1px solid rgba(129, 140, 248, 0.30) !important;
-  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.20) !important;
+.desktop-frame.legacy-mobile-shell {
+  display: none;
 }
 
-/* 图片预览 */
-.reference-preview {
-  width: 120px; height: 120px;
-  border-radius: 10px; overflow: hidden;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.1);
-  display: flex; align-items: center; justify-content: center;
-  margin-top: 8px;
-}
-.reference-preview-img {
-  width: 100%; height: 100%;
-  object-fit: cover; display: block;
-}
-.reference-preview-placeholder {
-  width: 120px; height: 120px;
-  border-radius: 10px;
-  background: rgba(255,255,255,0.04);
-  border: 1px dashed rgba(255,255,255,0.12);
-  display: flex; align-items: center; justify-content: center;
-  margin-top: 8px;
+.haoyu-page::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle, rgba(247, 185, 90, .48) 0 1px, transparent 2px),
+    linear-gradient(110deg, transparent 0 18%, rgba(236, 160, 73, .08) 18.2%, transparent 18.6% 100%);
+  background-size: 150px 150px, 360px 360px;
+  opacity: .28;
 }
 
-/* 发布弹窗标题 — 用 #header slot 接管，避免被全局 el-dialog__header 覆盖 */
-.publish-dialog-title {
-  margin: 0;
-  color: #ffffff !important;
-  font-size: 22px;
-  line-height: 1.3;
-  font-weight: 800;
-  letter-spacing: 0.02em;
-  text-shadow: 0 0 18px rgba(124, 92, 255, 0.28);
-}
-:deep(.publish-dialog .el-dialog__header) {
-  color: #ffffff !important;
-}
-.publish-form .el-form-item__label {
-  color: rgba(255,255,255,0.82) !important;
-  font-weight: 600 !important;
-}
-.publish-form .el-input__inner,
-.publish-form .el-textarea__inner {
-  color: rgba(255,255,255,0.92) !important;
-}
-.publish-form .el-input__inner::placeholder,
-.publish-form .el-textarea__inner::placeholder {
-  color: rgba(180,190,210,0.5) !important;
+.desktop-frame {
+  position: relative;
+  z-index: 1;
+  max-width: 1420px;
+  margin: 0 auto;
+  min-height: calc(100vh - 72px);
+  border: 2px solid rgba(194, 125, 45, .62);
+  border-radius: 30px;
+  overflow: hidden;
+  background: rgba(5, 10, 20, .82);
+  box-shadow: 0 28px 70px rgba(0, 0, 0, .45), 0 0 40px rgba(196, 125, 43, .18);
 }
 
-/* ==========================================
-   市场布局（任务网格 + 榜单侧栏）
-   ========================================== */
-.market-layout {
-  display: flex; gap: 24px; margin-bottom: 40px; align-items: flex-start;
-}
-.market-main { flex: 1; min-width: 0; }
-
-/* 任务卡片网格 */
-.task-grid {
+.top-nav {
+  height: 74px;
+  padding: 0 34px;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
-  gap: 20px;
+  grid-template-columns: 250px 1fr auto;
+  align-items: center;
+  gap: 24px;
 }
 
-/* 福利标签微调 */
-.welfare-badge {
-  background: rgba(245,158,11,0.15);
-  color: #fcd34d;
-  padding: 2px 8px;
-  border-radius: 4px;
-  margin-left: 6px;
+button {
+  font: inherit;
+  color: inherit;
+}
+
+.brand,
+.nav-links button,
+.ghost-login,
+.icon-btn,
+.user-menu,
+.mobile-bottom button,
+.mobile-fab {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 19px;
+  font-weight: 800;
+  color: #fff4dd;
+}
+
+.brand-mark {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(255, 219, 143, .08);
+  box-shadow: 0 0 18px rgba(238, 164, 61, .32);
+}
+
+.brand-mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+}
+
+.nav-links a,
+.nav-links button {
+  color: rgba(255, 232, 192, .64);
+  font-size: 14px;
+  text-decoration: none;
+  padding: 9px 0;
+}
+
+.nav-links .active,
+.nav-links a:hover,
+.nav-links button:hover {
+  color: #ffd88b;
+}
+
+.nav-links .active {
+  border-bottom: 2px solid #f2b956;
+}
+
+.nav-tools {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.search-pill {
+  width: 228px;
+  height: 40px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, .055);
+  border: 1px solid rgba(255, 255, 255, .08);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0 14px;
+  color: rgba(255, 226, 181, .65);
+}
+
+.search-pill input {
+  width: 100%;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  color: #fff2d6;
+  font-size: 13px;
+}
+
+.icon-btn {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: rgba(255, 232, 192, .72);
+  position: relative;
+}
+
+.icon-btn:hover,
+.ghost-login:hover {
+  background: rgba(255, 255, 255, .07);
+}
+
+.notice span {
+  position: absolute;
+  right: 3px;
+  top: 4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 10px;
+  background: #e14a3d;
+  color: #fff;
   font-size: 10px;
 }
 
-/* === 榜单侧栏 === */
-.leaderboard-sidebar {
-  width: 220px;
-  flex-shrink: 0;
-  position: sticky;
-  top: 72px;
+.user-menu,
+.ghost-login {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 18px;
+  padding: 0 10px;
+  color: rgba(255, 232, 192, .72);
 }
 
-/* === 信任机制 === */
-.trust-section {
-  margin-bottom: 40px; padding: 32px;
-  background: rgba(17,24,39,0.35);
-  border: 1px solid rgba(148,163,184,0.08);
-  border-radius: 14px; text-align: center;
+.hero {
+  min-height: 330px;
+  padding: 78px 150px 56px;
+  background-size: cover;
+  background-position: center bottom;
+  position: relative;
 }
-.trust-section h3 { font-size: 18px; color: #f1f5f9; margin-bottom: 8px; }
-.trust-grid {
-  display: flex; justify-content: center; gap: 24px; flex-wrap: wrap;
-}
-.trust-item {
-  font-size: 14px; color: #94a3b8;
-  display: flex; align-items: center; gap: 6px;
-  padding: 8px 16px;
-  background: rgba(17,24,39,0.5);
-  border: 1px solid rgba(148,163,184,0.1);
-  border-radius: 8px;
-}
-.trust-item span { font-size: 16px; }
 
-/* === 页脚 === */
-.page-footer {
-  text-align: center; padding: 24px 0; font-size: 13px;
-  color: #475569; display: flex; gap: 8px; justify-content: center;
+.hero::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 90px;
+  background: linear-gradient(180deg, transparent, rgba(5, 10, 20, .94));
 }
-.page-footer a { color: #818cf8; }
-.dot { color: #334155; }
 
-/* ==========================================
-   移动端抽屉菜单
-   ========================================== */
-.mobile-topbar {
-  display: none;
+.hero-copy {
+  max-width: 760px;
+  position: relative;
+  z-index: 1;
 }
-.mobile-menu-btn {
-  width: 40px; height: 40px;
-  border-radius: 12px;
-  border: 1px solid rgba(255,255,255,0.12);
-  background: rgba(255,255,255,0.06);
-  display: none;
-  align-items: center; justify-content: center;
-  flex-direction: column; gap: 4px;
+
+.hero h1 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", "Songti SC", serif;
+  font-size: clamp(42px, 4vw, 64px);
+  line-height: 1.08;
+  letter-spacing: 0;
+  color: #ffe8bd;
+  text-shadow: 0 8px 30px rgba(0, 0, 0, .62);
+}
+
+.hero p {
+  margin: 24px 0 34px;
+  font-size: 18px;
+  color: rgba(255, 232, 196, .72);
+}
+
+.hero-actions {
+  display: flex;
+  gap: 18px;
+}
+
+.primary-cta,
+.secondary-cta {
+  height: 54px;
+  min-width: 166px;
+  border-radius: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-weight: 800;
   cursor: pointer;
-  padding: 0;
-}
-.mobile-menu-btn span {
-  width: 18px; height: 2px;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.88);
-  transition: transform 0.2s ease;
-}
-.mobile-topbar-right {
-  display: flex; align-items: center; gap: 8px;
-}
-.mobile-avatar-btn {
-  width: 36px; height: 36px;
-  border-radius: 50%;
-  border: 1px solid rgba(255,255,255,0.12);
-  background: rgba(255,255,255,0.06);
-  display: inline-flex; align-items: center; justify-content: center;
-  cursor: pointer; padding: 0;
-}
-.mobile-avatar {
-  width: 28px; height: 28px;
-  border-radius: 50%;
-  display: inline-flex; align-items: center; justify-content: center;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
-  color: #fff;
-  font-weight: 700; font-size: 13px;
-}
-.mobile-page-title {
-  font-size: 15px; font-weight: 600; color: #f1f5f9;
-  margin-left: 8px;
 }
 
-.mobile-drawer-user {
-  display: flex; align-items: center; gap: 12px;
-  padding: 12px 0; margin-bottom: 4px;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+.primary-cta {
+  border: 0;
+  color: #231205;
+  background: linear-gradient(135deg, #ffe8ae, #f2b34d);
+  box-shadow: 0 16px 36px rgba(235, 164, 69, .34);
 }
-.drawer-avatar {
-  width: 40px; height: 40px;
-  border-radius: 50%;
-  display: inline-flex; align-items: center; justify-content: center;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
-  color: #fff; font-weight: 700; font-size: 16px;
-}
-.drawer-user-info { display: flex; flex-direction: column; gap: 2px; }
-.drawer-nickname { color: #f1f5f9; font-size: 15px; font-weight: 500; }
-.drawer-email { color: rgba(255,255,255,0.45); font-size: 12px; word-break: break-all; }
 
-.mobile-drawer-mask {
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,0.52);
-  z-index: 998;
+.secondary-cta {
+  color: #fff1cf;
+  background: rgba(4, 9, 17, .42);
+  border: 1px solid rgba(255, 210, 141, .28);
+}
+
+.stats-bar {
+  margin: -16px 70px 28px;
+  min-height: 76px;
+  border: 1px solid rgba(255, 218, 157, .18);
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .09), rgba(255, 255, 255, .045));
+  backdrop-filter: blur(18px);
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  position: relative;
+  z-index: 2;
+}
+
+.stat-item {
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  grid-template-rows: 1fr 1fr;
+  column-gap: 10px;
+  align-items: center;
+  padding: 16px 24px;
+  border-right: 1px solid rgba(255, 255, 255, .12);
+}
+
+.stat-item:last-child {
+  border-right: 0;
+}
+
+.stat-item .el-icon {
+  grid-row: 1 / 3;
+  font-size: 26px;
+  color: #f5bd58;
+}
+
+.stat-item strong {
+  color: #ffe0a5;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.stat-item span {
+  color: rgba(255, 232, 196, .62);
+  font-size: 12px;
+}
+
+.process {
+  padding: 10px 70px 30px;
+  text-align: center;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+
+.section-title h2,
+.tasks-head h2 {
+  margin: 0;
+  font-size: 28px;
+  letter-spacing: 0;
+  color: #ffe4b5;
+}
+
+.section-title span {
+  color: #f3b44e;
+}
+
+.process > p {
+  margin: 8px 0 30px;
+  color: rgba(255, 232, 196, .52);
+}
+
+.process-line {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 34px;
+}
+
+.process-card {
+  min-height: 126px;
+  border: 1px solid rgba(255, 214, 145, .16);
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .06), rgba(255, 255, 255, .025));
+  padding: 30px 16px 18px;
+  position: relative;
+}
+
+.process-card::after {
+  content: "";
+  position: absolute;
+  left: 100%;
+  top: 42px;
+  width: 34px;
+  border-top: 1px dashed rgba(243, 180, 78, .35);
+}
+
+.process-card:last-child::after {
   display: none;
 }
-.mobile-drawer {
-  position: fixed; top: 0; left: 0;
-  width: min(82vw, 320px); height: 100vh;
-  z-index: 999;
-  background: rgba(12, 17, 31, 0.98);
-  border-right: 1px solid rgba(255,255,255,0.08);
-  transform: translateX(-100%);
-  transition: transform 0.22s ease;
-  box-shadow: 24px 0 60px rgba(0,0,0,0.35);
-  padding: 16px;
+
+.step-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  position: absolute;
+  left: 50%;
+  top: -23px;
+  transform: translateX(-50%);
+  color: #231205;
+  background: linear-gradient(145deg, #ffe6a9, #d58a30);
+  box-shadow: 0 0 28px rgba(231, 155, 57, .34);
+}
+
+.step-title {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  color: #ffd78f;
+  font-weight: 800;
+  margin-bottom: 12px;
+}
+
+.step-title b {
+  color: #f8be52;
+}
+
+.process-card span:last-child {
+  display: block;
+  color: rgba(255, 232, 196, .58);
+  font-size: 13px;
+}
+
+.tasks-section {
+  padding: 0 70px 54px;
+}
+
+.tasks-head {
+  margin-top: 18px;
+}
+
+.tabs {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  margin-bottom: 22px;
+}
+
+.tabs button,
+.task-controls button {
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: rgba(255, 232, 196, .54);
+  cursor: pointer;
+}
+
+.tabs button {
+  padding: 9px 0;
+  font-size: 15px;
+}
+
+.tabs button.active,
+.tabs button:hover {
+  color: #ffd36f;
+  border-bottom: 2px solid #f3b44e;
+}
+
+.task-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.task-controls button {
+  min-height: 34px;
+  padding: 0 20px;
+  border: 1px solid rgba(255, 214, 145, .12);
+  background: rgba(255, 255, 255, .035);
+}
+
+.task-controls button.active,
+.task-controls button:hover {
+  color: #ffd36f;
+  border-color: rgba(243, 180, 78, .42);
+}
+
+.filter-btn {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.task-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+.task-card {
+  min-height: 170px;
+  border: 1px solid rgba(255, 214, 145, .16);
+  border-radius: 10px;
+  background:
+    radial-gradient(circle at 92% 20%, rgba(239, 163, 60, .18), transparent 28%),
+    linear-gradient(135deg, rgba(255, 255, 255, .09), rgba(255, 255, 255, .035));
+  padding: 20px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+
+.task-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(246, 190, 93, .45);
+  box-shadow: 0 18px 36px rgba(0, 0, 0, .28);
+}
+
+.card-glow {
+  position: absolute;
+  right: -18px;
+  bottom: -18px;
+  width: 120px;
+  height: 120px;
+  border: 1px solid rgba(243, 180, 78, .2);
+  border-radius: 24px;
+  transform: rotate(22deg);
+}
+
+.task-card-top,
+.task-card footer,
+.chips {
+  display: flex;
+  align-items: center;
+}
+
+.task-card-top {
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.tag {
+  border-radius: 7px;
+  padding: 5px 9px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #1d1207;
+}
+
+.tag.premium {
+  background: linear-gradient(135deg, #ffe3a0, #d89534);
+}
+
+.tag.fresh {
+  background: linear-gradient(135deg, #9ee6d8, #3eaa9a);
+}
+
+.tag.normal {
+  background: rgba(255, 220, 153, .22);
+  color: #ffd383;
+}
+
+.price {
+  color: #ffd16e;
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.task-card h3 {
+  margin: 0 0 8px;
+  font-size: 19px;
+  color: #fff3db;
+}
+
+.task-card p {
+  margin: 0 0 14px;
+  min-height: 24px;
+  color: rgba(255, 232, 196, .6);
+}
+
+.chips {
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.chips span {
+  padding: 5px 10px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .06);
+  color: rgba(255, 232, 196, .54);
+  font-size: 12px;
+}
+
+.task-card footer {
+  justify-content: space-between;
+  gap: 12px;
+  color: rgba(255, 232, 196, .46);
+  font-size: 12px;
+}
+
+.publisher {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.avatar-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: inline-grid;
+  place-items: center;
+  color: #1b1006;
+  background: linear-gradient(135deg, #ffe8ae, #e7a648);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.more-btn {
+  display: block;
+  min-width: 340px;
+  height: 48px;
+  margin: 26px auto 0;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 214, 145, .18);
+  background: rgba(255, 255, 255, .025);
+  color: #ffd57f;
+  cursor: pointer;
+}
+
+.route-content {
+  padding: 28px 34px 54px;
+}
+
+.mobile-bottom,
+.mobile-fab {
   display: none;
-  flex-direction: column;
-  overflow-y: auto;
 }
-.mobile-drawer-footer {
-  border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px;
+
+.reference-preview {
+  margin-top: 12px;
+  width: 150px;
+  height: 96px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 214, 145, .18);
 }
-.mobile-drawer.open { transform: translateX(0); }
-.mobile-drawer-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.08);
+
+.reference-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+:deep(.haoyu-dialog .el-dialog) {
+  border-radius: 22px;
+  background:
+    linear-gradient(180deg, rgba(255, 232, 174, .075), transparent 22%),
+    radial-gradient(circle at 90% 8%, rgba(239, 163, 60, .20), transparent 28%),
+    radial-gradient(circle at 8% 100%, rgba(124, 101, 216, .12), transparent 32%),
+    rgba(8, 14, 28, .94);
+  border: 1px solid rgba(255, 214, 145, .22);
+  box-shadow:
+    0 34px 96px rgba(0, 0, 0, .56),
+    0 0 58px rgba(196, 125, 43, .18),
+    0 0 0 1px rgba(255, 255, 255, .045) inset;
+  backdrop-filter: blur(22px);
+  overflow: hidden;
+}
+
+:deep(.haoyu-dialog .el-dialog::before) {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, transparent, rgba(255, 232, 174, .12), transparent) 0 0 / 100% 1px no-repeat,
+    radial-gradient(circle at 18% 8%, rgba(255, 214, 145, .16), transparent 18%);
+}
+
+:global(.haoyu-dialog-modal) {
+  background: rgba(0, 0, 0, .72) !important;
+  backdrop-filter: blur(5px);
+}
+
+:deep(.haoyu-dialog .el-dialog__header) {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  padding: 24px 28px 12px;
+  border-bottom: 1px solid rgba(255, 214, 145, .12);
+}
+
+:deep(.haoyu-dialog .el-dialog__body) {
+  position: relative;
+  z-index: 1;
+  padding: 22px 28px 8px;
+  color: rgba(255, 232, 196, .72);
+}
+
+:deep(.haoyu-dialog .el-dialog__footer) {
+  position: relative;
+  z-index: 1;
+  padding: 14px 28px 26px;
+  border-top: 1px solid rgba(255, 214, 145, .10);
+}
+
+.dialog-title {
+  display: inline-flex;
+  align-items: center;
+  color: transparent;
+  background: linear-gradient(135deg, #fff1c4, #f2b34d 58%, #bba8ff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  font-size: 22px;
+  font-weight: 900;
+  text-shadow: 0 12px 34px rgba(242, 179, 77, .22);
+}
+
+:deep(.haoyu-dialog .el-dialog__close) {
+  color: rgba(255, 232, 196, .58);
+}
+
+:deep(.haoyu-dialog .el-dialog__close:hover) {
+  color: #ffd16e;
+}
+
+:deep(.haoyu-dialog .el-form-item) {
+  margin-bottom: 19px;
+}
+
+:deep(.haoyu-dialog .el-form-item__label) {
+  color: rgba(255, 232, 196, .8);
+  font-weight: 700;
+  line-height: 1.15;
   margin-bottom: 8px;
 }
-.brand {
-  display: flex; align-items: center; gap: 8px; cursor: pointer;
-}
-.brand-logo {
-  width: 34px; height: 34px; border-radius: 10px;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
-  color: #fff; font-size: 18px; font-weight: 700;
-  display: flex; align-items: center; justify-content: center;
-}
-.brand-name { font-size: 18px; font-weight: 700; color: #f1f5f9; }
-.drawer-close {
-  width: 32px; height: 32px; border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.12);
-  background: rgba(255,255,255,0.06);
-  color: #94a3b8; font-size: 16px;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer;
-}
-.mobile-drawer-menu {
-  flex: 1; display: flex; flex-direction: column; gap: 2px;
-  padding: 8px 0;
-}
-.mdm-item {
-  display: flex; align-items: center;
-  padding: 10px 12px; border-radius: 10px;
-  color: #cbd5e1; text-decoration: none; font-size: 15px;
-  transition: background 0.15s ease;
-  cursor: pointer; position: relative;
-}
-.mdm-item:hover, .mdm-item:active { background: rgba(99,102,241,0.12); color: #e2e8f0; }
-.mdm-item.active { background: rgba(99,102,241,0.18); color: #a5b4fc; font-weight: 500; }
-.mdm-badge { position: static; margin-left: auto; }
 
-/* 原有移动端底部导航样式保留但隐藏 */
-.mobile-nav { display: none !important; }
-.mn-item {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 2px;
-  min-width: 48px; min-height: 48px;
-  color: #64748b; text-decoration: none; font-size: 11px;
-  position: relative; cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-  touch-action: manipulation;
-  user-select: none;
-  -webkit-user-select: none;
-  transition: color 0.15s ease;
-}
-.mn-item .el-icon { font-size: 20px; }
-.mn-item.active { color: #a5b4fc; }
-.mn-item:active { color: #c7d2fe; }
-.mn-publish {
-  width: 44px; height: 44px; border-radius: 50%;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
-  color: #fff; font-size: 26px;
-  display: flex; align-items: center; justify-content: center;
-  margin-top: -20px;
-  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.35);
-}
-.mn-publish:active {
-  transform: scale(0.92);
-  box-shadow: 0 2px 12px rgba(99, 102, 241, 0.25);
-}
-.mn-badge {
-  position: absolute; top: 0; right: -6px;
-  background: #ef4444; color: #fff;
-  font-size: 10px; min-width: 16px; height: 16px; border-radius: 8px;
-  display: flex; align-items: center; justify-content: center;
-  pointer-events: none;
+:deep(.haoyu-dialog .el-input__wrapper),
+:deep(.haoyu-dialog .el-textarea__inner),
+:deep(.haoyu-dialog .el-input-number .el-input__wrapper),
+:deep(.haoyu-dialog .el-select .el-input__wrapper) {
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .065), rgba(255, 255, 255, .025)), rgba(4, 9, 17, .76);
+  box-shadow:
+    0 0 0 1px rgba(255, 214, 145, .18) inset,
+    0 12px 24px rgba(0, 0, 0, .18);
+  transition: box-shadow .18s ease, background .18s ease;
 }
 
-/* ==========================================
-   响应式
-   ========================================== */
-@media (max-width: 1024px) {
-  .leaderboard-sidebar {
-    display: none !important;
+:deep(.haoyu-dialog .el-input__wrapper:hover),
+:deep(.haoyu-dialog .el-textarea__inner:hover),
+:deep(.haoyu-dialog .el-select .el-input__wrapper:hover),
+:deep(.haoyu-dialog .el-input-number:hover .el-input__wrapper) {
+  background: linear-gradient(180deg, rgba(255, 232, 174, .09), rgba(255, 255, 255, .03)), rgba(4, 9, 17, .82);
+  box-shadow:
+    0 0 0 1px rgba(243, 180, 78, .42) inset,
+    0 0 22px rgba(243, 180, 78, .08);
+}
+
+:deep(.haoyu-dialog .el-input__wrapper.is-focus),
+:deep(.haoyu-dialog .el-textarea__inner:focus),
+:deep(.haoyu-dialog .el-select .el-input__wrapper.is-focus),
+:deep(.haoyu-dialog .el-input-number .el-input__wrapper.is-focus) {
+  box-shadow:
+    0 0 0 1px rgba(255, 216, 139, .64) inset,
+    0 0 0 3px rgba(243, 180, 78, .12),
+    0 0 26px rgba(243, 180, 78, .10);
+}
+
+:deep(.haoyu-dialog .el-input__inner),
+:deep(.haoyu-dialog .el-textarea__inner),
+:deep(.haoyu-dialog .el-select__placeholder) {
+  color: #fff2d6;
+}
+
+:deep(.haoyu-dialog .el-input__inner::placeholder),
+:deep(.haoyu-dialog .el-textarea__inner::placeholder) {
+  color: rgba(166, 183, 207, .56);
+}
+
+:deep(.haoyu-dialog .el-input .el-input__count),
+:deep(.haoyu-dialog .el-textarea .el-input__count) {
+  color: rgba(255, 232, 196, .42);
+  background: transparent;
+}
+
+:deep(.haoyu-dialog .el-select .el-icon) {
+  color: rgba(255, 214, 145, .66);
+}
+
+:deep(.haoyu-dialog .el-input-number) {
+  width: 100%;
+  border-radius: 14px;
+  background: rgba(4, 9, 17, .72);
+}
+
+:deep(.haoyu-dialog .el-input-number__decrease),
+:deep(.haoyu-dialog .el-input-number__increase) {
+  width: 42px;
+  color: rgba(255, 232, 196, .74);
+  background: linear-gradient(180deg, rgba(255, 232, 174, .08), rgba(255, 255, 255, .025)), rgba(7, 14, 27, .84);
+  border-color: rgba(255, 214, 145, .18);
+}
+
+:deep(.haoyu-dialog .el-input-number__decrease:hover),
+:deep(.haoyu-dialog .el-input-number__increase:hover) {
+  color: #ffd16e;
+  background: rgba(242, 179, 77, .16);
+}
+
+:deep(.haoyu-dialog .el-input-number__decrease.is-disabled),
+:deep(.haoyu-dialog .el-input-number__increase.is-disabled) {
+  color: rgba(166, 183, 207, .32);
+  background: rgba(255, 255, 255, .025);
+}
+
+:deep(.haoyu-dialog .el-radio__label) {
+  color: rgba(166, 183, 207, .78);
+  transition: color .18s ease;
+}
+
+:deep(.haoyu-dialog .el-radio__inner) {
+  background: rgba(4, 9, 17, .78);
+  border-color: rgba(255, 214, 145, .32);
+}
+
+:deep(.haoyu-dialog .el-radio__input.is-checked .el-radio__inner) {
+  background: linear-gradient(135deg, #ffe8ae, #f2b34d);
+  border-color: #f2b34d;
+  box-shadow: 0 0 0 3px rgba(242, 179, 77, .13);
+}
+
+:deep(.haoyu-dialog .el-radio__input.is-checked + .el-radio__label) {
+  color: #ffd16e;
+}
+
+:deep(.haoyu-dialog .el-button) {
+  border-radius: 999px;
+  border-color: rgba(255, 214, 145, .20);
+  background: rgba(255, 255, 255, .055);
+  color: #ffe5b6;
+  min-height: 42px;
+  padding: 0 20px;
+  font-weight: 800;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, .18);
+}
+
+:deep(.haoyu-dialog .el-button:hover) {
+  border-color: rgba(243, 180, 78, .48);
+  background: rgba(242, 179, 77, .12);
+  color: #ffd16e;
+  box-shadow: 0 14px 30px rgba(242, 179, 77, .14);
+}
+
+:deep(.haoyu-dialog .el-button--primary),
+:deep(.haoyu-dialog .dialog-btn-primary) {
+  border: 0;
+  color: #241307;
+  font-weight: 800;
+  background: linear-gradient(135deg, #ffe8ae, #f2b34d) !important;
+  box-shadow: 0 14px 30px rgba(235, 164, 69, .26);
+}
+
+:deep(.haoyu-dialog .el-button--primary:hover),
+:deep(.haoyu-dialog .dialog-btn-primary:hover) {
+  color: #1d1207;
+  background: linear-gradient(135deg, #fff0bd, #d89a37 54%, #7c65d8) !important;
+}
+
+:deep(.haoyu-dialog .el-dialog__footer .el-button:first-child),
+:deep(.haoyu-dialog .dialog-btn-ghost) {
+  min-width: 96px;
+  color: rgba(255, 232, 196, .82);
+  background: linear-gradient(180deg, rgba(255, 255, 255, .065), rgba(255, 255, 255, .025)), rgba(7, 14, 27, .78);
+  border-color: rgba(255, 214, 145, .24);
+}
+
+:deep(.haoyu-dialog .el-dialog__footer .el-button:last-child),
+:deep(.haoyu-dialog .dialog-btn-primary) {
+  min-width: 116px;
+}
+
+:deep(.haoyu-dialog .el-upload .el-button) {
+  border-color: rgba(255, 214, 145, .30);
+  background:
+    linear-gradient(180deg, rgba(255, 232, 174, .10), rgba(255, 255, 255, .025)),
+    rgba(7, 14, 27, .78);
+  color: #ffe4ad;
+}
+
+:deep(.haoyu-dialog .el-upload .el-button:hover) {
+  border-color: rgba(255, 216, 139, .58);
+  background: rgba(242, 179, 77, .14);
+  box-shadow: 0 0 26px rgba(242, 179, 77, .14);
+}
+
+:global(.haoyu-select-popper.el-popper) {
+  border: 1px solid rgba(255, 214, 145, .22) !important;
+  border-radius: 16px !important;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(242, 179, 77, .16), transparent 30%),
+    rgba(7, 13, 25, .96) !important;
+  box-shadow: 0 22px 56px rgba(0, 0, 0, .44), 0 0 32px rgba(242, 179, 77, .10) !important;
+  backdrop-filter: blur(18px);
+  overflow: hidden;
+}
+
+:global(.haoyu-select-popper .el-select-dropdown) {
+  background: transparent !important;
+}
+
+:global(.haoyu-select-popper .el-select-dropdown__wrap) {
+  background: transparent !important;
+}
+
+:global(.haoyu-select-popper .el-select-dropdown__item) {
+  color: rgba(255, 232, 196, .78) !important;
+  background: transparent !important;
+}
+
+:global(.haoyu-select-popper .el-select-dropdown__item.hover),
+:global(.haoyu-select-popper .el-select-dropdown__item:hover) {
+  color: #ffd16e !important;
+  background: rgba(242, 179, 77, .14) !important;
+}
+
+:global(.haoyu-select-popper .el-select-dropdown__item.is-selected) {
+  color: #ffe8ae !important;
+  font-weight: 800;
+  background: rgba(242, 179, 77, .18) !important;
+}
+
+:global(.haoyu-select-popper .el-popper__arrow::before) {
+  background: rgba(7, 13, 25, .96) !important;
+  border-color: rgba(255, 214, 145, .22) !important;
+}
+
+@media (max-width: 1180px) {
+  .desktop-landing-only {
+    display: none;
   }
-  .content {
-    max-width: 100%;
+
+  .desktop-frame.legacy-mobile-shell {
+    display: block;
+  }
+
+  .haoyu-page {
+    padding: 0;
+  }
+
+  .desktop-frame {
+    min-height: 100vh;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .top-nav {
+    grid-template-columns: 1fr auto;
+    padding: 0 22px;
+  }
+
+  .nav-links,
+  .search-pill,
+  .nav-tools .icon-btn,
+  .user-menu {
+    display: none;
+  }
+
+  .hero {
+    min-height: 336px;
+    padding: 82px 24px 42px;
+    background-position: center bottom;
+  }
+
+  .hero h1 {
+    max-width: 330px;
+    font-size: 32px;
+  }
+
+  .hero p {
+    max-width: 260px;
+    font-size: 14px;
+    margin: 18px 0 24px;
+  }
+
+  .hero-actions {
+    gap: 10px;
+  }
+
+  .primary-cta,
+  .secondary-cta {
+    min-width: 118px;
+    height: 44px;
+    font-size: 13px;
+  }
+
+  .stats-bar {
+    margin: 0 14px 28px;
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .stats-bar .stat-item:last-child {
+    display: none;
+  }
+
+  .stat-item {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+    text-align: center;
+    padding: 14px 8px;
+    border-right: 0;
+  }
+
+  .stat-item .el-icon {
+    grid-row: auto;
+    margin: 0 auto 6px;
+    font-size: 19px;
+  }
+
+  .stat-item strong {
+    font-size: 14px;
+  }
+
+  .process {
+    padding: 0 16px 28px;
+    text-align: left;
+  }
+
+  .section-title {
+    justify-content: flex-start;
+  }
+
+  .section-title h2,
+  .tasks-head h2 {
+    font-size: 20px;
+  }
+
+  .process-line {
+    grid-template-columns: repeat(5, minmax(72px, 1fr));
+    gap: 8px;
+    overflow-x: auto;
+    padding-top: 18px;
+  }
+
+  .process-card {
+    min-width: 78px;
+    min-height: 96px;
+    padding: 28px 8px 10px;
+    text-align: center;
+  }
+
+  .process-card::after {
+    display: none;
+  }
+
+  .step-title {
+    flex-direction: column;
+    gap: 2px;
+    font-size: 12px;
+  }
+
+  .process-card span:last-child {
+    display: none;
+  }
+
+  .tasks-section {
+    padding: 0 14px 94px;
+  }
+
+  .tabs {
+    gap: 20px;
+    overflow-x: auto;
+  }
+
+  .task-controls {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 4px;
+  }
+
+  .task-controls button {
+    white-space: nowrap;
+  }
+
+  .filter-btn {
+    margin-left: 0;
+  }
+
+  .task-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .task-card {
+    min-height: 144px;
+    padding: 16px;
+  }
+
+  .more-btn {
+    display: none;
+  }
+
+  .mobile-bottom {
+    position: fixed;
+    left: 14px;
+    right: 14px;
+    bottom: 12px;
+    z-index: 20;
+    height: 62px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border: 1px solid rgba(255, 214, 145, .16);
+    border-radius: 20px;
+    background: rgba(4, 9, 17, .88);
+    backdrop-filter: blur(18px);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, .45);
+  }
+
+  .mobile-bottom button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    color: rgba(255, 232, 196, .58);
+    font-size: 11px;
+  }
+
+  .mobile-bottom button.active {
+    color: #ffd073;
+  }
+
+  .mobile-bottom .el-icon {
+    font-size: 20px;
+  }
+
+  .mobile-fab {
+    position: fixed;
+    right: 20px;
+    bottom: 86px;
+    z-index: 21;
+    width: 78px;
+    height: 78px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    color: #241305;
+    background: linear-gradient(145deg, #ffe9ac, #f1ad43);
+    box-shadow: 0 18px 36px rgba(236, 163, 62, .34);
+    font-size: 11px;
+    font-weight: 900;
+  }
+
+  .mobile-fab .el-icon {
+    font-size: 24px;
+  }
+
+  .mobile-fab img {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
   }
 }
 
-@media (max-width: 768px) {
-  .mobile-topbar {
-    display: flex !important;
-    position: fixed; top: 0; left: 0; right: 0; z-index: 900;
-    height: 52px;
-    align-items: center; justify-content: space-between;
-    padding: 0 14px;
-    background: rgba(8, 13, 26, 0.95);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border-bottom: 1px solid rgba(255,255,255,0.08);
+@media (max-width: 620px) {
+  .brand {
+    font-size: 17px;
   }
-  .mobile-menu-btn { display: flex !important; }
-  .app-shell.is-drawer-open .mobile-topbar-right { opacity: 0; pointer-events: none; transition: opacity 0.15s ease; }
-  .mobile-drawer-mask { display: block !important; }
-  .mobile-drawer { display: flex !important; }
-  body.drawer-open { overflow: hidden; }
-  .app-shell {
-    max-width: 100vw;
-    overflow-x: hidden;
+
+  .stats-bar {
+    border-radius: 10px;
   }
-  .app-shell > .sidebar { display: none !important; }
-  .main-area {
-    margin-left: 0 !important;
-    width: 100% !important;
-    padding-top: 52px !important;
-    max-width: 100vw;
+
+  .stat-item span {
+    font-size: 11px;
   }
-  .topbar { padding: 0 12px !important; }
-  .topbar .greeting { display: none !important; }
-  .content { padding: 0 12px 32px !important; max-width: 100vw; }
-  .hero { padding: 32px 0 24px !important; }
-  .hero h1 { font-size: 24px !important; }
-  .hero-subtitle { font-size: 14px !important; }
-  .hero-actions { flex-direction: column; align-items: center; gap: 10px; }
-  .hero-actions .el-button { width: 80%; }
-  .dashboard { flex-wrap: wrap; gap: 8px; padding: 14px; }
-  .stat-item { flex: 1 1 40%; min-width: 120px; padding: 8px; }
-  .stat-divider { display: none; }
-  .value-flow-enhanced { gap: 4px; padding: 10px; overflow-x: auto; }
-  .value-flow-enhanced .flow-step-connector { min-width: 8px; }
-  .task-grid { grid-template-columns: 1fr !important; gap: 12px !important; }
-  .market-layout { flex-direction: column; }
-  .filter-row { flex-wrap: wrap; gap: 8px; }
-  .filter-row .el-button { flex-shrink: 0; }
-  .search-input { max-width: 100% !important; flex: 1; }
-  .filter-select { width: 130px !important; flex-shrink: 0; }
-  .trust-grid { gap: 8px; }
-  .trust-item { font-size: 12px; padding: 6px 10px; }
-  .balance-badge { display: none; }
+
+  .price {
+    font-size: 17px;
+  }
 }
 </style>

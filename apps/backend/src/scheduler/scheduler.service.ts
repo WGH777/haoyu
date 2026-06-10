@@ -109,24 +109,27 @@ export class SchedulerService {
           this.logger.warn(`🔴 订单 #${order.id} 高风险超时，需人工处理`);
         } else {
           // LOW/MEDIUM：自动确认
-          await this.orderService.autoConfirm(order.id);
-          this.logger.log(`✅ 订单 #${order.id} 自动确认完成`);
-
-          await this.notification.createBatch(
-            [
-              {
-                userId: order.task.publisherId,
-                title: '系统自动确认',
-                content: `订单 #${order.id} 已超时72小时，系统自动确认完成`,
-              },
-              {
-                userId: order.workerId,
-                title: '订单已确认',
-                content: `订单 #${order.id} 已超时72小时，系统自动确认完成，收入已到账`,
-              },
-            ],
-            'AUTO_CONFIRMED',
-          ).catch(() => {});
+          const confirmed = await this.orderService.autoConfirm(order.id);
+          if (confirmed === null) {
+            this.logger.log(`⏭️ 跳过 legacy 订单 #${order.id}`);
+          } else {
+            this.logger.log(`✅ 订单 #${order.id} 自动确认完成`);
+            await this.notification.createBatch(
+              [
+                {
+                  userId: order.task.publisherId,
+                  title: '系统自动确认',
+                  content: `订单 #${order.id} 已超时72小时，系统自动确认完成`,
+                },
+                {
+                  userId: order.workerId,
+                  title: '订单已确认',
+                  content: `订单 #${order.id} 已超时72小时，系统自动确认完成，收入已到账`,
+                },
+              ],
+              'AUTO_CONFIRMED',
+            ).catch(() => {});
+          }
         }
       } catch (e: any) {
         this.logger.error(`订单 #${order.id} 自动处理失败: ${e?.message}`);

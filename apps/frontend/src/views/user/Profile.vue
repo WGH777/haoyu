@@ -1,9 +1,9 @@
-<template>
+﻿<template>
   <div class="profile-page">
     <el-row :gutter="20" class="profile-layout">
       <!-- 左边：账号信息 + 编辑资料 -->
       <el-col :xs="24" :sm="10">
-        <el-card shadow="hover" v-loading="loadingProfile">
+        <el-card class="profile-glass-card profile-card" shadow="never" v-loading="loadingProfile">
           <template #header>
             <div class="card-header header-with-action">
               <span>账号信息</span>
@@ -37,54 +37,67 @@
           </template>
 
           <!-- 展示模式 -->
-          <div v-if="!editingProfile">
-            <el-descriptions :column="1" border>
-              <el-descriptions-item label="昵称">
-                {{ profile?.nickname || '-' }}
-              </el-descriptions-item>
+          <div v-if="!editingProfile" class="profile-overview">
+            <div class="profile-hero">
+              <div class="avatar-ring">
+                <el-image
+                  v-if="profile?.avatar"
+                  :src="profile.avatar"
+                  fit="cover"
+                  class="avatar-img"
+                >
+                  <template #error>
+                    <div class="avatar-fallback">{{ profile?.nickname?.[0] || 'H' }}</div>
+                  </template>
+                </el-image>
+                <div v-else class="avatar-fallback">{{ profile?.nickname?.[0] || 'H' }}</div>
+              </div>
+              <div class="profile-title">
+                <strong>{{ profile?.nickname || '-' }}</strong>
+                <span>{{ profile?.email || '-' }}</span>
+              </div>
+            </div>
 
-              <el-descriptions-item label="邮箱">
-                {{ profile?.email || '-' }}
-              </el-descriptions-item>
-
-              <el-descriptions-item label="角色">
-                <el-tag v-if="profile" size="small" :type="roleTagType">
-                  {{ roleLabel }}
-                </el-tag>
-              </el-descriptions-item>
-
-              <el-descriptions-item label="余额">
-                <span v-if="profile">
-                  {{ formatYumiFromCent(profile?.wallet?.available ?? 0) }}
+            <div class="profile-fields">
+              <div class="info-row profile-field">
+                <span class="field-label">&#x5934;&#x50cf;</span>
+                <span class="field-value">{{ profile?.avatar ? 'Set' : 'Unset' }}</span>
+              </div>
+              <div class="info-row profile-field">
+                <span class="field-label">&#x6635;&#x79f0;</span>
+                <span class="field-value">{{ profile?.nickname || '-' }}</span>
+              </div>
+              <div class="info-row profile-field">
+                <span class="field-label">&#x90ae;&#x7bb1;</span>
+                <span class="field-value">{{ profile?.email || '-' }}</span>
+              </div>
+              <div class="info-row profile-field">
+                <span class="field-label">&#x89d2;&#x8272;</span>
+                <span class="field-value">
+                  <el-tag v-if="profile" size="small" :type="roleTagType" effect="dark">
+                    {{ roleLabel }}
+                  </el-tag>
+                  <span v-else>-</span>
                 </span>
-                <span v-else>-</span>
-              </el-descriptions-item>
-
-              <el-descriptions-item label="简介">
-                {{ profile?.bio || '-' }}
-              </el-descriptions-item>
-
-              <el-descriptions-item label="头像">
-                <div class="avatar-row">
-                  <el-image
-                    v-if="profile?.avatar"
-                    :src="profile.avatar"
-                    fit="cover"
-                    class="avatar-img"
-                    @error="onAvatarError"
-                  >
-                    <template #error>
-                      <div class="avatar-fallback">{{ profile?.nickname?.[0] || '煜' }}</div>
-                    </template>
-                  </el-image>
-                  <div v-else class="avatar-fallback">{{ profile?.nickname?.[0] || '煜' }}</div>
-                </div>
-              </el-descriptions-item>
-
-              <el-descriptions-item label="创建时间">
-                {{ profile ? formatTime(profile.createdAt) : '-' }}
-              </el-descriptions-item>
-            </el-descriptions>
+              </div>
+              <div class="info-row profile-field balance-field">
+                <span class="field-label">&#x4f59;&#x989d;</span>
+                <span class="field-value">
+                  <span v-if="profile">
+                    {{ formatYumiFromCent(profile.balance ?? 0) }}
+                  </span>
+                  <span v-else>-</span>
+                </span>
+              </div>
+              <div class="info-row profile-field bio-field">
+                <span class="field-label">&#x7b80;&#x4ecb;</span>
+                <span class="field-value">{{ profile?.bio || '-' }}</span>
+              </div>
+              <div class="info-row profile-field">
+                <span class="field-label">&#x521b;&#x5efa;&#x65f6;&#x95f4;</span>
+                <span class="field-value">{{ profile ? formatTime(profile.createdAt) : '-' }}</span>
+              </div>
+            </div>
           </div>
 
           <!-- 编辑模式 -->
@@ -142,7 +155,7 @@
 
       <!-- 右边：修改密码 -->
       <el-col :xs="24" :sm="14">
-        <el-card shadow="hover">
+        <el-card class="profile-glass-card password-card" shadow="never">
           <template #header>
             <div class="card-header">
               <span>修改密码</span>
@@ -444,12 +457,48 @@ onMounted(() => {
 
 <style scoped>
 .profile-page {
-  padding: 16px;
+  width: 100%;
+  max-width: 100%;
+  padding: 4px 0 0;
+  color: #fff2d6;
+  overflow-x: hidden;
+}
+
+.profile-layout {
+  align-items: stretch;
+  max-width: 100%;
+}
+
+.profile-glass-card {
+  min-height: 100%;
+  border: 1px solid rgba(255, 214, 145, .18);
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 92% 10%, rgba(239, 163, 60, .16), transparent 28%),
+    linear-gradient(145deg, rgba(255, 255, 255, .08), rgba(255, 255, 255, .026));
+  box-shadow: 0 22px 54px rgba(0, 0, 0, .34), inset 0 1px 0 rgba(255, 240, 205, .08);
+  backdrop-filter: blur(18px);
+  overflow: hidden;
+}
+
+:deep(.profile-glass-card .el-card__header) {
+  border-bottom: 1px solid rgba(255, 214, 145, .14);
+  background: linear-gradient(90deg, rgba(255, 224, 170, .08), rgba(88, 68, 141, .08));
+}
+
+:deep(.profile-glass-card .el-card__body) {
+  padding: 22px;
+}
+
+:deep(.profile-glass-card .el-loading-mask) {
+  background: rgba(5, 10, 20, .68);
 }
 
 .card-header {
-  font-weight: 600;
-  font-size: 15px;
+  font-weight: 800;
+  font-size: 16px;
+  color: #ffe4b5;
+  letter-spacing: 0;
 }
 
 .header-with-action {
@@ -464,6 +513,108 @@ onMounted(() => {
   gap: 8px;
 }
 
+.profile-overview {
+  display: grid;
+  gap: 18px;
+}
+
+.profile-hero {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid rgba(255, 214, 145, .16);
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 12% 15%, rgba(255, 219, 143, .16), transparent 28%),
+    rgba(4, 9, 17, .34);
+}
+
+.avatar-ring {
+  flex: 0 0 auto;
+  width: 72px;
+  height: 72px;
+  padding: 3px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #ffe6a9, #d58a30 52%, #6856b8);
+  box-shadow: 0 0 28px rgba(231, 155, 57, .28);
+}
+
+.profile-title {
+  min-width: 0;
+  display: grid;
+  gap: 7px;
+}
+
+.profile-title strong {
+  color: #fff3db;
+  font-size: 22px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.profile-title span {
+  color: rgba(255, 232, 196, .62);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.profile-fields {
+  display: grid;
+  gap: 10px;
+}
+
+.info-row,
+.profile-field {
+  min-width: 0;
+}
+
+.profile-field {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  min-height: 48px;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 214, 145, .13);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .035);
+}
+
+.profile-field:hover {
+  border-color: rgba(243, 180, 78, .34);
+  background: rgba(255, 255, 255, .052);
+}
+
+.field-label {
+  color: rgba(255, 232, 196, .52);
+  font-size: 13px;
+}
+
+.field-value {
+  min-width: 0;
+  color: rgba(255, 242, 214, .9);
+  font-size: 14px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
+.balance-field .field-value {
+  color: #ffd16e;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.bio-field {
+  align-items: start;
+}
+
+.bio-field .field-value {
+  text-align: left;
+}
+
 .avatar-row {
   display: flex;
   align-items: center;
@@ -471,24 +622,114 @@ onMounted(() => {
 }
 
 .avatar-img {
-  width: 44px;
-  height: 44px;
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
   overflow: hidden;
+  display: block;
 }
 
 .avatar-fallback {
-  width: 44px;
-  height: 44px;
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
-  background: linear-gradient(135deg, #6366f1, #818cf8);
-  color: #fff;
+  background: linear-gradient(135deg, #ffe8ae, #e7a648 58%, #7c65d8);
+  color: #241307;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
-  font-weight: 600;
+  font-size: 24px;
+  font-weight: 900;
   user-select: none;
+}
+
+.avatar-row .avatar-img,
+.avatar-row .avatar-fallback {
+  width: 54px;
+  height: 54px;
+}
+
+:deep(.profile-glass-card .el-form-item__label) {
+  color: rgba(255, 232, 196, .76);
+  font-weight: 700;
+}
+
+:deep(.profile-glass-card .el-input__wrapper),
+:deep(.profile-glass-card .el-textarea__inner) {
+  border-radius: 12px;
+  background: rgba(4, 9, 17, .58);
+  box-shadow: 0 0 0 1px rgba(255, 214, 145, .16) inset;
+}
+
+:deep(.profile-glass-card .el-input__wrapper:hover),
+:deep(.profile-glass-card .el-textarea__inner:hover) {
+  box-shadow: 0 0 0 1px rgba(243, 180, 78, .35) inset;
+}
+
+:deep(.profile-glass-card .el-input__wrapper.is-focus),
+:deep(.profile-glass-card .el-textarea__inner:focus) {
+  box-shadow: 0 0 0 1px rgba(255, 216, 139, .58) inset, 0 0 0 3px rgba(243, 180, 78, .10);
+}
+
+:deep(.profile-glass-card .el-input__inner),
+:deep(.profile-glass-card .el-textarea__inner) {
+  color: #fff2d6;
+}
+
+:deep(.profile-glass-card .el-input__inner::placeholder),
+:deep(.profile-glass-card .el-textarea__inner::placeholder) {
+  color: rgba(255, 232, 196, .36);
+}
+
+:deep(.profile-glass-card .el-input .el-input__count),
+:deep(.profile-glass-card .el-textarea .el-input__count) {
+  color: rgba(255, 232, 196, .42);
+  background: transparent;
+}
+
+:deep(.profile-glass-card .el-button) {
+  border-radius: 999px;
+  border-color: rgba(255, 214, 145, .20);
+  background: rgba(255, 255, 255, .055);
+  color: #ffe5b6;
+}
+
+:deep(.profile-glass-card .el-button:hover) {
+  border-color: rgba(243, 180, 78, .48);
+  background: rgba(255, 255, 255, .085);
+  color: #ffd16e;
+}
+
+:deep(.profile-glass-card .el-button--primary),
+:deep(.profile-glass-card .el-button--success) {
+  border: 0;
+  color: #241307;
+  background: linear-gradient(135deg, #ffe8ae, #f2b34d) !important;
+  box-shadow: 0 12px 28px rgba(235, 164, 69, .24);
+}
+
+:deep(.profile-glass-card .el-button--primary:hover),
+:deep(.profile-glass-card .el-button--success:hover) {
+  color: #1d1207;
+  background: linear-gradient(135deg, #fff0bd, #d89a37 54%, #7c65d8) !important;
+}
+
+:deep(.profile-glass-card .el-tag) {
+  border-color: rgba(255, 214, 145, .22);
+  background: rgba(255, 214, 145, .12);
+  color: #ffd98e;
+}
+
+:deep(.profile-glass-card .el-alert) {
+  border: 1px solid rgba(130, 150, 180, .20);
+  border-radius: 12px;
+  background: rgba(18, 28, 45, .58);
+  color: rgba(221, 232, 246, .78);
+}
+
+:deep(.profile-glass-card .el-alert__title),
+:deep(.profile-glass-card .el-alert__content) {
+  color: rgba(221, 232, 246, .78);
 }
 
 @media (max-width: 992px) {

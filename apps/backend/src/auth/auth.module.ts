@@ -8,6 +8,7 @@ import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
+import { LoginThrottleGuard } from './guards/login-throttle.guard';
 
 import { UserModule } from '../user/user.module';
 import { PrismaModule } from '../prisma/prisma.module';
@@ -29,7 +30,7 @@ if (!JWT_SECRET) {
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, JwtAuthGuard, RolesGuard],
+  providers: [AuthService, JwtStrategy, JwtAuthGuard, RolesGuard, LoginThrottleGuard],
   exports: [JwtModule, JwtAuthGuard, RolesGuard],
 })
 export class AuthModule {}
