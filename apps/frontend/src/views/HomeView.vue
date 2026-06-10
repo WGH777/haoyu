@@ -172,7 +172,13 @@
       <span>发布需求</span>
     </button>
 
-    <el-dialog v-model="showCreateDialog" width="560px" destroy-on-close class="haoyu-dialog">
+    <el-dialog
+      v-model="showCreateDialog"
+      width="560px"
+      destroy-on-close
+      class="haoyu-dialog"
+      modal-class="haoyu-dialog-modal"
+    >
       <template #header>
         <div class="dialog-title">发布新的协作需求</div>
       </template>
@@ -195,7 +201,7 @@
           </div>
         </el-form-item>
         <el-form-item label="需求分类">
-          <el-select v-model="createForm.category" style="width: 100%">
+          <el-select v-model="createForm.category" popper-class="haoyu-select-popper" style="width: 100%">
             <el-option label="技能服务" value="SKILL_SERVICE" />
             <el-option label="生活协助" value="LIFE_ASSISTANCE" />
             <el-option label="家庭关怀" value="FAMILY_CARE" />
@@ -1195,70 +1201,128 @@ button {
 :deep(.haoyu-dialog .el-dialog) {
   border-radius: 22px;
   background:
-    radial-gradient(circle at 92% 12%, rgba(239, 163, 60, .16), transparent 30%),
-    linear-gradient(145deg, rgba(9, 18, 31, .96), rgba(19, 12, 8, .94));
-  border: 1px solid rgba(255, 214, 145, .2);
-  box-shadow: 0 28px 90px rgba(0, 0, 0, .48), 0 0 46px rgba(196, 125, 43, .16);
+    linear-gradient(180deg, rgba(255, 232, 174, .075), transparent 22%),
+    radial-gradient(circle at 90% 8%, rgba(239, 163, 60, .20), transparent 28%),
+    radial-gradient(circle at 8% 100%, rgba(124, 101, 216, .12), transparent 32%),
+    rgba(8, 14, 28, .94);
+  border: 1px solid rgba(255, 214, 145, .22);
+  box-shadow:
+    0 34px 96px rgba(0, 0, 0, .56),
+    0 0 58px rgba(196, 125, 43, .18),
+    0 0 0 1px rgba(255, 255, 255, .045) inset;
   backdrop-filter: blur(22px);
   overflow: hidden;
 }
 
+:deep(.haoyu-dialog .el-dialog::before) {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, transparent, rgba(255, 232, 174, .12), transparent) 0 0 / 100% 1px no-repeat,
+    radial-gradient(circle at 18% 8%, rgba(255, 214, 145, .16), transparent 18%);
+}
+
+:global(.haoyu-dialog-modal) {
+  background: rgba(0, 0, 0, .72) !important;
+  backdrop-filter: blur(5px);
+}
+
 :deep(.haoyu-dialog .el-dialog__header) {
+  position: relative;
+  z-index: 1;
   margin: 0;
   padding: 24px 28px 12px;
   border-bottom: 1px solid rgba(255, 214, 145, .12);
 }
 
 :deep(.haoyu-dialog .el-dialog__body) {
+  position: relative;
+  z-index: 1;
   padding: 22px 28px 8px;
   color: rgba(255, 232, 196, .72);
 }
 
 :deep(.haoyu-dialog .el-dialog__footer) {
+  position: relative;
+  z-index: 1;
   padding: 14px 28px 26px;
   border-top: 1px solid rgba(255, 214, 145, .10);
 }
 
 .dialog-title {
-  color: #ffe6b3;
+  display: inline-flex;
+  align-items: center;
+  color: transparent;
+  background: linear-gradient(135deg, #fff1c4, #f2b34d 58%, #bba8ff);
+  -webkit-background-clip: text;
+  background-clip: text;
   font-size: 22px;
   font-weight: 900;
+  text-shadow: 0 12px 34px rgba(242, 179, 77, .22);
+}
+
+:deep(.haoyu-dialog .el-dialog__close) {
+  color: rgba(255, 232, 196, .58);
+}
+
+:deep(.haoyu-dialog .el-dialog__close:hover) {
+  color: #ffd16e;
+}
+
+:deep(.haoyu-dialog .el-form-item) {
+  margin-bottom: 19px;
 }
 
 :deep(.haoyu-dialog .el-form-item__label) {
   color: rgba(255, 232, 196, .8);
   font-weight: 700;
+  line-height: 1.15;
+  margin-bottom: 8px;
 }
 
 :deep(.haoyu-dialog .el-input__wrapper),
 :deep(.haoyu-dialog .el-textarea__inner),
 :deep(.haoyu-dialog .el-input-number .el-input__wrapper),
 :deep(.haoyu-dialog .el-select .el-input__wrapper) {
-  border-radius: 12px;
-  background: rgba(4, 9, 17, .58);
-  box-shadow: 0 0 0 1px rgba(255, 214, 145, .16) inset;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .065), rgba(255, 255, 255, .025)), rgba(4, 9, 17, .76);
+  box-shadow:
+    0 0 0 1px rgba(255, 214, 145, .18) inset,
+    0 12px 24px rgba(0, 0, 0, .18);
+  transition: box-shadow .18s ease, background .18s ease;
 }
 
 :deep(.haoyu-dialog .el-input__wrapper:hover),
 :deep(.haoyu-dialog .el-textarea__inner:hover),
-:deep(.haoyu-dialog .el-select .el-input__wrapper:hover) {
-  box-shadow: 0 0 0 1px rgba(243, 180, 78, .35) inset;
+:deep(.haoyu-dialog .el-select .el-input__wrapper:hover),
+:deep(.haoyu-dialog .el-input-number:hover .el-input__wrapper) {
+  background: linear-gradient(180deg, rgba(255, 232, 174, .09), rgba(255, 255, 255, .03)), rgba(4, 9, 17, .82);
+  box-shadow:
+    0 0 0 1px rgba(243, 180, 78, .42) inset,
+    0 0 22px rgba(243, 180, 78, .08);
 }
 
 :deep(.haoyu-dialog .el-input__wrapper.is-focus),
 :deep(.haoyu-dialog .el-textarea__inner:focus),
-:deep(.haoyu-dialog .el-select .el-input__wrapper.is-focus) {
-  box-shadow: 0 0 0 1px rgba(255, 216, 139, .58) inset, 0 0 0 3px rgba(243, 180, 78, .10);
+:deep(.haoyu-dialog .el-select .el-input__wrapper.is-focus),
+:deep(.haoyu-dialog .el-input-number .el-input__wrapper.is-focus) {
+  box-shadow:
+    0 0 0 1px rgba(255, 216, 139, .64) inset,
+    0 0 0 3px rgba(243, 180, 78, .12),
+    0 0 26px rgba(243, 180, 78, .10);
 }
 
 :deep(.haoyu-dialog .el-input__inner),
-:deep(.haoyu-dialog .el-textarea__inner) {
+:deep(.haoyu-dialog .el-textarea__inner),
+:deep(.haoyu-dialog .el-select__placeholder) {
   color: #fff2d6;
 }
 
 :deep(.haoyu-dialog .el-input__inner::placeholder),
 :deep(.haoyu-dialog .el-textarea__inner::placeholder) {
-  color: rgba(255, 232, 196, .38);
+  color: rgba(166, 183, 207, .56);
 }
 
 :deep(.haoyu-dialog .el-input .el-input__count),
@@ -1267,25 +1331,50 @@ button {
   background: transparent;
 }
 
+:deep(.haoyu-dialog .el-select .el-icon) {
+  color: rgba(255, 214, 145, .66);
+}
+
+:deep(.haoyu-dialog .el-input-number) {
+  width: 100%;
+  border-radius: 14px;
+  background: rgba(4, 9, 17, .72);
+}
+
 :deep(.haoyu-dialog .el-input-number__decrease),
 :deep(.haoyu-dialog .el-input-number__increase) {
-  color: rgba(255, 232, 196, .7);
-  background: rgba(255, 255, 255, .045);
-  border-color: rgba(255, 214, 145, .14);
+  width: 42px;
+  color: rgba(255, 232, 196, .74);
+  background: linear-gradient(180deg, rgba(255, 232, 174, .08), rgba(255, 255, 255, .025)), rgba(7, 14, 27, .84);
+  border-color: rgba(255, 214, 145, .18);
+}
+
+:deep(.haoyu-dialog .el-input-number__decrease:hover),
+:deep(.haoyu-dialog .el-input-number__increase:hover) {
+  color: #ffd16e;
+  background: rgba(242, 179, 77, .16);
+}
+
+:deep(.haoyu-dialog .el-input-number__decrease.is-disabled),
+:deep(.haoyu-dialog .el-input-number__increase.is-disabled) {
+  color: rgba(166, 183, 207, .32);
+  background: rgba(255, 255, 255, .025);
 }
 
 :deep(.haoyu-dialog .el-radio__label) {
-  color: rgba(255, 232, 196, .72);
+  color: rgba(166, 183, 207, .78);
+  transition: color .18s ease;
 }
 
 :deep(.haoyu-dialog .el-radio__inner) {
-  background: rgba(4, 9, 17, .58);
+  background: rgba(4, 9, 17, .78);
   border-color: rgba(255, 214, 145, .32);
 }
 
 :deep(.haoyu-dialog .el-radio__input.is-checked .el-radio__inner) {
-  background: #f2b34d;
+  background: linear-gradient(135deg, #ffe8ae, #f2b34d);
   border-color: #f2b34d;
+  box-shadow: 0 0 0 3px rgba(242, 179, 77, .13);
 }
 
 :deep(.haoyu-dialog .el-radio__input.is-checked + .el-radio__label) {
@@ -1297,15 +1386,21 @@ button {
   border-color: rgba(255, 214, 145, .20);
   background: rgba(255, 255, 255, .055);
   color: #ffe5b6;
+  min-height: 42px;
+  padding: 0 20px;
+  font-weight: 800;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, .18);
 }
 
 :deep(.haoyu-dialog .el-button:hover) {
   border-color: rgba(243, 180, 78, .48);
-  background: rgba(255, 255, 255, .085);
+  background: rgba(242, 179, 77, .12);
   color: #ffd16e;
+  box-shadow: 0 14px 30px rgba(242, 179, 77, .14);
 }
 
-:deep(.haoyu-dialog .el-button--primary) {
+:deep(.haoyu-dialog .el-button--primary),
+:deep(.haoyu-dialog .dialog-btn-primary) {
   border: 0;
   color: #241307;
   font-weight: 800;
@@ -1313,14 +1408,78 @@ button {
   box-shadow: 0 14px 30px rgba(235, 164, 69, .26);
 }
 
-:deep(.haoyu-dialog .el-button--primary:hover) {
+:deep(.haoyu-dialog .el-button--primary:hover),
+:deep(.haoyu-dialog .dialog-btn-primary:hover) {
   color: #1d1207;
   background: linear-gradient(135deg, #fff0bd, #d89a37 54%, #7c65d8) !important;
 }
 
+:deep(.haoyu-dialog .el-dialog__footer .el-button:first-child),
+:deep(.haoyu-dialog .dialog-btn-ghost) {
+  min-width: 96px;
+  color: rgba(255, 232, 196, .82);
+  background: linear-gradient(180deg, rgba(255, 255, 255, .065), rgba(255, 255, 255, .025)), rgba(7, 14, 27, .78);
+  border-color: rgba(255, 214, 145, .24);
+}
+
+:deep(.haoyu-dialog .el-dialog__footer .el-button:last-child),
+:deep(.haoyu-dialog .dialog-btn-primary) {
+  min-width: 116px;
+}
+
 :deep(.haoyu-dialog .el-upload .el-button) {
-  border-color: rgba(255, 214, 145, .26);
-  background: rgba(255, 255, 255, .06);
+  border-color: rgba(255, 214, 145, .30);
+  background:
+    linear-gradient(180deg, rgba(255, 232, 174, .10), rgba(255, 255, 255, .025)),
+    rgba(7, 14, 27, .78);
+  color: #ffe4ad;
+}
+
+:deep(.haoyu-dialog .el-upload .el-button:hover) {
+  border-color: rgba(255, 216, 139, .58);
+  background: rgba(242, 179, 77, .14);
+  box-shadow: 0 0 26px rgba(242, 179, 77, .14);
+}
+
+:global(.haoyu-select-popper.el-popper) {
+  border: 1px solid rgba(255, 214, 145, .22) !important;
+  border-radius: 16px !important;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(242, 179, 77, .16), transparent 30%),
+    rgba(7, 13, 25, .96) !important;
+  box-shadow: 0 22px 56px rgba(0, 0, 0, .44), 0 0 32px rgba(242, 179, 77, .10) !important;
+  backdrop-filter: blur(18px);
+  overflow: hidden;
+}
+
+:global(.haoyu-select-popper .el-select-dropdown) {
+  background: transparent !important;
+}
+
+:global(.haoyu-select-popper .el-select-dropdown__wrap) {
+  background: transparent !important;
+}
+
+:global(.haoyu-select-popper .el-select-dropdown__item) {
+  color: rgba(255, 232, 196, .78) !important;
+  background: transparent !important;
+}
+
+:global(.haoyu-select-popper .el-select-dropdown__item.hover),
+:global(.haoyu-select-popper .el-select-dropdown__item:hover) {
+  color: #ffd16e !important;
+  background: rgba(242, 179, 77, .14) !important;
+}
+
+:global(.haoyu-select-popper .el-select-dropdown__item.is-selected) {
+  color: #ffe8ae !important;
+  font-weight: 800;
+  background: rgba(242, 179, 77, .18) !important;
+}
+
+:global(.haoyu-select-popper .el-popper__arrow::before) {
+  background: rgba(7, 13, 25, .96) !important;
+  border-color: rgba(255, 214, 145, .22) !important;
 }
 
 @media (max-width: 1180px) {
