@@ -1,11 +1,9 @@
-<template>
+﻿<template>
   <div class="profile-page">
-    <!-- ====== 桌面端布局 ====== -->
-    <div class="profile-desktop">
     <el-row :gutter="20" class="profile-layout">
       <!-- 左边：账号信息 + 编辑资料 -->
       <el-col :xs="24" :sm="10">
-        <el-card shadow="hover" v-loading="loadingProfile">
+        <el-card class="profile-glass-card profile-card" shadow="never" v-loading="loadingProfile">
           <template #header>
             <div class="card-header header-with-action">
               <span>账号信息</span>
@@ -39,54 +37,67 @@
           </template>
 
           <!-- 展示模式 -->
-          <div v-if="!editingProfile">
-            <el-descriptions :column="1" border>
-              <el-descriptions-item label="昵称">
-                {{ profile?.nickname || '-' }}
-              </el-descriptions-item>
+          <div v-if="!editingProfile" class="profile-overview">
+            <div class="profile-hero">
+              <div class="avatar-ring">
+                <el-image
+                  v-if="profile?.avatar"
+                  :src="profile.avatar"
+                  fit="cover"
+                  class="avatar-img"
+                >
+                  <template #error>
+                    <div class="avatar-fallback">{{ profile?.nickname?.[0] || 'H' }}</div>
+                  </template>
+                </el-image>
+                <div v-else class="avatar-fallback">{{ profile?.nickname?.[0] || 'H' }}</div>
+              </div>
+              <div class="profile-title">
+                <strong>{{ profile?.nickname || '-' }}</strong>
+                <span>{{ profile?.email || '-' }}</span>
+              </div>
+            </div>
 
-              <el-descriptions-item label="邮箱">
-                {{ profile?.email || '-' }}
-              </el-descriptions-item>
-
-              <el-descriptions-item label="角色">
-                <el-tag v-if="profile" size="small" :type="roleTagType">
-                  {{ roleLabel }}
-                </el-tag>
-              </el-descriptions-item>
-
-              <el-descriptions-item label="余额">
-                <span v-if="profile">
-                  {{ formatYumiFromCent(profile?.wallet?.available ?? 0) }}
+            <div class="profile-fields">
+              <div class="info-row profile-field">
+                <span class="field-label">&#x5934;&#x50cf;</span>
+                <span class="field-value">{{ profile?.avatar ? 'Set' : 'Unset' }}</span>
+              </div>
+              <div class="info-row profile-field">
+                <span class="field-label">&#x6635;&#x79f0;</span>
+                <span class="field-value">{{ profile?.nickname || '-' }}</span>
+              </div>
+              <div class="info-row profile-field">
+                <span class="field-label">&#x90ae;&#x7bb1;</span>
+                <span class="field-value">{{ profile?.email || '-' }}</span>
+              </div>
+              <div class="info-row profile-field">
+                <span class="field-label">&#x89d2;&#x8272;</span>
+                <span class="field-value">
+                  <el-tag v-if="profile" size="small" :type="roleTagType" effect="dark">
+                    {{ roleLabel }}
+                  </el-tag>
+                  <span v-else>-</span>
                 </span>
-                <span v-else>-</span>
-              </el-descriptions-item>
-
-              <el-descriptions-item label="简介">
-                {{ profile?.bio || '-' }}
-              </el-descriptions-item>
-
-              <el-descriptions-item label="头像">
-                <div class="avatar-row">
-                  <el-image
-                    v-if="profile?.avatar"
-                    :src="profile.avatar"
-                    fit="cover"
-                    class="avatar-img"
-
-                  >
-                    <template #error>
-                      <div class="avatar-fallback">{{ profile?.nickname?.[0] || '煜' }}</div>
-                    </template>
-                  </el-image>
-                  <div v-else class="avatar-fallback">{{ profile?.nickname?.[0] || '煜' }}</div>
-                </div>
-              </el-descriptions-item>
-
-              <el-descriptions-item label="创建时间">
-                {{ profile ? formatTime(profile.createdAt) : '-' }}
-              </el-descriptions-item>
-            </el-descriptions>
+              </div>
+              <div class="info-row profile-field balance-field">
+                <span class="field-label">&#x4f59;&#x989d;</span>
+                <span class="field-value">
+                  <span v-if="profile">
+                    {{ formatYumiFromCent(profile.balance ?? 0) }}
+                  </span>
+                  <span v-else>-</span>
+                </span>
+              </div>
+              <div class="info-row profile-field bio-field">
+                <span class="field-label">&#x7b80;&#x4ecb;</span>
+                <span class="field-value">{{ profile?.bio || '-' }}</span>
+              </div>
+              <div class="info-row profile-field">
+                <span class="field-label">&#x521b;&#x5efa;&#x65f6;&#x95f4;</span>
+                <span class="field-value">{{ profile ? formatTime(profile.createdAt) : '-' }}</span>
+              </div>
+            </div>
           </div>
 
           <!-- 编辑模式 -->
@@ -144,7 +155,7 @@
 
       <!-- 右边：修改密码 -->
       <el-col :xs="24" :sm="14">
-        <el-card shadow="hover">
+        <el-card class="profile-glass-card password-card" shadow="never">
           <template #header>
             <div class="card-header">
               <span>修改密码</span>
@@ -205,96 +216,12 @@
         </el-card>
       </el-col>
     </el-row>
-    </div><!-- /.profile-desktop -->
-
-    <!-- ====== 移动端用户中心聚合页 ====== -->
-    <div class="profile-mobile" v-loading="loadingProfile">
-      <div class="uc-profile-section">
-        <!-- 移动端背景装饰 -->
-        <img src="/assets/haoyu/mobile/vertical_backgrounds_02_mobile_city_lantern_bg.webp" alt="" class="uc-bg-deco" aria-hidden="true" />
-        <div class="uc-avatar">
-          <el-image
-            v-if="profile?.avatar"
-            :src="profile.avatar"
-            fit="cover"
-            class="uc-avatar-img"
-          >
-            <template #error>
-              <span class="uc-avatar-fallback">{{ profile?.nickname?.[0] || profile?.email?.[0]?.toUpperCase() || '煜' }}</span>
-            </template>
-          </el-image>
-          <span v-else class="uc-avatar-fallback">{{ profile?.nickname?.[0] || profile?.email?.[0]?.toUpperCase() || '煜' }}</span>
-        </div>
-        <div class="uc-profile-info">
-          <div class="uc-nickname">{{ profile?.nickname || profile?.email?.split('@')[0] || '用户' }}</div>
-          <div class="uc-role">{{ profile?.email || '' }}</div>
-        </div>
-      </div>
-
-      <div class="uc-stats-bar">
-        <div class="uc-stat-item">
-          <span class="uc-stat-num">{{ taskStats.total }}</span>
-          <span class="uc-stat-label">全部任务</span>
-        </div>
-        <div class="uc-stat-item">
-          <span class="uc-stat-num">{{ taskStats.rate }}</span>
-          <span class="uc-stat-label">好评率</span>
-        </div>
-        <div class="uc-stat-item">
-          <span class="uc-stat-num">{{ formatYumiCompactFromCent(profile?.wallet?.available ?? 0) }}</span>
-          <span class="uc-stat-label">余额</span>
-        </div>
-        <div class="uc-stat-item">
-          <span class="uc-stat-num">—</span>
-          <span class="uc-stat-label">信用分</span>
-        </div>
-      </div>
-
-      <section class="uc-management-section">
-        <h3 class="uc-section-title">📌 管理中心</h3>
-        <div class="uc-management-grid">
-          <div v-for="item in managementLinks" :key="item.label" class="uc-mgmt-card" @click="$router.push(item.path)">
-            <span class="uc-mgmt-icon">{{ item.icon }}</span>
-            <div class="uc-mgmt-info">
-              <span class="uc-mgmt-label">{{ item.label }}</span>
-              <span class="uc-mgmt-desc">{{ item.desc }}</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="uc-task-section">
-        <h3 class="uc-section-title">📋 任务概况</h3>
-        <div class="uc-task-cards">
-          <div class="uc-task-card" @click="$router.push('/my-task?status=PENDING')">
-            <span class="uc-task-count pending-count">{{ taskStats.pending }}</span>
-            <span class="uc-task-label">待接单</span>
-            <span class="uc-task-status">等待服务者领取</span>
-          </div>
-          <div class="uc-task-card" @click="$router.push('/my-task?status=IN_PROGRESS')">
-            <span class="uc-task-count active-count">{{ taskStats.active }}</span>
-            <span class="uc-task-label">进行中</span>
-            <span class="uc-task-status">服务中或待验收</span>
-          </div>
-          <div class="uc-task-card" @click="$router.push('/my-task?status=COMPLETED')">
-            <span class="uc-task-count done-count">{{ taskStats.done }}</span>
-            <span class="uc-task-label">已完成</span>
-            <span class="uc-task-status">交易成功已结算</span>
-          </div>
-          <div class="uc-task-card" @click="$router.push('/my-task?status=CANCELLED')">
-            <span class="uc-task-count cancel-count">{{ taskStats.cancelled }}</span>
-            <span class="uc-task-label">已取消</span>
-            <span class="uc-task-status">已关闭或争议</span>
-          </div>
-        </div>
-      </section>
-    </div><!-- /.profile-mobile -->
   </div>
 </template>
 
 <script setup lang="ts">
 import { onMounted, reactive, ref, computed } from 'vue'
-import { formatYumiFromCent, formatYumiCompactFromCent } from '@/utils/money'
+import { formatYumiFromCent } from '@/utils/money'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
 import http from '@/api/http'
@@ -349,24 +276,6 @@ const profileRules: FormRules<typeof profileForm> = {
 
 const passwordFormRef = ref<FormInstance>()
 const submitting = ref(false)
-
-// ====== 移动端用户中心数据 ======
-const managementLinks = [
-  { icon: '📋', label: '我的任务', desc: '查看与管理的任务', path: '/my-task' },
-  { icon: '💰', label: '钱包', desc: '余额与交易记录', path: '/wallet' },
-  { icon: '🛡️', label: '信任中心', desc: '信用记录与保障', path: '/trust' },
-  { icon: '⚙️', label: '个人设置', desc: '编辑资料与密码', path: '/profile' },
-]
-
-// 任务统计（UI 展示用，后续可对接后端统计接口）
-const taskStats = {
-  total: '—',
-  rate: '—',
-  pending: '—',
-  active: '—',
-  done: '—',
-  cancelled: '—',
-}
 
 const passwordForm = reactive({
   oldPassword: '',
@@ -548,14 +457,48 @@ onMounted(() => {
 
 <style scoped>
 .profile-page {
-  padding: 16px;
-  min-height: 100vh;
-  background: #05070d;
+  width: 100%;
+  max-width: 100%;
+  padding: 4px 0 0;
+  color: #fff2d6;
+  overflow-x: hidden;
+}
+
+.profile-layout {
+  align-items: stretch;
+  max-width: 100%;
+}
+
+.profile-glass-card {
+  min-height: 100%;
+  border: 1px solid rgba(255, 214, 145, .18);
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 92% 10%, rgba(239, 163, 60, .16), transparent 28%),
+    linear-gradient(145deg, rgba(255, 255, 255, .08), rgba(255, 255, 255, .026));
+  box-shadow: 0 22px 54px rgba(0, 0, 0, .34), inset 0 1px 0 rgba(255, 240, 205, .08);
+  backdrop-filter: blur(18px);
+  overflow: hidden;
+}
+
+:deep(.profile-glass-card .el-card__header) {
+  border-bottom: 1px solid rgba(255, 214, 145, .14);
+  background: linear-gradient(90deg, rgba(255, 224, 170, .08), rgba(88, 68, 141, .08));
+}
+
+:deep(.profile-glass-card .el-card__body) {
+  padding: 22px;
+}
+
+:deep(.profile-glass-card .el-loading-mask) {
+  background: rgba(5, 10, 20, .68);
 }
 
 .card-header {
-  font-weight: 600;
-  font-size: 15px;
+  font-weight: 800;
+  font-size: 16px;
+  color: #ffe4b5;
+  letter-spacing: 0;
 }
 
 .header-with-action {
@@ -570,6 +513,108 @@ onMounted(() => {
   gap: 8px;
 }
 
+.profile-overview {
+  display: grid;
+  gap: 18px;
+}
+
+.profile-hero {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid rgba(255, 214, 145, .16);
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 12% 15%, rgba(255, 219, 143, .16), transparent 28%),
+    rgba(4, 9, 17, .34);
+}
+
+.avatar-ring {
+  flex: 0 0 auto;
+  width: 72px;
+  height: 72px;
+  padding: 3px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #ffe6a9, #d58a30 52%, #6856b8);
+  box-shadow: 0 0 28px rgba(231, 155, 57, .28);
+}
+
+.profile-title {
+  min-width: 0;
+  display: grid;
+  gap: 7px;
+}
+
+.profile-title strong {
+  color: #fff3db;
+  font-size: 22px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.profile-title span {
+  color: rgba(255, 232, 196, .62);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.profile-fields {
+  display: grid;
+  gap: 10px;
+}
+
+.info-row,
+.profile-field {
+  min-width: 0;
+}
+
+.profile-field {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  min-height: 48px;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 214, 145, .13);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .035);
+}
+
+.profile-field:hover {
+  border-color: rgba(243, 180, 78, .34);
+  background: rgba(255, 255, 255, .052);
+}
+
+.field-label {
+  color: rgba(255, 232, 196, .52);
+  font-size: 13px;
+}
+
+.field-value {
+  min-width: 0;
+  color: rgba(255, 242, 214, .9);
+  font-size: 14px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
+.balance-field .field-value {
+  color: #ffd16e;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.bio-field {
+  align-items: start;
+}
+
+.bio-field .field-value {
+  text-align: left;
+}
+
 .avatar-row {
   display: flex;
   align-items: center;
@@ -577,111 +622,160 @@ onMounted(() => {
 }
 
 .avatar-img {
-  width: 44px;
-  height: 44px;
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
   overflow: hidden;
+  display: block;
 }
 
 .avatar-fallback {
-  width: 44px;
-  height: 44px;
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
-  background: linear-gradient(135deg, #6366f1, #818cf8);
-  color: #fff;
+  background: linear-gradient(135deg, #ffe8ae, #e7a648 58%, #7c65d8);
+  color: #241307;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
-  font-weight: 600;
+  font-size: 24px;
+  font-weight: 900;
   user-select: none;
 }
 
+.avatar-row .avatar-img,
+.avatar-row .avatar-fallback {
+  width: 54px;
+  height: 54px;
+}
+
+:deep(.profile-glass-card .el-form-item__label) {
+  color: rgba(255, 232, 196, .76);
+  font-weight: 700;
+}
+
+:deep(.profile-glass-card .el-input__wrapper),
+:deep(.profile-glass-card .el-textarea__inner) {
+  border-radius: 12px;
+  background: rgba(4, 9, 17, .58);
+  box-shadow: 0 0 0 1px rgba(255, 214, 145, .16) inset;
+}
+
+:deep(.profile-glass-card .el-input__wrapper:hover),
+:deep(.profile-glass-card .el-textarea__inner:hover) {
+  box-shadow: 0 0 0 1px rgba(243, 180, 78, .35) inset;
+}
+
+:deep(.profile-glass-card .el-input__wrapper.is-focus),
+:deep(.profile-glass-card .el-textarea__inner:focus) {
+  box-shadow: 0 0 0 1px rgba(255, 216, 139, .58) inset, 0 0 0 3px rgba(243, 180, 78, .10);
+}
+
+:deep(.profile-glass-card .el-input__inner),
+:deep(.profile-glass-card .el-textarea__inner) {
+  color: #fff2d6;
+}
+
+:deep(.profile-glass-card .el-input__inner::placeholder),
+:deep(.profile-glass-card .el-textarea__inner::placeholder) {
+  color: rgba(255, 232, 196, .36);
+}
+
+:deep(.profile-glass-card .el-input .el-input__count),
+:deep(.profile-glass-card .el-textarea .el-input__count) {
+  color: rgba(255, 232, 196, .42);
+  background: transparent;
+}
+
+:deep(.profile-glass-card .el-button) {
+  border-radius: 999px;
+  border-color: rgba(255, 214, 145, .20);
+  background: rgba(255, 255, 255, .055);
+  color: #ffe5b6;
+}
+
+:deep(.profile-glass-card .el-button:hover) {
+  border-color: rgba(243, 180, 78, .48);
+  background: rgba(255, 255, 255, .085);
+  color: #ffd16e;
+}
+
+:deep(.profile-glass-card .el-button--primary),
+:deep(.profile-glass-card .el-button--success) {
+  border: 0;
+  color: #241307;
+  background: linear-gradient(135deg, #ffe8ae, #f2b34d) !important;
+  box-shadow: 0 12px 28px rgba(235, 164, 69, .24);
+}
+
+:deep(.profile-glass-card .el-button--primary:hover),
+:deep(.profile-glass-card .el-button--success:hover) {
+  color: #1d1207;
+  background: linear-gradient(135deg, #fff0bd, #d89a37 54%, #7c65d8) !important;
+}
+
+:deep(.profile-glass-card .el-tag) {
+  border-color: rgba(255, 214, 145, .22);
+  background: rgba(255, 214, 145, .12);
+  color: #ffd98e;
+}
+
+:deep(.profile-glass-card .el-alert) {
+  border: 1px solid rgba(130, 150, 180, .20);
+  border-radius: 12px;
+  background: rgba(18, 28, 45, .58);
+  color: rgba(221, 232, 246, .78);
+}
+
+:deep(.profile-glass-card .el-alert__title),
+:deep(.profile-glass-card .el-alert__content) {
+  color: rgba(221, 232, 246, .78);
+}
+
 @media (max-width: 992px) {
-  .profile-desktop { padding: 8px; }
+  .profile-page {
+    padding: 8px;
+  }
 }
 
-/* 移动端用户中心 — 桌面端隐藏 */
-.profile-mobile { display: none; }
-
-/* ====== 移动端用户中心 ====== */
+/* 移动端全宽修复 */
 @media (max-width: 768px) {
-  .profile-page { padding: 0; max-width: 100vw; overflow-x: hidden; background: #05070d; }
-  .profile-desktop { display: none; }
-  .profile-mobile { display: block; padding-bottom: calc(100px + env(safe-area-inset-bottom)); }
-
-  .uc-profile-section {
-    position: relative;
-    overflow: hidden;
-    display: flex; align-items: center; gap: 14px; padding: 20px 14px; height: 120px;
-    background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(251,191,36,0.04));
-    border-bottom: 1px solid rgba(148,163,184,0.06);
+  .profile-page {
+    padding: 0 !important;
+    max-width: 100vw;
+    overflow-x: hidden;
   }
-  .uc-bg-deco {
-    position: absolute;
-    top: 0; right: 0;
-    height: 100%;
-    width: auto;
-    opacity: 0.15;
-    pointer-events: none;
-    z-index: 0;
-    object-fit: cover;
+  .profile-layout .el-col {
+    margin-bottom: 12px;
   }
-  .uc-profile-section > *:not(.uc-bg-deco) {
-    position: relative;
-    z-index: 1;
+  .profile-page .el-descriptions {
+    width: 100% !important;
   }
-  .uc-avatar { width: 58px; height: 58px; border-radius: 50%; overflow: hidden; flex-shrink: 0; background: linear-gradient(135deg,#6366f1,#818cf8); }
-  .uc-avatar-img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .uc-avatar-fallback { width: 58px; height: 58px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 22px; font-weight: 700; }
-  .uc-profile-info { display: flex; flex-direction: column; gap: 4px; }
-  .uc-nickname { font-size: 19px; font-weight: 700; color: #f1f5f9; }
-  .uc-role { font-size: 12px; color: rgba(255,255,255,0.5); }
-
-  .uc-stats-bar { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; padding: 16px 14px 0; }
-  .uc-stat-item { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 4px; background: rgba(17,24,39,0.5); border: 1px solid rgba(148,163,184,0.08); border-radius: 14px; }
-  .uc-stat-num { font-size: 19px; font-weight: 900; background: linear-gradient(135deg,#a5b4fc,#67e8f9); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1; }
-  .uc-stat-label { font-size: 10px; color: #64748b; }
-
-  .uc-section-title { font-size: 17px; font-weight: 700; color: #f1f5f9; margin: 0 0 12px; padding: 0; }
-
-  .uc-management-section { padding: 18px 14px 0; }
-  .uc-management-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-  .uc-mgmt-card { display: flex; align-items: center; gap: 10px; padding: 14px; background: rgba(17,24,39,0.55); border: 1px solid rgba(148,163,184,0.08); border-radius: 16px; min-height: 68px; cursor: pointer; transition: all 0.2s; }
-  .uc-mgmt-card:active { background: rgba(17,24,39,0.75); border-color: rgba(251,191,36,0.15); }
-  .uc-mgmt-icon { font-size: 22px; flex-shrink: 0; }
-  .uc-mgmt-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-  .uc-mgmt-label { font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.85); }
-  .uc-mgmt-desc { font-size: 11px; color: rgba(180,190,210,0.4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-  .uc-task-section { padding: 18px 14px 0; }
-  .uc-task-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-  .uc-task-card { padding: 14px; border-radius: 16px; background: rgba(17,24,39,0.5); border: 1px solid rgba(148,163,184,0.08); min-height: 100px; display: flex; flex-direction: column; justify-content: center; gap: 4px; cursor: pointer; transition: all 0.2s; }
-  .uc-task-card:active { background: rgba(17,24,39,0.75); }
-  .uc-task-count { font-size: 24px; font-weight: 900; line-height: 1; }
-  .pending-count { color: #a78bfa; }
-  .active-count { color: #fbbf24; }
-  .done-count { color: #4ade80; }
-  .cancel-count { color: #94a3b8; }
-  .uc-task-label { font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.65); }
-  .uc-task-status { font-size: 11px; color: rgba(180,190,210,0.35); }
-}
-
-@media (max-width: 375px) {
-  .uc-avatar { width: 54px; height: 54px; }
-  .uc-avatar-fallback { width: 54px; height: 54px; font-size: 20px; }
-  .uc-nickname { font-size: 17px; }
-  .uc-stat-num { font-size: 17px; }
-  .uc-mgmt-card { min-height: 64px; padding: 12px; }
-  .uc-task-count { font-size: 22px; }
-}
-
-@media (min-width: 391px) and (max-width: 430px) {
-  .uc-avatar { width: 62px; height: 62px; }
-  .uc-avatar-fallback { width: 62px; height: 62px; font-size: 24px; }
-  .uc-nickname { font-size: 20px; }
-  .uc-stat-num { font-size: 20px; }
-  .uc-mgmt-card { min-height: 72px; }
-  .uc-task-count { font-size: 24px; }
+  .profile-page .el-descriptions__label {
+    width: 80px !important;
+    min-width: 80px !important;
+    white-space: nowrap !important;
+  }
+  .profile-page .el-form-item__label {
+    display: block !important;
+    width: 100% !important;
+    text-align: left !important;
+    margin-bottom: 6px !important;
+    float: none !important;
+  }
+  .profile-page .el-form-item__content {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+  .profile-page .el-input {
+    width: 100% !important;
+  }
+  .profile-page .el-button--primary {
+    width: 100% !important;
+    margin-bottom: 8px;
+  }
+  .profile-page .el-card {
+    max-width: 100% !important;
+  }
 }
 </style>
