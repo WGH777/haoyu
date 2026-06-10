@@ -123,6 +123,12 @@ const router = createRouter({
       component: () => import('@/views/Register.vue'),
       meta: { public: true },
     },
+    {
+      path: '/design-showcase',
+      name: 'design-showcase',
+      component: () => import('@/views/DesignShowcase.vue'),
+      meta: { public: true },
+    },
 
     // 404
     {
