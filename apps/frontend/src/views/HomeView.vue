@@ -259,6 +259,7 @@ import { createTask, getTaskList, uploadTaskImage, type Task } from '@/api/task'
 import { getProfile, type UserProfile } from '@/api/user'
 import { notificationApi } from '@/api/notification'
 import { getWallet } from '@/api/wallet'
+import { resolveApiAssetUrl } from '@/api/http'
 
 const router = useRouter()
 const route = useRoute()
@@ -565,8 +566,7 @@ const relativeTime = (date?: string) => {
 }
 
 const getFullUrl = (path: string) => {
-  if (!path) return ''
-  return path.startsWith('http') ? path : `http://localhost:3000${path}`
+  return resolveApiAssetUrl(path)
 }
 
 onMounted(() => {

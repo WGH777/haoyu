@@ -16,11 +16,21 @@ import { ElMessage } from 'element-plus'
 // =========================================================
 
 const isDev = import.meta.env.DEV
+const PROD_API_BASE = 'https://admin.haoyulv.com/api'
 
 /** API 基地址：开发环境 localhost:3000，生产环境默认 /api（同域）
  *  可通过 VITE_API_BASE 环境变量覆盖 */
 export const API_BASE: string =
-  import.meta.env.VITE_API_BASE || (isDev ? 'http://localhost:3000/api' : '/api')
+  import.meta.env.VITE_API_BASE || (isDev ? 'http://localhost:3000/api' : PROD_API_BASE)
+
+export const API_ORIGIN = API_BASE.replace(/\/api\/?$/, '')
+
+export const resolveApiAssetUrl = (path?: string | null): string => {
+  if (!path) return ''
+  if (/^(https?:|blob:|data:)/.test(path)) return path
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`
+  return `${API_ORIGIN}${normalizedPath}`
+}
 
 // 1) axios 实例
 const instance: AxiosInstance = axios.create({

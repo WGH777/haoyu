@@ -6,7 +6,7 @@ import { ElMessage } from 'element-plus';
 // 1. 创建 axios 实例
 const service = axios.create({
   // 后端接口地址 (注意：如果您的后端跑在 3000，这里必须写对)
-  baseURL: 'http://localhost:3000', 
+  baseURL: import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:3000' : 'https://admin.haoyulv.com'), 
   timeout: 5000, // 请求超时时间
 });
 

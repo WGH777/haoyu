@@ -635,15 +635,13 @@ import { disputeApi } from '@/api/dispute'
 import { commentApi } from '@/api/comment'
 
 import { getProfile, type UserProfile } from '@/api/user'
+import { resolveApiAssetUrl } from '@/api/http'
 
 type ViewMode = 'guest' | 'worker' | 'publisher'
 
 // ========== 工具函数 ==========
 const getFullUrl = (path?: string | null): string => {
-  if (!path) return ''
-  if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('blob:')) return path
-  if (path.startsWith('/')) return path
-  return '/' + path
+  return resolveApiAssetUrl(path)
 }
 
 const formatTime = (iso: string) => {
