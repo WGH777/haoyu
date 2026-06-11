@@ -24,6 +24,7 @@
 import { computed } from 'vue'
 import { formatYumiCompactFromCent } from '@/utils/money'
 import type { Task } from '@/api/task'
+import { resolveApiAssetUrl } from '@/api/http'
 import coverDesign from '@/assets/haoyu-v027/task-covers/task-cover-design.svg'
 import coverDev from '@/assets/haoyu-v027/task-covers/task-cover-dev.svg'
 import coverVideo from '@/assets/haoyu-v027/task-covers/task-cover-video.svg'
@@ -80,7 +81,7 @@ const coverSrc = computed(() => {
   // If the task already has an image, use it
   if (props.task.image || (props.task as any).referenceImage) {
     const img = props.task.image || (props.task as any).referenceImage || ''
-    return img.startsWith('http') ? img : 'http://localhost:3000' + img
+    return resolveApiAssetUrl(img)
   }
   const c = props.task.category || 'OTHER'
   const map: Record<string, string> = {

@@ -9,7 +9,13 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // CORS：从环境变量读取允许域名（逗号分隔，默认开发环境）
-  const corsOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173')
+  const defaultCorsOrigins = [
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+    'https://www.haoyulv.com',
+    'https://haoyulv.com',
+  ];
+  const corsOrigins = (process.env.CORS_ORIGIN || defaultCorsOrigins.join(','))
     .split(',')
     .map(s => s.trim())
     .filter(Boolean);

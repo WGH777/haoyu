@@ -171,6 +171,7 @@ import { getTaskList, type Task } from '@/api/task'
 import { getProfile, type UserProfile } from '@/api/user'
 import { getWallet } from '@/api/wallet'
 import { notificationApi } from '@/api/notification'
+import { resolveApiAssetUrl } from '@/api/http'
 import cityLights from '@/assets/haoyu-v027/hero-city-lights.svg'
 import lanterns from '@/assets/haoyu-v027/hero-lanterns.svg'
 import wheatBand from '@/assets/haoyu-v027/wheat-glow-band.svg'
@@ -261,7 +262,7 @@ const timeAgo = (d?: string) => {
 const getCover = (t: any) => {
   if (t.image || (t as any).referenceImage) {
     const img = t.image || (t as any).referenceImage || ''
-    return img.startsWith('http') ? img : 'http://localhost:3000' + img
+    return resolveApiAssetUrl(img)
   }
   const c = t.category || 'OTHER'
   const map: Record<string, string> = { SKILL_SERVICE: coverDev, LIFE_ASSISTANCE: coverDesign, FAMILY_CARE: coverDesign, REMOTE_ASSISTANCE: coverDev, PUBLIC_WELFARE: coverDesign, OTHER: coverDesign }
