@@ -1,9 +1,30 @@
 <template>
   <div class="wallet-page">
     <section class="wallet-hero">
-      <span>Escrow Wallet</span>
-      <h2>我的钱包</h2>
-      <p>资金托管、收支流水与冻结金额集中展示，让每一笔协作资金都清晰可追溯。</p>
+      <div class="hero-copy">
+        <span>Escrow Wallet</span>
+        <h2>托管钱包</h2>
+        <p>资金托管、收支流水与冻结金额集中展示，让每一笔协作资金都清晰可追溯。</p>
+      </div>
+      <div class="hero-badge">
+        <strong>透明托管</strong>
+        <small>安全 / 留痕 / 可追溯</small>
+      </div>
+    </section>
+
+    <section class="trust-strip" aria-label="资金托管说明">
+      <div class="trust-item">
+        <strong>资金托管</strong>
+        <span>发布需求后预算进入平台托管，验收后再结算给服务者。</span>
+      </div>
+      <div class="trust-item">
+        <strong>流水留痕</strong>
+        <span>充值、冻结、解冻、收入与提现均保留账本记录。</span>
+      </div>
+      <div class="trust-item">
+        <strong>风险隔离</strong>
+        <span>冻结金额与可用余额分区展示，协作进度更清楚。</span>
+      </div>
     </section>
 
     <div class="balance-cards">
@@ -37,7 +58,7 @@
       <div v-else class="ledger-list">
         <div v-for="entry in ledger" :key="entry.id" class="ledger-item">
           <div class="ledger-left">
-            <span class="ledger-type" :class="entry.direction">
+            <span class="ledger-type" :class="[entry.direction, `ledger-type-${entry.type}`]">
               {{ typeLabel(entry.type) }}
             </span>
             <span class="ledger-remark">{{ entry.remark || '-' }}</span>
@@ -87,7 +108,7 @@ onMounted(async () => {
   position: relative;
   max-width: 1080px;
   margin: 0 auto;
-  padding: 28px;
+  padding: 30px;
   color: #fff2d6;
   overflow: hidden;
 }
@@ -99,19 +120,41 @@ onMounted(async () => {
   z-index: -1;
   border-radius: 28px;
   background:
-    radial-gradient(circle at 12% 16%, rgba(255, 214, 145, .16), transparent 26%),
-    radial-gradient(circle at 84% 20%, rgba(16, 185, 129, .14), transparent 26%),
-    linear-gradient(180deg, rgba(5, 10, 20, .76), rgba(5, 10, 20, .95));
+    radial-gradient(circle at 12% 10%, rgba(255, 214, 145, .18), transparent 28%),
+    radial-gradient(circle at 84% 14%, rgba(16, 185, 129, .12), transparent 26%),
+    linear-gradient(135deg, rgba(6, 10, 19, .82), rgba(8, 18, 32, .96) 48%, rgba(5, 8, 16, .98));
+}
+
+.wallet-page::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: .42;
+  background:
+    linear-gradient(115deg, transparent 0 42%, rgba(255, 214, 145, .08) 42% 43%, transparent 43% 100%),
+    radial-gradient(circle at 18% 86%, rgba(242, 179, 77, .12), transparent 22%);
 }
 
 .wallet-hero {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
   padding: 34px;
-  border: 1px solid rgba(255, 214, 145, .18);
-  border-radius: 24px;
+  border: 1px solid rgba(255, 214, 145, .24);
+  border-radius: 26px;
   background:
-    linear-gradient(120deg, rgba(8, 14, 28, .86), rgba(8, 23, 38, .66)),
-    radial-gradient(circle at 84% 20%, rgba(242, 179, 77, .18), transparent 28%);
-  box-shadow: 0 22px 54px rgba(0, 0, 0, .32), inset 0 1px 0 rgba(255,255,255,.06);
+    radial-gradient(circle at 82% 18%, rgba(255, 214, 145, .18), transparent 26%),
+    linear-gradient(120deg, rgba(8, 14, 28, .92), rgba(8, 23, 38, .74));
+  box-shadow:
+    0 22px 54px rgba(0, 0, 0, .36),
+    0 0 42px rgba(242, 179, 77, .10),
+    inset 0 1px 0 rgba(255, 255, 255, .08);
+}
+
+.hero-copy {
+  max-width: 640px;
 }
 
 .wallet-hero span,
@@ -126,14 +169,71 @@ onMounted(async () => {
 .wallet-hero h2 {
   margin: 8px 0 10px;
   color: #ffe8ae;
-  font-size: 34px;
+  font-size: 36px;
+  line-height: 1.12;
 }
 
 .wallet-hero p {
-  max-width: 620px;
   margin: 0;
   color: rgba(255, 232, 196, .66);
   line-height: 1.8;
+}
+
+.hero-badge {
+  align-self: center;
+  min-width: 176px;
+  padding: 18px;
+  border: 1px solid rgba(255, 214, 145, .18);
+  border-radius: 20px;
+  background: rgba(5, 10, 20, .46);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06);
+}
+
+.hero-badge strong,
+.hero-badge small {
+  display: block;
+}
+
+.hero-badge strong {
+  color: #ffe8ae;
+  font-size: 18px;
+  margin-bottom: 8px;
+}
+
+.hero-badge small {
+  color: rgba(183, 200, 220, .68);
+  font-size: 12px;
+}
+
+.trust-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin: 18px 0 22px;
+}
+
+.trust-item {
+  min-height: 112px;
+  padding: 18px;
+  border: 1px solid rgba(255, 214, 145, .14);
+  border-radius: 20px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .055), rgba(255, 255, 255, .022)),
+    rgba(5, 10, 20, .42);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05);
+}
+
+.trust-item strong {
+  display: block;
+  color: #ffe8ae;
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+.trust-item span {
+  color: rgba(255, 232, 196, .62);
+  font-size: 13px;
+  line-height: 1.7;
 }
 
 .balance-cards {
@@ -146,36 +246,49 @@ onMounted(async () => {
 .bal-card {
   min-height: 150px;
   padding: 22px;
-  border: 1px solid rgba(255, 214, 145, .16);
+  border: 1px solid rgba(255, 214, 145, .18);
   border-radius: 20px;
   color: #fff2d6;
-  background: linear-gradient(180deg, rgba(255,255,255,.065), rgba(255,255,255,.025));
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+  background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.026));
+  box-shadow:
+    0 16px 34px rgba(0, 0, 0, .22),
+    inset 0 1px 0 rgba(255,255,255,.06);
 }
 
-.bal-card.available { background: radial-gradient(circle at 90% 12%, rgba(255, 214, 145, .20), transparent 32%), rgba(255,255,255,.045); }
-.bal-card.frozen { background: radial-gradient(circle at 90% 12%, rgba(242, 179, 77, .20), transparent 32%), rgba(255,255,255,.045); }
-.bal-card.total { background: radial-gradient(circle at 90% 12%, rgba(45, 212, 191, .16), transparent 32%), rgba(255,255,255,.045); }
+.bal-card.available { background: radial-gradient(circle at 90% 12%, rgba(255, 214, 145, .22), transparent 32%), rgba(255,255,255,.045); }
+.bal-card.frozen { background: radial-gradient(circle at 90% 12%, rgba(242, 179, 77, .22), transparent 32%), rgba(255,255,255,.045); }
+.bal-card.total { background: radial-gradient(circle at 90% 12%, rgba(45, 212, 191, .18), transparent 32%), rgba(255,255,255,.045); }
 
 .bal-label { display: block; color: rgba(255,232,196,.66); font-size: 13px; margin-bottom: 10px; }
-.bal-amount { display: block; color: #ffe8ae; font-size: 30px; font-weight: 900; font-variant-numeric: tabular-nums; }
+.bal-amount { display: block; color: #ffe8ae; font-size: 32px; font-weight: 900; font-variant-numeric: tabular-nums; }
 .bal-hint { display: block; color: rgba(183, 200, 220, .58); font-size: 12px; margin-top: 12px; }
 
 .ledger-section {
   padding: 24px;
-  border: 1px solid rgba(255, 214, 145, .14);
-  border-radius: 22px;
-  background: rgba(4, 9, 17, .42);
+  border: 1px solid rgba(255, 214, 145, .18);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 95% 0%, rgba(255, 214, 145, .10), transparent 26%),
+    rgba(4, 9, 17, .56);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05);
 }
 
 .section-heading h3 { margin: 6px 0 18px; color: #ffe8ae; font-size: 24px; }
 .ledger-list { display: flex; flex-direction: column; gap: 8px; }
-.ledger-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border: 1px solid rgba(255, 214, 145, .12); border-radius: 14px; background: rgba(255,255,255,.035); transition: all .18s ease; }
+.ledger-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 16px; border: 1px solid rgba(255, 214, 145, .12); border-radius: 16px; background: rgba(255,255,255,.04); transition: all .18s ease; }
 .ledger-item:hover { border-color: rgba(255, 214, 145, .28); transform: translateY(-1px); }
 .ledger-left { display: flex; gap: 10px; align-items: center; }
 .ledger-type { font-size: 12px; font-weight: 800; padding: 3px 9px; border-radius: 999px; }
-.ledger-type.IN { background: rgba(45, 212, 191, .14); color: #8ff5df; }
-.ledger-type.OUT { background: rgba(207, 97, 74, .14); color: #ffc4b2; }
+.ledger-type.IN,
+.ledger-type-DEPOSIT { background: rgba(45, 212, 191, .14); color: #8ff5df; }
+.ledger-type.OUT,
+.ledger-type-RISK_RESERVE { background: rgba(207, 97, 74, .14); color: #ffc4b2; }
+.ledger-type-FREEZE { background: rgba(245, 158, 11, .16); color: #ffd58a; }
+.ledger-type-UNFREEZE,
+.ledger-type-SETTLEMENT { background: rgba(255, 214, 145, .16); color: #ffe8ae; }
+.ledger-type-WITHDRAW { background: rgba(148, 163, 184, .16); color: #cbd5e1; }
+.ledger-type-ADMIN_ADJUST,
+.ledger-type-PLATFORM_FEE { background: rgba(168, 85, 247, .14); color: #dec5ff; }
 .ledger-remark { font-size: 13px; color: rgba(255, 232, 196, .64); }
 .ledger-right { text-align: right; }
 .ledger-amount { font-size: 15px; font-weight: 800; display: block; font-variant-numeric: tabular-nums; }
@@ -185,13 +298,18 @@ onMounted(async () => {
 
 .wallet-empty {
   min-height: 260px;
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
   text-align: center;
   padding: 34px;
   border: 1px dashed rgba(255, 214, 145, .18);
   border-radius: 20px;
-  background: radial-gradient(circle at 50% 12%, rgba(255, 214, 145, .10), transparent 26%);
+  background:
+    radial-gradient(circle at 50% 12%, rgba(255, 214, 145, .12), transparent 26%),
+    rgba(255, 255, 255, .025);
 }
 
 .empty-mark {
@@ -212,7 +330,8 @@ onMounted(async () => {
 
 @media (max-width: 768px) {
   .wallet-page { padding: 14px; max-width: 100%; }
-  .wallet-hero { padding: 24px; }
+  .wallet-hero { padding: 24px; flex-direction: column; }
+  .trust-strip { grid-template-columns: 1fr; }
   .balance-cards { grid-template-columns: 1fr; }
   .ledger-item { flex-direction: column; align-items: stretch; gap: 6px; }
   .ledger-right { display: flex; justify-content: space-between; text-align: left; }
