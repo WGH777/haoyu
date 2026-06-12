@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="profile-page">
     <el-row :gutter="20" class="profile-layout">
       <!-- 左边：账号信息 + 编辑资料 -->
@@ -127,13 +127,28 @@
                   placeholder="请输入个人简介（可选）"
                 />
               </el-form-item>
+              <el-form-item label="预设头像">
+                <div class="avatar-preset-grid">
+                  <button
+                    v-for="item in avatarPresets"
+                    :key="item.label"
+                    type="button"
+                    class="avatar-preset"
+                    :class="{ active: profileForm.avatar === item.value }"
+                    @click="selectAvatarPreset(item.value)"
+                  >
+                    <img :src="item.value" :alt="item.label" />
+                    <span>{{ item.label }}</span>
+                  </button>
+                </div>
+              </el-form-item>
 
               <el-form-item label="头像URL" prop="avatar">
                 <el-input
                   v-model="profileForm.avatar"
                   maxlength="500"
                   show-word-limit
-                  placeholder="请输入头像 URL（可选，留空则清空）"
+                  placeholder="可粘贴图片 URL，或从上方选择预设头像"
                 />
               </el-form-item>
 
@@ -144,7 +159,11 @@
                     :src="profileForm.avatar"
                     fit="cover"
                     class="avatar-img"
-                  />
+                  >
+                    <template #error>
+                      <div class="avatar-fallback">H</div>
+                    </template>
+                  </el-image>
                   <span v-else>（无）</span>
                 </div>
               </el-form-item>
@@ -239,6 +258,23 @@ const profileForm = reactive({
   bio: '',
   avatar: '',
 })
+
+const avatarSvg = (bg: string, fg: string) => {
+  const b = bg.replace('#', '%23')
+  const f = fg.replace('#', '%23')
+  return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'%3E%3Crect width='80' height='80' rx='24' fill='${b}'/%3E%3Ccircle cx='40' cy='30' r='14' fill='${f}'/%3E%3Cpath d='M15 76c5-25 45-25 50 0' fill='${f}'/%3E%3C/svg%3E`
+}
+
+const avatarPresets = [
+  { label: '暖金', value: avatarSvg('#d18a2f', '#fff2d6') },
+  { label: '紫金', value: avatarSvg('#7c65d8', '#fff2d6') },
+  { label: '蓝灰', value: avatarSvg('#1c314f', '#dbeafe') },
+  { label: '青金', value: avatarSvg('#2f8f83', '#fef3c7') },
+]
+
+const selectAvatarPreset = (value: string) => {
+  profileForm.avatar = value
+}
 
 // 基础校验（不改变后端规则，仅做前端友好提示）
 const profileRules: FormRules<typeof profileForm> = {
@@ -615,6 +651,47 @@ onMounted(() => {
   text-align: left;
 }
 
+.avatar-preset-grid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.avatar-preset {
+  min-width: 0;
+  padding: 10px 8px;
+  border: 1px solid rgba(255, 214, 145, .16);
+  border-radius: 14px;
+  background: rgba(4, 9, 17, .42);
+  color: rgba(255, 232, 196, .72);
+  cursor: pointer;
+  transition: border-color .18s ease, background .18s ease, transform .18s ease;
+}
+
+.avatar-preset:hover,
+.avatar-preset.active {
+  border-color: rgba(255, 214, 145, .48);
+  background: rgba(242, 179, 77, .10);
+  color: #ffe8ae;
+  transform: translateY(-1px);
+}
+
+.avatar-preset img {
+  width: 48px;
+  height: 48px;
+  display: block;
+  margin: 0 auto 6px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.avatar-preset span {
+  display: block;
+  font-size: 12px;
+  text-align: center;
+}
+
 .avatar-row {
   display: flex;
   align-items: center;
@@ -740,6 +817,7 @@ onMounted(() => {
 
 /* 移动端全宽修复 */
 @media (max-width: 768px) {
+  .avatar-preset-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .profile-page {
     padding: 0 !important;
     max-width: 100vw;

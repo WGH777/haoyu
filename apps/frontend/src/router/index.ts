@@ -2,7 +2,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '@/views/HomeView.vue'
 import LandingHomeView from '@/views/LandingHomeView.vue'
-import DesktopLandingView from '@/views/DesktopLandingView.vue'
 import { getProfile } from '@/api/user'
 
 type Role = 'USER' | 'ADMIN' | 'SUPER_ADMIN'
@@ -40,7 +39,7 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
-      component: DesktopLandingView,
+      component: HomeView,
       meta: { public: true },
     },
     /**

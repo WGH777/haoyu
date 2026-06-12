@@ -1,24 +1,7 @@
 <template>
-  <div class="haoyu-page">
-    <DesktopLandingView
-      v-if="isHome"
-      class="desktop-landing-only"
-      :tasks="visibleTasks"
-      :loading="loading"
-      :current-user="currentUser"
-      :is-login="isLogin"
-      :unread-count="unreadCount"
-      :user-initial="userInitial"
-      @open-create="openCreateDialog"
-      @task-click="(task: Task) => router.push(`/task/${task.id}`)"
-      @route-to="(path: string) => router.push(path)"
-      @search="handleDesktopSearch"
-      @set-price-filter="priceFilter = $event"
-      @set-category-filter="categoryFilter = $event"
-      @refresh="fetchData"
-    />
-
-    <main class="desktop-frame" :class="{ 'legacy-mobile-shell': isHome }">
+  <div class="haoyu-page" :class="{ 'is-home-page': isHome }">
+    <div class="pc-home-layout" :class="{ 'is-home': isHome }">
+    <main class="desktop-frame">
       <header class="top-nav">
         <button class="brand" @click="router.push('/task')" aria-label="回到首页">
           <span class="brand-mark"><img :src="brandLogoSrc" alt="" /></span>
@@ -113,17 +96,26 @@
           <div class="tasks-head">
             <div class="tabs">
               <h2>精选任务</h2>
-              <button class="active">推荐</button>
-              <button @click="priceFilter = 'high'">高预算</button>
-              <button>最新发布</button>
+              <button :class="{ active: taskViewFilter === 'recommend' }" @click="setTaskView('recommend')">推荐</button>
+              <button :class="{ active: taskViewFilter === 'high' }" @click="setTaskView('high')">高预算</button>
+              <button :class="{ active: taskViewFilter === 'latest' }" @click="setTaskView('latest')">最新发布</button>
             </div>
             <div class="task-controls">
               <button v-for="cat in categories" :key="cat.value" :class="{ active: categoryFilter === cat.value }" @click="categoryFilter = cat.value">
                 {{ cat.label }}
               </button>
-              <button class="filter-btn" @click="fetchData">
-                <el-icon><Filter /></el-icon> 默认排序
-              </button>
+              <el-dropdown trigger="click" popper-class="haoyu-task-sort-popper" @command="setSortMode">
+                <button class="filter-btn">
+                  <el-icon><Filter /></el-icon>{{ sortModeLabel }}<el-icon><CaretBottom /></el-icon>
+                </button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item v-for="item in sortOptions" :key="item.value" :command="item.value">
+                      {{ item.label }}
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
             </div>
           </div>
 
@@ -160,6 +152,105 @@
       </section>
     </main>
 
+    <aside v-if="isHome" class="account-preview" aria-label="个人工作台">
+      <section class="account-panel">
+        <div class="account-panel__glow"></div>
+        <div class="account-panel__head">
+          <span class="account-brand"><img :src="brandLogoSrc" alt="" /></span>
+          <div>
+            <small>个人工作台</small>
+            <strong>浩煜协作中枢</strong>
+          </div>
+          <button class="account-bell" aria-label="通知" @click="router.push('/notifications')">
+            <el-icon><Bell /></el-icon>
+            <span v-if="unreadCount">{{ unreadCount }}</span>
+          </button>
+        </div>
+
+        <template v-if="isLogin && currentUser">
+          <div class="account-hero-card">
+            <el-avatar :size="62" :src="currentUser.avatar ? getFullUrl(currentUser.avatar) : defaultAvatarSrc">
+              {{ userInitial }}
+            </el-avatar>
+            <div class="account-identity">
+              <span>{{ accountRoleLabel }}</span>
+              <h3>{{ currentUser.nickname || '浩煜用户' }}</h3>
+              <p>{{ currentUser.email }}</p>
+            </div>
+          </div>
+
+          <div class="account-metrics">
+            <div>
+              <span>可用余额</span>
+              <strong>{{ accountBalanceText }}</strong>
+            </div>
+            <div>
+              <span>未读通知</span>
+              <strong>{{ unreadCount || 0 }}</strong>
+            </div>
+          </div>
+
+          <div class="account-info-list">
+            <div>
+              <span>账号状态</span>
+              <b>安全在线</b>
+            </div>
+            <div>
+              <span>加入时间</span>
+              <b>{{ accountCreatedText }}</b>
+            </div>
+            <div>
+              <span>个人简介</span>
+              <b>{{ currentUser.bio || '让每一次协作都有回响' }}</b>
+            </div>
+          </div>
+
+          <div class="account-actions">
+            <button class="account-action primary" @click="openCreateDialog">发布需求</button>
+            <button class="account-action" @click="handleCommand('profile')">个人资料</button>
+            <button class="account-action" @click="handleCommand('wallet')">钱包中心</button>
+            <button class="account-action" @click="router.push('/notifications')">通知中心</button>
+            <button v-if="canSeeUserManage" class="account-action" @click="handleCommand('admin')">管理后台</button>
+            <button class="account-action danger" @click="handleCommand('logout')">退出登录</button>
+          </div>
+        </template>
+
+        <template v-else>
+          <div class="account-guest-card">
+            <div class="guest-avatar"><el-icon><User /></el-icon></div>
+            <span>访客模式</span>
+            <h3>登录后查看个人工作台</h3>
+            <p>同步余额、通知、资料与发布入口，让你的需求和协作都在同一处流转。</p>
+          </div>
+
+          <div class="guest-actions">
+            <button class="account-action primary" @click="router.push('/login')">立即登录</button>
+            <button class="account-action" @click="router.push('/register')">免费注册</button>
+            <button class="account-action" @click="scrollToTasks">先逛任务</button>
+          </div>
+
+          <div class="account-trust-list">
+            <div>
+              <el-icon><Lock /></el-icon>
+              <span>资金托管</span>
+              <b>平台保障协作权益</b>
+            </div>
+            <div>
+              <el-icon><CircleCheck /></el-icon>
+              <span>验收结算</span>
+              <b>交付路径清晰可追溯</b>
+            </div>
+            <div>
+              <el-icon><Star /></el-icon>
+              <span>信用沉淀</span>
+              <b>好评与履约持续累积</b>
+            </div>
+          </div>
+        </template>
+      </section>
+    </aside>
+    </div>
+
     <nav class="mobile-bottom" aria-label="移动端导航">
       <button :class="{ active: isHome }" @click="router.push('/task')"><el-icon><House /></el-icon><span>首页</span></button>
       <button @click="router.push('/my-orders')"><el-icon><Tickets /></el-icon><span>任务市场</span></button>
@@ -180,7 +271,7 @@
       modal-class="haoyu-dialog-modal"
     >
       <template #header>
-        <div class="dialog-title">发布新的协作需求</div>
+        <div class="dialog-title"><strong>发布新的协作需求</strong><span>资金托管、协作交付、验收结算一步进入浩煜流程</span></div>
       </template>
       <el-form :model="createForm" label-position="top" class="publish-form">
         <el-form-item label="需求标题" required>
@@ -194,7 +285,7 @@
         </el-form-item>
         <el-form-item label="参考图片">
           <el-upload :auto-upload="false" :show-file-list="false" accept="image/*" :on-change="handleImageChange">
-            <el-button :loading="uploadingImg">{{ previewImageUrl ? '重新选择图片' : '添加参考图' }}</el-button>
+            <el-button class="upload-reference-btn" :loading="uploadingImg">{{ previewImageUrl ? '重新选择图片' : '添加参考图' }}</el-button>
           </el-upload>
           <div v-if="previewImageUrl" class="reference-preview">
             <img :src="previewImageUrl" alt="参考图预览" />
@@ -220,8 +311,8 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="showCreateDialog = false">取消</el-button>
-        <el-button type="primary" :loading="submitting" @click="submitTask">确认发布</el-button>
+        <el-button class="dialog-btn-ghost" @click="showCreateDialog = false">取消</el-button>
+        <el-button class="dialog-btn-primary" type="primary" :loading="submitting" @click="submitTask">确认发布</el-button>
       </template>
     </el-dialog>
   </div>
@@ -231,7 +322,6 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import DesktopLandingView from './DesktopLandingView.vue'
 import {
   ArrowRight,
   Bell,
@@ -276,6 +366,8 @@ const tasks = ref<Task[]>([])
 const searchKeyword = ref('')
 const priceFilter = ref('all')
 const categoryFilter = ref('all')
+const taskViewFilter = ref<'recommend' | 'high' | 'latest'>('recommend')
+const sortMode = ref<'default' | 'price_desc' | 'price_asc' | 'latest'>('default')
 const showCreateDialog = ref(false)
 const submitting = ref(false)
 const uploadingImg = ref(false)
@@ -304,12 +396,19 @@ const isLogin = computed(() => Boolean(localStorage.getItem('token')))
 const isHome = computed(() => route.path === '/' || route.path === '/task')
 const userInitial = computed(() => currentUser.value?.nickname?.[0] || currentUser.value?.email?.[0]?.toUpperCase() || '浩')
 const canSeeUserManage = computed(() => ['ADMIN', 'SUPER_ADMIN'].includes(currentUser.value?.role || ''))
+const accountRoleLabel = computed(() => ({
+  SUPER_ADMIN: '超级管理员',
+  ADMIN: '管理员',
+  USER: '认证用户',
+}[currentUser.value?.role || 'USER'] || '认证用户'))
+const accountBalanceText = computed(() => formatAccountMoney(walletBalance.value || currentUser.value?.wallet?.available || currentUser.value?.balance || 0))
+const accountCreatedText = computed(() => currentUser.value?.createdAt ? new Date(currentUser.value.createdAt).toLocaleDateString('zh-CN') : '待完善')
 
 const stats = computed(() => [
   { icon: User, value: '10万+', label: '注册用户' },
   { icon: Briefcase, value: '3万+', label: '完成任务' },
   { icon: Star, value: '98.6%', label: '好评率' },
-  { icon: WalletFilled, value: formatLargeMoney(walletBalance.value || 120000000), label: '托管资金(元)' },
+  { icon: WalletFilled, value: '1.2亿+', label: '托管资金(元)' },
   { icon: Lock, value: '平台资金托管', label: '安全 · 透明 · 可追溯' },
 ])
 
@@ -329,8 +428,17 @@ const categories = [
   { label: '生活协助', value: 'LIFE_ASSISTANCE' },
 ]
 
+const sortOptions = [
+  { label: '默认排序', value: 'default' },
+  { label: '预算从高到低', value: 'price_desc' },
+  { label: '预算从低到高', value: 'price_asc' },
+  { label: '最新发布', value: 'latest' },
+] as const
+
+const sortModeLabel = computed(() => sortOptions.find((item) => item.value === sortMode.value)?.label || '默认排序')
+
 const visibleTasks = computed(() => {
-  let list = tasks.value.length ? tasks.value : demoTasks
+  let list = [...(tasks.value.length ? tasks.value : demoTasks)]
   if (searchKeyword.value.trim()) {
     const kw = searchKeyword.value.trim().toLowerCase()
     list = list.filter((task) =>
@@ -340,8 +448,19 @@ const visibleTasks = computed(() => {
   if (categoryFilter.value !== 'all') {
     list = list.filter((task) => task.category === categoryFilter.value)
   }
-  if (priceFilter.value === 'high') {
+  if (taskViewFilter.value === 'high' || priceFilter.value === 'high') {
     list = list.filter((task) => task.price >= 5000000)
+  }
+  if (taskViewFilter.value === 'latest') {
+    list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+  } else if (sortMode.value === 'price_desc') {
+    list.sort((a, b) => b.price - a.price)
+  } else if (sortMode.value === 'price_asc') {
+    list.sort((a, b) => a.price - b.price)
+  } else if (sortMode.value === 'latest') {
+    list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+  } else {
+    list.sort((a, b) => Number(b.status === 'PENDING') - Number(a.status === 'PENDING') || b.price - a.price)
   }
   return list.slice(0, 6)
 })
@@ -377,6 +496,17 @@ function demoTask(
   }
 }
 
+const setTaskView = (view: 'recommend' | 'high' | 'latest') => {
+  taskViewFilter.value = view
+  priceFilter.value = view === 'high' ? 'high' : 'all'
+  if (view === 'latest') sortMode.value = 'latest'
+  if (view === 'recommend') sortMode.value = 'default'
+}
+
+const setSortMode = (mode: 'default' | 'price_desc' | 'price_asc' | 'latest') => {
+  sortMode.value = mode
+  if (mode === 'latest') taskViewFilter.value = 'latest'
+}
 const fetchData = async () => {
   loading.value = true
   try {
@@ -507,6 +637,11 @@ const formatMoney = (cent?: number | null) => {
   return `￥ ${yuan.toLocaleString('zh-CN')}`
 }
 
+const formatAccountMoney = (cent?: number | null) => {
+  const yuan = Math.round(Number(cent || 0) / 100)
+  return `￥ ${yuan.toLocaleString('zh-CN')}`
+}
+
 const formatLargeMoney = (cent: number) => {
   const yuan = cent / 100
   if (yuan >= 100000000) return `${(yuan / 100000000).toFixed(2)}亿+`
@@ -590,12 +725,22 @@ onMounted(() => {
   overflow-x: hidden;
 }
 
-.desktop-landing-only {
-  display: block;
+.haoyu-page.is-home-page {
+  padding: 12px;
 }
 
-.desktop-frame.legacy-mobile-shell {
-  display: none;
+.pc-home-layout {
+  position: relative;
+  z-index: 1;
+}
+
+.pc-home-layout.is-home {
+  max-width: 1720px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 252px;
+  align-items: start;
+  gap: 14px;
 }
 
 .haoyu-page::before {
@@ -623,13 +768,302 @@ onMounted(() => {
   box-shadow: 0 28px 70px rgba(0, 0, 0, .45), 0 0 40px rgba(196, 125, 43, .18);
 }
 
+.pc-home-layout.is-home .desktop-frame {
+  max-width: none;
+  margin: 0;
+}
+
+.account-preview {
+  position: sticky;
+  top: 22px;
+  z-index: 1;
+}
+
+.account-panel {
+  position: relative;
+  min-height: calc(100vh - 56px);
+  max-height: 940px;
+  overflow: hidden;
+  border: 2px solid rgba(194, 125, 45, .58);
+  border-radius: 30px;
+  padding: 18px 14px 16px;
+  color: #fff2d6;
+  background:
+    linear-gradient(180deg, rgba(7, 13, 26, .9), rgba(5, 10, 20, .98)),
+    radial-gradient(circle at 82% 16%, rgba(245, 158, 11, .24), transparent 30%),
+    radial-gradient(circle at 12% 72%, rgba(93, 129, 166, .18), transparent 34%),
+    #060b15;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, .48), 0 0 34px rgba(196, 125, 43, .22);
+}
+
+.account-panel__glow {
+  position: absolute;
+  inset: 1px;
+  border-radius: 28px;
+  pointer-events: none;
+  background: linear-gradient(135deg, rgba(255, 232, 174, .12), transparent 28%, rgba(255, 255, 255, .04));
+  mask-image: linear-gradient(#000, transparent 62%);
+}
+
+.account-panel__head,
+.account-hero-card,
+.account-metrics,
+.account-info-list div,
+.account-trust-list div {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.account-panel__head {
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.account-brand,
+.account-bell,
+.guest-avatar {
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 214, 145, .18);
+  background: rgba(255, 214, 145, .08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08), 0 0 18px rgba(238, 164, 61, .14);
+}
+
+.account-brand {
+  width: 34px;
+  height: 34px;
+  border-radius: 13px;
+}
+
+.account-brand img {
+  width: 22px;
+  height: 22px;
+}
+
+.account-panel__head div {
+  flex: 1;
+  min-width: 0;
+}
+
+.account-panel__head small,
+.account-identity span,
+.account-metrics span,
+.account-info-list span,
+.account-trust-list span {
+  display: block;
+  color: rgba(183, 200, 220, .72);
+  font-size: 12px;
+}
+
+.account-panel__head strong {
+  display: block;
+  margin-top: 2px;
+  color: #ffe8ae;
+  font-size: 15px;
+}
+
+.account-bell {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  color: #ffe8ae;
+  cursor: pointer;
+}
+
+.account-bell span {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  color: #fff;
+  background: #ef4444;
+  font-size: 10px;
+  line-height: 16px;
+}
+
+.account-hero-card,
+.account-guest-card,
+.account-metrics,
+.account-info-list,
+.account-trust-list {
+  border: 1px solid rgba(255, 214, 145, .15);
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .07), rgba(255, 255, 255, .03));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .07);
+}
+
+.account-hero-card {
+  gap: 12px;
+  padding: 14px;
+}
+
+.account-hero-card .el-avatar {
+  flex: 0 0 auto;
+  border: 2px solid rgba(255, 214, 145, .32);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, .28), 0 0 24px rgba(242, 179, 77, .16);
+}
+
+.account-identity {
+  min-width: 0;
+}
+
+.account-identity span,
+.account-guest-card span {
+  width: fit-content;
+  padding: 3px 8px;
+  border-radius: 999px;
+  color: #2a1a05;
+  background: linear-gradient(135deg, #ffe8ae, #d99b43);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.account-identity h3,
+.account-guest-card h3 {
+  margin: 8px 0 4px;
+  color: #fff7dd;
+  font-size: 19px;
+  line-height: 1.2;
+}
+
+.account-identity p,
+.account-guest-card p {
+  margin: 0;
+  color: rgba(255, 232, 196, .66);
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.account-metrics {
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 13px;
+}
+
+.account-metrics div {
+  flex: 1;
+  min-width: 0;
+}
+
+.account-metrics strong {
+  display: block;
+  margin-top: 5px;
+  color: #ffd073;
+  font-size: 17px;
+}
+
+.account-info-list,
+.account-trust-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 13px;
+}
+
+.account-info-list div,
+.account-trust-list div {
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.account-info-list b,
+.account-trust-list b {
+  min-width: 0;
+  color: rgba(255, 247, 221, .9);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.account-actions,
+.guest-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.account-action {
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 214, 145, .18);
+  border-radius: 999px;
+  color: #fff2d6;
+  background: rgba(255, 255, 255, .06);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06);
+  cursor: pointer;
+  transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+
+.account-action:hover {
+  border-color: rgba(255, 214, 145, .42);
+  box-shadow: 0 0 20px rgba(242, 179, 77, .16), inset 0 1px 0 rgba(255, 255, 255, .09);
+  transform: translateY(-1px);
+}
+
+.account-action.primary {
+  grid-column: 1 / -1;
+  color: #2a1a05;
+  font-weight: 800;
+  background: linear-gradient(135deg, #ffe8ae, #f2b34d);
+  box-shadow: 0 12px 28px rgba(242, 179, 77, .26);
+}
+
+.account-action.danger {
+  color: #ffd7c2;
+  border-color: rgba(207, 97, 74, .32);
+}
+
+.account-guest-card {
+  padding: 18px 14px;
+  text-align: center;
+}
+
+.guest-avatar {
+  width: 62px;
+  height: 62px;
+  margin: 0 auto 12px;
+  border-radius: 22px;
+  color: #ffe8ae;
+  font-size: 28px;
+}
+
+.account-guest-card span {
+  margin: 0 auto;
+}
+
+.account-trust-list div {
+  justify-content: flex-start;
+  align-items: flex-start;
+}
+
+.account-trust-list .el-icon {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: #ffd073;
+}
+
+.account-trust-list b {
+  flex: 1;
+  text-align: left;
+}
 .top-nav {
   height: 74px;
-  padding: 0 34px;
+  padding: 0 24px;
   display: grid;
-  grid-template-columns: 250px 1fr auto;
+  grid-template-columns: 205px 1fr auto;
   align-items: center;
-  gap: 24px;
+  gap: 14px;
 }
 
 button {
@@ -653,7 +1087,7 @@ button {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  font-size: 19px;
+  font-size: 18px;
   font-weight: 800;
   color: #fff4dd;
 }
@@ -679,13 +1113,14 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 28px;
+  gap: 18px;
+  white-space: nowrap;
 }
 
 .nav-links a,
 .nav-links button {
   color: rgba(255, 232, 192, .64);
-  font-size: 14px;
+  font-size: 13px;
   text-decoration: none;
   padding: 9px 0;
 }
@@ -703,11 +1138,11 @@ button {
 .nav-tools {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 9px;
 }
 
 .search-pill {
-  width: 228px;
+  width: 190px;
   height: 40px;
   border-radius: 20px;
   background: rgba(255, 255, 255, .055);
@@ -797,6 +1232,14 @@ button {
   letter-spacing: 0;
   color: #ffe8bd;
   text-shadow: 0 8px 30px rgba(0, 0, 0, .62);
+}
+
+.pc-home-layout.is-home .hero-copy {
+  max-width: 880px;
+}
+
+.pc-home-layout.is-home .hero h1 {
+  font-size: clamp(40px, 3.45vw, 58px);
 }
 
 .hero p {
@@ -1034,6 +1477,32 @@ button {
   gap: 8px;
 }
 
+
+:global(.haoyu-task-sort-popper.el-popper) {
+  border: 1px solid rgba(255, 214, 145, .22) !important;
+  border-radius: 14px !important;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(242, 179, 77, .16), transparent 30%),
+    rgba(7, 13, 25, .97) !important;
+  box-shadow: 0 18px 42px rgba(0, 0, 0, .42), 0 0 26px rgba(242, 179, 77, .10) !important;
+  overflow: hidden;
+}
+
+:global(.haoyu-task-sort-popper .el-dropdown-menu) {
+  background: transparent !important;
+  border: 0 !important;
+  padding: 6px !important;
+}
+
+:global(.haoyu-task-sort-popper .el-dropdown-menu__item) {
+  color: rgba(255, 232, 196, .82) !important;
+  border-radius: 10px;
+}
+
+:global(.haoyu-task-sort-popper .el-dropdown-menu__item:hover) {
+  color: #ffd16e !important;
+  background: rgba(242, 179, 77, .14) !important;
+}
 .task-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -1204,13 +1673,16 @@ button {
     linear-gradient(180deg, rgba(255, 232, 174, .075), transparent 22%),
     radial-gradient(circle at 90% 8%, rgba(239, 163, 60, .20), transparent 28%),
     radial-gradient(circle at 8% 100%, rgba(124, 101, 216, .12), transparent 32%),
-    rgba(8, 14, 28, .94);
+    linear-gradient(180deg, rgba(7, 12, 24, .90), rgba(5, 10, 20, .96)),
+    var(--dialog-hero);
   border: 1px solid rgba(255, 214, 145, .22);
   box-shadow:
     0 34px 96px rgba(0, 0, 0, .56),
     0 0 58px rgba(196, 125, 43, .18),
     0 0 0 1px rgba(255, 255, 255, .045) inset;
   backdrop-filter: blur(22px);
+  background-size: cover;
+  background-position: center;
   overflow: hidden;
 }
 
@@ -1482,13 +1954,284 @@ button {
   border-color: rgba(255, 214, 145, .22) !important;
 }
 
+
+
+:deep(.haoyu-dialog .el-input__count-inner),
+:deep(.haoyu-dialog .el-textarea .el-input__count-inner) {
+  color: rgba(255, 232, 196, .58) !important;
+  background: transparent !important;
+}
+
+:deep(.haoyu-dialog .el-button.upload-reference-btn),
+:deep(.haoyu-dialog .el-button.dialog-btn-ghost),
+:deep(.haoyu-dialog .el-button.dialog-btn-primary) {
+  border-radius: 999px !important;
+}
+
+:deep(.haoyu-dialog .el-select__selected-item),
+:deep(.haoyu-dialog .el-select__placeholder) {
+  color: #fff2d6 !important;
+}
+/* Create task dialog: final warm-gold glass polish */
+:deep(.haoyu-dialog .el-dialog) {
+  width: min(560px, calc(100vw - 32px));
+  overflow: hidden;
+}
+
+:deep(.haoyu-dialog .el-dialog__header) {
+  padding: 28px 32px 15px;
+  background:
+    linear-gradient(90deg, rgba(255, 232, 174, .075), transparent 72%),
+    rgba(255, 255, 255, .015);
+}
+
+:deep(.haoyu-dialog .el-dialog__body) {
+  padding: 20px 32px 10px;
+}
+
+:deep(.haoyu-dialog .el-dialog__footer) {
+  padding: 16px 32px 28px;
+  background: linear-gradient(180deg, transparent, rgba(0, 0, 0, .16));
+}
+
+.dialog-title {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.dialog-title strong {
+  font-size: 21px;
+  line-height: 1.2;
+  background: linear-gradient(135deg, #fff2c7, #f2b34d 66%, #b98cff);
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+.dialog-title span {
+  color: rgba(183, 200, 220, .66);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.publish-form {
+  display: grid;
+  gap: 2px;
+}
+
+:deep(.haoyu-dialog .el-form-item) {
+  position: relative;
+  margin-bottom: 18px;
+  padding: 12px;
+  border: 1px solid rgba(255, 214, 145, .105);
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .035), rgba(255, 255, 255, .014)),
+    rgba(3, 8, 17, .22);
+}
+
+:deep(.haoyu-dialog .el-form-item:hover) {
+  border-color: rgba(255, 214, 145, .20);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .035), 0 0 22px rgba(242, 179, 77, .045);
+}
+
+:deep(.haoyu-dialog .el-form-item__label) {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 18px;
+  padding: 0;
+  color: #f7dca5;
+  text-shadow: 0 0 14px rgba(242, 179, 77, .12);
+}
+
+:deep(.haoyu-dialog .el-form-item.is-required .el-form-item__label::before) {
+  color: #f07d63;
+}
+
+:deep(.haoyu-dialog .el-input__wrapper),
+:deep(.haoyu-dialog .el-select__wrapper),
+:deep(.haoyu-dialog .el-textarea__inner),
+:deep(.haoyu-dialog .el-input-number .el-input__wrapper) {
+  min-height: 40px;
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .055), rgba(255, 255, 255, .018)),
+    rgba(3, 8, 17, .86) !important;
+  border: 1px solid rgba(255, 214, 145, .18);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .045), 0 10px 24px rgba(0, 0, 0, .16) !important;
+}
+
+:deep(.haoyu-dialog .el-input__wrapper:hover),
+:deep(.haoyu-dialog .el-select__wrapper:hover),
+:deep(.haoyu-dialog .el-textarea__inner:hover),
+:deep(.haoyu-dialog .el-input-number:hover .el-input__wrapper) {
+  border-color: rgba(255, 214, 145, .36);
+  background:
+    linear-gradient(180deg, rgba(255, 232, 174, .075), rgba(255, 255, 255, .02)),
+    rgba(5, 12, 24, .92) !important;
+  box-shadow: 0 0 0 1px rgba(243, 180, 78, .18), 0 0 24px rgba(243, 180, 78, .08) !important;
+}
+
+:deep(.haoyu-dialog .el-input__wrapper.is-focus),
+:deep(.haoyu-dialog .el-select__wrapper.is-focused),
+:deep(.haoyu-dialog .el-textarea__inner:focus),
+:deep(.haoyu-dialog .el-input-number .el-input__wrapper.is-focus) {
+  border-color: rgba(255, 216, 139, .62);
+  box-shadow: 0 0 0 1px rgba(255, 216, 139, .32), 0 0 0 4px rgba(243, 180, 78, .10), 0 0 30px rgba(243, 180, 78, .12) !important;
+}
+
+:deep(.haoyu-dialog .el-input__inner),
+:deep(.haoyu-dialog .el-select__selected-item),
+:deep(.haoyu-dialog .el-select__placeholder),
+:deep(.haoyu-dialog .el-input-number .el-input__inner),
+:deep(.haoyu-dialog .el-textarea__inner) {
+  color: #fff2d6 !important;
+  font-weight: 650;
+}
+
+:deep(.haoyu-dialog .el-input__inner::placeholder),
+:deep(.haoyu-dialog .el-textarea__inner::placeholder) {
+  color: rgba(166, 183, 207, .58) !important;
+  font-weight: 500;
+}
+
+:deep(.haoyu-dialog .el-input .el-input__count),
+:deep(.haoyu-dialog .el-textarea .el-input__count) {
+  right: 10px;
+  border-radius: 999px;
+  padding: 1px 7px;
+  color: rgba(255, 232, 196, .56) !important;
+  background: rgba(4, 9, 17, .78) !important;
+  box-shadow: 0 0 0 1px rgba(255, 214, 145, .12) inset;
+}
+
+:deep(.haoyu-dialog .el-select__caret) {
+  color: #ffd073 !important;
+}
+
+:deep(.haoyu-dialog .el-input-number) {
+  border: 0;
+  background: transparent !important;
+}
+
+:deep(.haoyu-dialog .el-input-number__decrease),
+:deep(.haoyu-dialog .el-input-number__increase) {
+  top: 1px;
+  bottom: 1px;
+  width: 44px;
+  color: #ffe8ae !important;
+  background:
+    linear-gradient(180deg, rgba(255, 232, 174, .09), rgba(255, 255, 255, .02)),
+    rgba(3, 8, 17, .92) !important;
+  border-color: rgba(255, 214, 145, .16) !important;
+}
+
+:deep(.haoyu-dialog .el-input-number__decrease) {
+  left: 1px;
+  border-radius: 13px 0 0 13px;
+}
+
+:deep(.haoyu-dialog .el-input-number__increase) {
+  right: 1px;
+  border-radius: 0 13px 13px 0;
+}
+
+:deep(.haoyu-dialog .el-input-number__decrease:hover),
+:deep(.haoyu-dialog .el-input-number__increase:hover) {
+  color: #2a1a05 !important;
+  background: linear-gradient(135deg, #ffe8ae, #f2b34d) !important;
+}
+
+:deep(.haoyu-dialog .el-radio-group) {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+:deep(.haoyu-dialog .el-radio) {
+  height: 40px;
+  margin: 0;
+  justify-content: center;
+  border: 1px solid rgba(255, 214, 145, .16);
+  border-radius: 999px;
+  background: rgba(3, 8, 17, .58);
+  transition: border-color .18s ease, background .18s ease, box-shadow .18s ease;
+}
+
+:deep(.haoyu-dialog .el-radio:hover) {
+  border-color: rgba(255, 214, 145, .36);
+  background: rgba(242, 179, 77, .08);
+}
+
+:deep(.haoyu-dialog .el-radio__input.is-checked + .el-radio__label) {
+  color: #ffe8ae !important;
+}
+
+:deep(.haoyu-dialog .el-radio:has(.el-radio__input.is-checked)) {
+  border-color: rgba(255, 214, 145, .48);
+  background: linear-gradient(135deg, rgba(255, 232, 174, .18), rgba(124, 101, 216, .10));
+  box-shadow: 0 0 24px rgba(242, 179, 77, .11);
+}
+
+:deep(.haoyu-dialog .upload-reference-btn),
+:deep(.haoyu-dialog .dialog-btn-ghost),
+:deep(.haoyu-dialog .dialog-btn-primary) {
+  height: 42px;
+  border-radius: 999px;
+  letter-spacing: 0;
+}
+
+:deep(.haoyu-dialog .upload-reference-btn) {
+  padding: 0 18px;
+  border-color: rgba(255, 214, 145, .34) !important;
+  color: #ffe8ae !important;
+  background:
+    linear-gradient(180deg, rgba(255, 232, 174, .11), rgba(255, 255, 255, .025)),
+    rgba(3, 8, 17, .74) !important;
+}
+
+:deep(.haoyu-dialog .dialog-btn-ghost) {
+  min-width: 104px;
+  color: rgba(255, 232, 196, .86) !important;
+  background: rgba(3, 8, 17, .70) !important;
+  border-color: rgba(255, 214, 145, .24) !important;
+}
+
+:deep(.haoyu-dialog .dialog-btn-primary) {
+  min-width: 128px;
+  border: 0 !important;
+  color: #261604 !important;
+  background: linear-gradient(135deg, #fff0bd, #f2b34d 62%, #c98c35) !important;
+  box-shadow: 0 16px 34px rgba(242, 179, 77, .30), inset 0 1px 0 rgba(255, 255, 255, .42) !important;
+}
+
+:deep(.haoyu-dialog .dialog-btn-primary:hover) {
+  background: linear-gradient(135deg, #fff5cf, #f6bf5d 58%, #9b72e7) !important;
+}
+
+:global(.haoyu-select-popper.el-popper),
+:global(.haoyu-select-popper .el-select-dropdown),
+:global(.haoyu-select-popper .el-scrollbar),
+:global(.haoyu-select-popper .el-select-dropdown__wrap),
+:global(.haoyu-select-popper .el-select-dropdown__list) {
+  background: rgba(7, 13, 25, .98) !important;
+}
+
+:global(.haoyu-select-popper .el-select-dropdown__item) {
+  color: rgba(255, 232, 196, .82) !important;
+}
+
 @media (max-width: 1180px) {
-  .desktop-landing-only {
-    display: none;
+  .pc-home-layout,
+  .pc-home-layout.is-home {
+    display: block;
+    max-width: none;
   }
 
-  .desktop-frame.legacy-mobile-shell {
-    display: block;
+  .account-preview {
+    display: none;
   }
 
   .haoyu-page {
@@ -1728,3 +2471,4 @@ button {
   }
 }
 </style>
+
