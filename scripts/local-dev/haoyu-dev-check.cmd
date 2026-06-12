@@ -2,6 +2,11 @@
 setlocal EnableExtensions
 
 set "FAIL=0"
+set "SHOULD_STOP=0"
+if /I "%~1"=="/stop" set "SHOULD_STOP=1"
+if /I "%~1"=="--stop" set "SHOULD_STOP=1"
+
+set "SCRIPT_DIR=%~dp0"
 set "BACKEND_PORT=3000"
 set "FRONTEND_PORT=5174"
 set "BACKEND_URL=http://127.0.0.1:%BACKEND_PORT%/api"
@@ -20,11 +25,19 @@ call :check_cors "http://localhost:%FRONTEND_PORT%" "Local CORS localhost"
 echo.
 if "%FAIL%"=="0" (
   echo [OK] HaoYu local development checks passed.
+  if "%SHOULD_STOP%"=="1" call :stop_services
   exit /b 0
 )
 
 echo [ERROR] One or more HaoYu local development checks failed.
+if "%SHOULD_STOP%"=="1" call :stop_services
 exit /b 1
+
+:stop_services
+echo.
+echo Stopping HaoYu local development services after check...
+powershell -NoProfile -ExecutionPolicy Bypass -File "%SCRIPT_DIR%haoyu-dev-cleanup.ps1"
+exit /b 0
 
 :check_port
 set "PORT=%~1"

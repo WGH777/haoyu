@@ -1,6 +1,6 @@
 ﻿$ErrorActionPreference = 'SilentlyContinue'
 $ports = @(3000, 5173, 5174)
-$titlePatterns = @('HaoYu Backend :3000*', 'HaoYu Frontend :5173*', 'HaoYu Frontend :5174*')
+$titlePatterns = @('*HaoYu Backend :3000*', '*HaoYu Frontend :5173*', '*HaoYu Frontend :5174*')
 
 foreach ($pattern in $titlePatterns) {
   Get-Process | Where-Object { $_.MainWindowTitle -like $pattern } | ForEach-Object {
