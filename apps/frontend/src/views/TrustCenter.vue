@@ -2,9 +2,16 @@
   <div class="trust-page">
     <section class="trust-hero">
       <div class="trust-orbit"></div>
-      <span class="eyebrow">HaoYu Trust Engine</span>
-      <h1>浩煜信任引擎</h1>
-      <p>资金托管、过程留痕、信用沉淀与争议仲裁共同构成协作保障，让每一笔任务都有路径、每一次交付都有回响。</p>
+      <div class="hero-copy">
+        <span class="eyebrow">HaoYu Trust Engine</span>
+        <h1>浩煜信任引擎</h1>
+        <p>资金托管、过程留痕、信用沉淀与争议仲裁共同构成协作保障，让每一笔任务都有路径、每一次交付都有回响。</p>
+      </div>
+      <aside class="trust-score-card" aria-label="信任画像示例">
+        <span>信用画像</span>
+        <strong>96</strong>
+        <p>完成率 98.6% · 好评率 99.1%</p>
+      </aside>
       <div class="trust-metrics">
         <div><strong>6</strong><span>保障机制</span></div>
         <div><strong>100%</strong><span>流程留痕</span></div>
@@ -18,6 +25,34 @@
         <h3>{{ item.title }}</h3>
         <p>{{ item.desc }}</p>
       </article>
+    </section>
+
+    <section class="arbitration-section">
+      <div class="section-heading">
+        <span>Dispute Governance</span>
+        <h2>争议仲裁流程</h2>
+      </div>
+      <div class="arbitration-grid">
+        <article class="evidence-card">
+          <strong>证据材料</strong>
+          <p>聊天记录、交付文件、验收说明与资金流水共同构成核验依据。</p>
+          <div class="evidence-tags">
+            <span>沟通记录</span>
+            <span>交付文件</span>
+            <span>验收说明</span>
+            <span>资金流水</span>
+          </div>
+        </article>
+        <div class="dispute-steps">
+          <div v-for="step in disputeSteps" :key="step.title" class="dispute-step">
+            <span>{{ step.no }}</span>
+            <div>
+              <strong>{{ step.title }}</strong>
+              <p>{{ step.desc }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
     </section>
 
     <section class="rules-section">
@@ -46,12 +81,19 @@
 
 <script setup lang="ts">
 const features = [
-  { icon: '¥', title: '资金托管', desc: '发布需求时资金进入平台托管，验收通过后再结算给服务者。' },
-  { icon: '✓', title: '过程留痕', desc: '从接单、协作、提交到验收，每一步都有记录和通知。' },
-  { icon: '★', title: '信用沉淀', desc: '交易评价、完成率与履约表现共同构成平台信用资产。' },
-  { icon: '◎', title: '风控审计', desc: '异常交易与可疑行为会被标记，并进入人工复核流程。' },
-  { icon: '⚖', title: '争议协调', desc: '双方提交证据，平台依据记录进行公正处理。' },
-  { icon: '⌁', title: '隐私保护', desc: '联系信息按交易阶段最小化展示，降低不必要暴露。' },
+  { icon: '托', title: '资金托管', desc: '发布需求时资金进入平台托管，验收通过后再结算给服务者。' },
+  { icon: '迹', title: '过程留痕', desc: '从接单、协作、提交到验收，每一步都有记录和通知。' },
+  { icon: '信', title: '信用沉淀', desc: '交易评价、完成率与履约表现共同构成平台信用资产。' },
+  { icon: '审', title: '风控审计', desc: '异常交易与可疑行为会被标记，并进入人工复核流程。' },
+  { icon: '裁', title: '争议协调', desc: '双方提交证据，平台依据记录进行公正处理。' },
+  { icon: '隐', title: '隐私保护', desc: '联系信息按交易阶段最小化展示，降低不必要暴露。' },
+]
+
+const disputeSteps = [
+  { no: '01', title: '提交申请', desc: '交易双方在订单内提交争议原因与证据材料。' },
+  { no: '02', title: '证据核验', desc: '平台核验聊天记录、交付文件、验收说明与资金流水。' },
+  { no: '03', title: '平台处理', desc: '依据规则给出协调意见，必要时进入人工复核。' },
+  { no: '04', title: '结果通知', desc: '处理结果同步双方，并写入审计与信用记录。' },
 ]
 
 const rules = [
@@ -66,9 +108,9 @@ const rules = [
 <style scoped>
 .trust-page {
   position: relative;
-  max-width: 1120px;
+  max-width: 1160px;
   margin: 0 auto;
-  padding: 28px;
+  padding: 30px;
   color: #fff2d6;
   overflow: hidden;
 }
@@ -80,29 +122,47 @@ const rules = [
   z-index: -1;
   border-radius: 28px;
   background:
-    radial-gradient(circle at 20% 12%, rgba(255, 214, 145, .16), transparent 24%),
-    radial-gradient(circle at 86% 10%, rgba(242, 179, 77, .14), transparent 28%),
-    radial-gradient(circle at 50% 86%, rgba(92, 124, 166, .14), transparent 30%),
-    linear-gradient(180deg, rgba(5, 10, 20, .76), rgba(5, 10, 20, .94));
+    radial-gradient(circle at 18% 10%, rgba(255, 214, 145, .18), transparent 26%),
+    radial-gradient(circle at 86% 12%, rgba(242, 179, 77, .13), transparent 28%),
+    radial-gradient(circle at 50% 88%, rgba(92, 124, 166, .12), transparent 32%),
+    linear-gradient(135deg, rgba(6, 10, 19, .84), rgba(8, 18, 32, .96) 50%, rgba(5, 8, 16, .98));
+}
+
+.trust-page::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: .40;
+  background:
+    linear-gradient(112deg, transparent 0 40%, rgba(255, 214, 145, .08) 40% 41%, transparent 41% 100%),
+    radial-gradient(circle at 20% 86%, rgba(242, 179, 77, .12), transparent 24%);
 }
 
 .trust-hero {
   position: relative;
-  min-height: 300px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: 24px;
+  min-height: 320px;
   padding: 54px 42px;
-  border: 1px solid rgba(255, 214, 145, .18);
-  border-radius: 24px;
+  border: 1px solid rgba(255, 214, 145, .24);
+  border-radius: 26px;
   background:
-    linear-gradient(120deg, rgba(5, 10, 20, .86), rgba(9, 21, 39, .62)),
-    radial-gradient(circle at 82% 30%, rgba(255, 184, 86, .20), transparent 26%);
-  box-shadow: 0 24px 60px rgba(0, 0, 0, .34), inset 0 1px 0 rgba(255, 255, 255, .06);
+    radial-gradient(circle at 82% 30%, rgba(255, 184, 86, .18), transparent 28%),
+    linear-gradient(120deg, rgba(5, 10, 20, .92), rgba(9, 21, 39, .70));
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, .36),
+    0 0 42px rgba(242, 179, 77, .10),
+    inset 0 1px 0 rgba(255, 255, 255, .08);
   overflow: hidden;
 }
 
 .trust-orbit {
   position: absolute;
-  right: 44px;
-  top: 38px;
+  right: 68px;
+  top: 34px;
   width: 210px;
   height: 210px;
   border-radius: 50%;
@@ -120,6 +180,11 @@ const rules = [
 
 .trust-orbit::before { inset: 34px; }
 .trust-orbit::after { inset: 72px; background: rgba(255, 214, 145, .10); }
+
+.hero-copy {
+  position: relative;
+  z-index: 1;
+}
 
 .eyebrow,
 .section-heading span {
@@ -146,18 +211,61 @@ const rules = [
   line-height: 1.8;
 }
 
+.trust-score-card {
+  position: relative;
+  z-index: 1;
+  align-self: center;
+  padding: 22px;
+  border: 1px solid rgba(255, 214, 145, .20);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 82% 12%, rgba(242, 179, 77, .18), transparent 34%),
+    rgba(5, 10, 20, .54);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06);
+}
+
+.trust-score-card span,
+.trust-score-card strong,
+.trust-score-card p {
+  display: block;
+}
+
+.trust-score-card span {
+  color: rgba(255, 232, 196, .68);
+  font-size: 13px;
+}
+
+.trust-score-card strong {
+  margin: 10px 0 8px;
+  color: #ffe8ae;
+  font-size: 56px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.trust-score-card p {
+  margin: 0;
+  color: rgba(183, 200, 220, .68);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
 .trust-metrics {
-  display: flex;
+  grid-column: 1 / -1;
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 150px));
   gap: 12px;
-  margin-top: 34px;
+  margin-top: 8px;
 }
 
 .trust-metrics div {
-  min-width: 118px;
   padding: 12px 16px;
   border: 1px solid rgba(255, 214, 145, .16);
-  border-radius: 14px;
-  background: rgba(255, 255, 255, .045);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, .05);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05);
 }
 
 .trust-metrics strong {
@@ -168,7 +276,9 @@ const rules = [
 
 .trust-metrics span,
 .feature-card p,
-.tips p {
+.tips p,
+.dispute-step p,
+.evidence-card p {
   color: rgba(255, 232, 196, .62);
 }
 
@@ -182,10 +292,21 @@ const rules = [
 .feature-card {
   min-height: 190px;
   padding: 24px;
-  border: 1px solid rgba(255, 214, 145, .15);
-  border-radius: 18px;
-  background: linear-gradient(180deg, rgba(255,255,255,.065), rgba(255,255,255,.025));
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+  border: 1px solid rgba(255, 214, 145, .16);
+  border-radius: 20px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.065), rgba(255,255,255,.026)),
+    rgba(5, 10, 20, .36);
+  box-shadow:
+    0 16px 34px rgba(0, 0, 0, .20),
+    inset 0 1px 0 rgba(255,255,255,.06);
+  transition: border-color .18s ease, transform .18s ease, box-shadow .18s ease;
+}
+
+.feature-card:hover {
+  border-color: rgba(255, 214, 145, .30);
+  transform: translateY(-1px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, .24), inset 0 1px 0 rgba(255,255,255,.06);
 }
 
 .feature-icon {
@@ -197,7 +318,7 @@ const rules = [
   border-radius: 14px;
   color: #2a1a05;
   background: linear-gradient(135deg, #ffe8ae, #f2b34d);
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 900;
 }
 
@@ -212,11 +333,92 @@ const rules = [
   line-height: 1.7;
 }
 
+.arbitration-section {
+  padding: 24px;
+  margin-bottom: 22px;
+  border: 1px solid rgba(255, 214, 145, .16);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 95% 0%, rgba(255, 214, 145, .10), transparent 26%),
+    rgba(4, 9, 17, .50);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05);
+}
+
+.arbitration-grid {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 16px;
+}
+
+.evidence-card,
+.dispute-step {
+  border: 1px solid rgba(255, 214, 145, .14);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, .035);
+}
+
+.evidence-card {
+  padding: 20px;
+}
+
+.evidence-card strong,
+.dispute-step strong {
+  color: #fff7dd;
+}
+
+.evidence-card p,
+.dispute-step p {
+  margin: 8px 0 0;
+  line-height: 1.7;
+}
+
+.evidence-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.evidence-tags span {
+  padding: 5px 10px;
+  border: 1px solid rgba(255, 214, 145, .14);
+  border-radius: 999px;
+  color: #ffe8ae;
+  background: rgba(255, 214, 145, .07);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.dispute-steps {
+  display: grid;
+  gap: 10px;
+}
+
+.dispute-step {
+  display: flex;
+  gap: 14px;
+  padding: 16px;
+}
+
+.dispute-step > span {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  color: #2a1a05;
+  background: linear-gradient(135deg, #ffe8ae, #f2b34d);
+  font-size: 12px;
+  font-weight: 900;
+}
+
 .rules-section {
   padding: 24px;
-  border: 1px solid rgba(255, 214, 145, .14);
-  border-radius: 20px;
-  background: rgba(4, 9, 17, .40);
+  border: 1px solid rgba(255, 214, 145, .16);
+  border-radius: 24px;
+  background: rgba(4, 9, 17, .50);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05);
 }
 
 .section-heading h2 {
@@ -233,11 +435,23 @@ const rules = [
 :deep(.trust-collapse .el-collapse-item__header),
 :deep(.trust-collapse .el-collapse-item__wrap) {
   color: #fff2d6;
-  background: transparent;
+  background: rgba(255, 255, 255, .025);
   border-color: rgba(255, 214, 145, .13);
 }
 
+:deep(.trust-collapse .el-collapse-item__header) {
+  padding: 0 14px;
+  border-radius: 14px;
+  font-weight: 800;
+}
+
+:deep(.trust-collapse .el-collapse-item__wrap) {
+  margin-top: 4px;
+  border-radius: 14px;
+}
+
 :deep(.trust-collapse .el-collapse-item__content) {
+  padding: 14px 16px 16px;
   color: rgba(255, 232, 196, .68);
 }
 
@@ -257,8 +471,11 @@ const rules = [
   margin-top: 22px;
   padding: 18px;
   border: 1px solid rgba(255, 214, 145, .18);
-  border-radius: 18px;
-  background: rgba(242, 179, 77, .08);
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(242, 179, 77, .13), transparent 28%),
+    rgba(242, 179, 77, .08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05);
 }
 
 .tip-icon {
@@ -283,10 +500,11 @@ const rules = [
 
 @media (max-width: 900px) {
   .trust-page { padding: 12px; }
-  .trust-hero { padding: 34px 22px; }
+  .trust-hero { grid-template-columns: 1fr; padding: 34px 22px; }
   .trust-hero h1 { font-size: 32px; }
   .trust-orbit { opacity: .36; }
   .features { grid-template-columns: 1fr; }
-  .trust-metrics { flex-wrap: wrap; }
+  .trust-metrics { grid-template-columns: 1fr; }
+  .arbitration-grid { grid-template-columns: 1fr; }
 }
 </style>
