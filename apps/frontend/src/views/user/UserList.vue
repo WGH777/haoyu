@@ -1,9 +1,13 @@
 <template>
   <div class="user-list-page">
-    <el-card class="box-card" shadow="hover">
+    <el-card class="box-card admin-user-shell" shadow="never">
       <template #header>
         <div class="card-header">
-          <span>管理中心</span>
+          <div>
+            <p class="eyebrow">HaoYu Admin Center</p>
+            <h2>后台管理中心</h2>
+            <p class="header-copy">聚合用户、任务与资金流水监控，保持后台治理清晰可追踪。</p>
+          </div>
           <div class="card-actions">
             <el-tag
               v-if="currentUser"
@@ -17,12 +21,10 @@
         </div>
       </template>
 
-      <!-- 加载当前用户信息时的骨架屏 -->
       <div v-if="loadingUser" class="loading-wrapper">
         <el-skeleton :rows="4" animated />
       </div>
 
-      <!-- 无权限提示 -->
       <div v-else-if="!hasPermission" class="no-permission">
         <el-result
           icon="warning"
@@ -35,17 +37,22 @@
         </el-result>
       </div>
 
-      <!-- 管理中心内容：用户列表 + 任务监控 + 资金监控 -->
       <div v-else>
-        <el-tabs v-model="activeTab">
-          <!-- Tab 1：用户列表 -->
+        <el-tabs v-model="activeTab" class="admin-user-tabs">
           <el-tab-pane label="用户列表" name="users">
-            <!-- 桌面端表格 -->
-            <div class="desktop-only">
+            <div class="admin-section-head">
+              <div>
+                <h3>用户与权限</h3>
+                <p>查看用户资料、角色与余额，仅超级管理员可执行角色调整和账号维护。</p>
+              </div>
+            </div>
+
+            <div class="desktop-only admin-table-wrap">
               <el-table
                 v-loading="loadingUsers"
                 :data="users"
                 border
+                class="admin-data-table"
                 style="width: 100%"
               >
                 <el-table-column prop="id" label="ID" width="80" />
@@ -122,7 +129,6 @@
               </el-table>
             </div>
 
-            <!-- 移动端卡片列表 -->
             <div class="mobile-only">
               <div v-if="loadingUsers" style="text-align:center;padding:24px;color:#64748b;">加载中...</div>
               <van-empty v-else-if="!users.length" description="暂无用户记录" />
@@ -147,9 +153,14 @@
             <van-action-sheet v-model:show="actionSheetShow" :actions="actionSheetOptions" cancel-text="取消" close-on-click-action @select="onActionSheetSelect" />
           </el-tab-pane>
 
-          <!-- Tab 2：任务监控（管理员专用，只读） -->
           <el-tab-pane label="任务监控" name="tasks">
-            <!-- 桌面端筛选条 + 表格 -->
+            <div class="admin-section-head">
+              <div>
+                <h3>任务状态监控</h3>
+                <p>只读查看全站任务状态，帮助管理员定位履约风险与异常协作。</p>
+              </div>
+            </div>
+
             <div class="desktop-only">
               <div class="task-filter-bar">
                 <span class="filter-label">状态：</span>
@@ -163,50 +174,52 @@
                 </el-radio-group>
               </div>
 
-              <el-table
-                v-loading="loadingTasks"
-                :data="filteredAdminTasks"
-                border
-                style="width: 100%"
-                empty-text="当前没有任务"
-              >
-                <el-table-column prop="id" label="任务 ID" width="90" />
-                <el-table-column label="任务标题" min-width="180">
-                  <template #default="{ row }">
-                    <el-link type="primary" @click="goTaskDetail(row.id)">
-                      {{ row.title }}
-                    </el-link>
-                  </template>
-                </el-table-column>
-                <el-table-column label="发布人" width="140">
-                  <template #default="{ row }">
-                    {{ row.publisher?.nickname || row.publisher?.email || 'N/A' }}
-                  </template>
-                </el-table-column>
-                <el-table-column label="赏金 (元)" width="120">
-                  <template #default="{ row }">
-                    {{ (row.price / 100).toFixed(2) }}
-                  </template>
-                </el-table-column>
-                <el-table-column label="状态" width="120">
-                  <template #default="{ row }">
-                    <el-tag :type="getTaskStatusTag(row.status)" size="small">
-                      {{ getTaskStatusText(row.status) }}
-                    </el-tag>
-                  </template>
-                </el-table-column>
-                <el-table-column label="发布时间" width="180">
-                  <template #default="{ row }">
-                    {{ formatTime(row.createdAt) }}
-                  </template>
-                </el-table-column>
-              </el-table>
+              <div class="admin-table-wrap">
+                <el-table
+                  v-loading="loadingTasks"
+                  :data="filteredAdminTasks"
+                  border
+                  class="admin-data-table"
+                  style="width: 100%"
+                  empty-text="当前没有任务"
+                >
+                  <el-table-column prop="id" label="任务 ID" width="90" />
+                  <el-table-column label="任务标题" min-width="180">
+                    <template #default="{ row }">
+                      <el-link type="primary" @click="goTaskDetail(row.id)">
+                        {{ row.title }}
+                      </el-link>
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="发布人" width="140">
+                    <template #default="{ row }">
+                      {{ row.publisher?.nickname || row.publisher?.email || 'N/A' }}
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="赏金 (元)" width="120">
+                    <template #default="{ row }">
+                      {{ (row.price / 100).toFixed(2) }}
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="状态" width="120">
+                    <template #default="{ row }">
+                      <el-tag :type="getTaskStatusTag(row.status)" size="small">
+                        {{ getTaskStatusText(row.status) }}
+                      </el-tag>
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="发布时间" width="180">
+                    <template #default="{ row }">
+                      {{ formatTime(row.createdAt) }}
+                    </template>
+                  </el-table-column>
+                </el-table>
+              </div>
               <div class="tab-tip">
                 当前任务数据来自接口 <code>/admin/tasks</code>，包含各状态任务。
               </div>
             </div>
 
-            <!-- 移动端筛选 chip + 卡片列表 -->
             <div class="mobile-only">
               <van-tabs v-model:active="adminTaskStatusTabIndex" @change="onTaskStatusTabChange" class="vant-tabs-filter" :swipeable="false" :ellipsis="false" :duration="0.2" color="#6366f1" title-active-color="#a5b4fc" title-inactive-color="#94a3b8">
                 <van-tab v-for="opt in taskStatusOptions" :key="opt.value" :title="opt.label" />
@@ -222,20 +235,25 @@
                   </div>
                   <div class="mdc-title">{{ t.title }}</div>
                   <div class="mdc-meta">
-                    <span>👤 {{ t.publisher?.nickname || t.publisher?.email || 'N/A' }}</span>
-                    <span>💰 {{ (t.price / 100).toFixed(2) }}</span>
+                    <span>发布人 {{ t.publisher?.nickname || t.publisher?.email || 'N/A' }}</span>
+                    <span>赏金 {{ (t.price / 100).toFixed(2) }}</span>
                   </div>
-                  <div class="mdc-time">📅 {{ formatTime(t.createdAt) }}</div>
+                  <div class="mdc-time">{{ formatTime(t.createdAt) }}</div>
                 </div>
               </div>
             </div>
           </el-tab-pane>
 
-          <!-- Tab 3：资金监控（管理员专用，只读） -->
           <el-tab-pane label="资金监控" name="wallet">
-            <!-- 桌面端 -->
+            <div class="admin-section-head">
+              <div>
+                <h3>资金流水监控</h3>
+                <p>只读查看平台资金流水，支持按类型与用户 ID 进行安全查询。</p>
+              </div>
+            </div>
+
             <div class="desktop-only">
-              <div class="task-filter-bar">
+              <div class="task-filter-bar admin-fund-filter">
                 <span class="filter-label">类型：</span>
                 <el-radio-group v-model="adminTxnTypeFilter" size="small">
                   <el-radio-button label="all">全部</el-radio-button>
@@ -245,7 +263,7 @@
                   <el-radio-button label="INCOME">任务收入</el-radio-button>
                 </el-radio-group>
 
-                <span class="filter-label" style="margin-left: 20px;">用户ID：</span>
+                <span class="filter-label user-filter-label">用户ID：</span>
                 <el-input-number
                   v-model="adminTxnUserId"
                   :min="1"
@@ -256,74 +274,76 @@
                 <el-button
                   size="small"
                   type="primary"
-                  style="margin-left: 10px;"
+                  class="query-button"
                   @click="handleSearchAdminTransactions"
                 >
                   查询
                 </el-button>
               </div>
 
-              <el-table
-                v-loading="loadingAdminTransactions"
-                :data="filteredAdminTransactions"
-                border
-                style="width: 100%"
-                empty-text="当前没有流水记录"
-              >
-                <el-table-column prop="id" label="流水ID" width="90" />
-                <el-table-column label="用户" min-width="180">
-                  <template #default="{ row }">
-                    <span>
-                      {{ row.user?.nickname || row.user?.email || 'N/A' }}
-                    </span>
-                    <span class="user-id-text">（ID：{{ row.userId }}）</span>
-                  </template>
-                </el-table-column>
-                <el-table-column label="类型" width="110">
-                  <template #default="{ row }">
-                    <el-tag
-                      :type="row.amount > 0 ? 'success' : 'danger'"
-                      size="small"
-                    >
-                      {{ getTxnTypeLabel(row.type) }}
-                    </el-tag>
-                  </template>
-                </el-table-column>
-                <el-table-column label="金额" width="120">
-                  <template #default="{ row }">
-                    <span :class="row.amount > 0 ? 'text-green' : 'text-red'">
-                      {{ formatTxnAmount(row) }}
-                    </span>
-                  </template>
-                </el-table-column>
-                <el-table-column label="状态" width="100">
-                  <template #default="{ row }">
-                    <el-tag
-                      :type="row.status === 'SUCCESS' ? 'success' : 'info'"
-                      size="small"
-                    >
-                      {{ row.status }}
-                    </el-tag>
-                  </template>
-                </el-table-column>
-                <el-table-column label="时间" width="180">
-                  <template #default="{ row }">
-                    {{ formatTime(row.createdAt) }}
-                  </template>
-                </el-table-column>
-              </el-table>
+              <div class="admin-table-wrap">
+                <el-table
+                  v-loading="loadingAdminTransactions"
+                  :data="filteredAdminTransactions"
+                  border
+                  class="admin-data-table"
+                  style="width: 100%"
+                  empty-text="当前没有流水记录"
+                >
+                  <el-table-column prop="id" label="流水ID" width="90" />
+                  <el-table-column label="用户" min-width="180">
+                    <template #default="{ row }">
+                      <span>
+                        {{ row.user?.nickname || row.user?.email || 'N/A' }}
+                      </span>
+                      <span class="user-id-text">（ID：{{ row.userId }}）</span>
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="类型" width="110">
+                    <template #default="{ row }">
+                      <el-tag
+                        :type="row.amount > 0 ? 'success' : 'danger'"
+                        size="small"
+                      >
+                        {{ getTxnTypeLabel(row.type) }}
+                      </el-tag>
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="金额" width="120">
+                    <template #default="{ row }">
+                      <span :class="row.amount > 0 ? 'text-green' : 'text-red'">
+                        {{ formatTxnAmount(row) }}
+                      </span>
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="状态" width="100">
+                    <template #default="{ row }">
+                      <el-tag
+                        :type="row.status === 'SUCCESS' ? 'success' : 'info'"
+                        size="small"
+                      >
+                        {{ row.status }}
+                      </el-tag>
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="时间" width="180">
+                    <template #default="{ row }">
+                      {{ formatTime(row.createdAt) }}
+                    </template>
+                  </el-table-column>
+                </el-table>
+              </div>
               <div class="tab-tip">
                 当前流水数据来自接口 <code>/admin/transactions</code>，展示最近 100 条记录。
                 本页仅支持查看，不提供资金修改入口，资金安全完全由业务逻辑控制。
               </div>
             </div>
 
-            <!-- 移动端 -->
             <div class="mobile-only">
               <div class="mobile-filter-bar">
                 <van-tabs v-model:active="adminTxnTypeTabIndex" @change="onTxnTypeTabChange" class="vant-tabs-filter" :swipeable="false" :ellipsis="false" :duration="0.2" color="#6366f1" title-active-color="#a5b4fc" title-inactive-color="#94a3b8">
-                <van-tab v-for="opt in txnTypeOptions" :key="opt.value" :title="opt.label" />
-              </van-tabs>
+                  <van-tab v-for="opt in txnTypeOptions" :key="opt.value" :title="opt.label" />
+                </van-tabs>
                 <div class="filter-row-inner">
                   <el-input-number
                     v-model="adminTxnUserId"
@@ -349,13 +369,13 @@
                     >{{ getTxnTypeLabel(tx.type) }}</el-tag>
                   </div>
                   <div class="mdc-meta">
-                    <span>👤 {{ tx.user?.nickname || tx.user?.email || 'N/A' }}（ID:{{ tx.userId }}）</span>
+                    <span>{{ tx.user?.nickname || tx.user?.email || 'N/A' }}（ID:{{ tx.userId }}）</span>
                   </div>
                   <div class="mdc-meta">
                     <span :class="tx.amount > 0 ? 'text-green' : 'text-red'">{{ formatTxnAmount(tx) }}</span>
                     <el-tag :type="tx.status === 'SUCCESS' ? 'success' : 'info'" size="small">{{ tx.status }}</el-tag>
                   </div>
-                  <div class="mdc-time">📅 {{ formatTime(tx.createdAt) }}</div>
+                  <div class="mdc-time">{{ formatTime(tx.createdAt) }}</div>
                 </div>
               </div>
             </div>
@@ -364,11 +384,11 @@
       </div>
     </el-card>
 
-    <!-- 重置密码弹窗 -->
     <el-dialog
       v-model="resetDialogVisible"
       title="重置用户密码"
-      width="400px"
+      width="420px"
+      class="admin-action-dialog"
     >
       <div v-if="resetTargetUser">
         <p class="dialog-tip">
@@ -390,7 +410,7 @@
 
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="resetDialogVisible = false">取 消</el-button>
+          <el-button @click="resetDialogVisible = false">取消</el-button>
           <el-button
             type="primary"
             :loading="resetSubmitting"
@@ -720,7 +740,7 @@ const handleChangeRole = async (user: UserItem, targetRole: UserRole) => {
   try {
     const label = getRoleLabel(targetRole)
     await ElMessageBox.confirm(
-      `确定将用户「${user.nickname || user.email}」设置为「${label}」吗？`,
+      `确定将用户“${user.nickname || user.email}”设置为“${label}”吗？`,
       '提示',
       { type: 'warning' },
     )
@@ -768,7 +788,7 @@ const handleDeleteUser = async (user: UserItem) => {
 
   try {
     await ElMessageBox.confirm(
-      `确定删除用户「${user.nickname || user.email}」吗？此操作不可恢复！`,
+      `确定删除用户“${user.nickname || user.email}”吗？此操作不可恢复！`,
       '警告',
       { type: 'warning' },
     )
@@ -787,7 +807,7 @@ const goTaskDetail = (taskId: number) => {
   router.push(`/task/${taskId}`)
 }
 
-// 顶部刷新按钮：根据当前 Tab 刷对应的数据
+// 顶部刷新按钮：根据当前 Tab 刷新对应的数据
 const handleRefresh = async () => {
   if (!hasPermission.value) return
   if (activeTab.value === 'users') {
@@ -858,21 +878,66 @@ watch(
 
 <style scoped>
 .user-list-page {
-  padding: 16px;
+  position: relative;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 28px;
+  color: #f8efd9;
+}
+
+.user-list-page::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 18% 16%, rgba(242, 179, 77, 0.14), transparent 30%),
+    radial-gradient(circle at 78% 10%, rgba(178, 142, 255, 0.12), transparent 28%),
+    linear-gradient(135deg, rgba(5, 10, 20, 0.96), rgba(9, 15, 29, 0.94));
+}
+
+.admin-user-shell {
+  border-radius: 18px;
+  border: 1px solid rgba(255, 214, 145, 0.18);
+  background: linear-gradient(145deg, rgba(8, 14, 28, 0.9), rgba(13, 23, 42, 0.78));
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.36), inset 0 1px 0 rgba(255, 232, 174, 0.08);
+  backdrop-filter: blur(18px);
 }
 
 .card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-weight: 600;
-  font-size: 15px;
+  gap: 18px;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: #f2b34d;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.card-header h2 {
+  margin: 0;
+  color: #ffe8ae;
+  font-size: 28px;
+  line-height: 1.2;
+}
+
+.header-copy {
+  margin: 10px 0 0;
+  color: #aebbd2;
+  line-height: 1.7;
 }
 
 .card-actions {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-shrink: 0;
 }
 
 .loading-wrapper {
@@ -883,42 +948,199 @@ watch(
   padding: 40px 0;
 }
 
+.admin-section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin: 8px 0 18px;
+}
+
+.admin-section-head h3 {
+  margin: 0 0 6px;
+  color: #ffe8ae;
+  font-size: 20px;
+}
+
+.admin-section-head p {
+  margin: 0;
+  color: #8fa3bf;
+  line-height: 1.7;
+}
+
+.admin-table-wrap {
+  overflow-x: auto;
+  border-radius: 14px;
+}
+
 .tab-tip {
   margin-top: 12px;
   font-size: 12px;
-  color: #909399;
+  color: #8fa3bf;
+  line-height: 1.7;
 }
 
 .dialog-tip {
   margin-bottom: 12px;
+  color: #aebbd2;
 }
 
 .task-filter-bar {
   display: flex;
   align-items: center;
-  margin-bottom: 10px;
+  gap: 8px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
 }
 
 .filter-label {
-  margin-right: 8px;
   font-size: 13px;
-  color: #94a3b8;
+  color: #aebbd2;
+}
+
+.user-filter-label {
+  margin-left: 12px;
+}
+
+.query-button {
+  margin-left: 2px;
 }
 
 .user-id-text {
   margin-left: 4px;
   font-size: 12px;
-  color: #64748b;
+  color: #8fa3bf;
 }
 
 .text-green {
   color: #6ee7b7;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .text-red {
   color: #fca5a5;
-  font-weight: 600;
+  font-weight: 700;
+}
+
+:deep(.admin-user-shell > .el-card__header),
+:deep(.admin-user-shell > .el-card__body) {
+  border-color: rgba(255, 214, 145, 0.12);
+  background: transparent;
+}
+
+:deep(.admin-user-tabs .el-tabs__nav-wrap::after) {
+  background: rgba(255, 214, 145, 0.12);
+}
+
+:deep(.admin-user-tabs .el-tabs__item) {
+  color: #8fa3bf;
+  font-weight: 700;
+}
+
+:deep(.admin-user-tabs .el-tabs__item.is-active) {
+  color: #ffe8ae;
+}
+
+:deep(.admin-user-tabs .el-tabs__active-bar) {
+  background: linear-gradient(90deg, #ffe8ae, #f2b34d);
+}
+
+:deep(.admin-data-table) {
+  --el-table-border-color: rgba(255, 214, 145, 0.12);
+  --el-table-header-bg-color: rgba(255, 214, 145, 0.08);
+  --el-table-tr-bg-color: rgba(8, 14, 28, 0.58);
+  --el-table-row-hover-bg-color: rgba(255, 214, 145, 0.08);
+  --el-table-text-color: #d8e1ee;
+  --el-table-header-text-color: #ffe8ae;
+  min-width: 880px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: rgba(8, 14, 28, 0.65);
+  border: 1px solid rgba(255, 214, 145, 0.12);
+}
+
+:deep(.admin-data-table .el-table__inner-wrapper::before),
+:deep(.admin-data-table .el-table__border-left-patch) {
+  background: rgba(255, 214, 145, 0.12);
+}
+
+:deep(.admin-data-table th.el-table__cell),
+:deep(.admin-data-table tr),
+:deep(.admin-data-table td.el-table__cell) {
+  background: transparent;
+}
+
+:deep(.el-button) {
+  border-radius: 999px;
+  border-color: rgba(255, 214, 145, 0.22);
+  background: rgba(8, 14, 28, 0.72);
+  color: #ffe8ae;
+}
+
+:deep(.el-button--primary),
+:deep(.el-button--success) {
+  border: none;
+  background: linear-gradient(135deg, #ffe8ae, #f2b34d);
+  color: #1d1406;
+  box-shadow: 0 12px 28px rgba(242, 179, 77, 0.22);
+}
+
+:deep(.el-button--danger) {
+  border-color: rgba(191, 83, 72, 0.42);
+  background: rgba(96, 33, 29, 0.28);
+  color: #ffb3a8;
+}
+
+:deep(.el-tag) {
+  border-radius: 999px;
+  background: rgba(255, 214, 145, 0.1);
+  border-color: rgba(255, 214, 145, 0.18);
+}
+
+:deep(.el-radio-button__inner) {
+  border-color: rgba(255, 214, 145, 0.14);
+  background: rgba(8, 14, 28, 0.62);
+  color: #aebbd2;
+}
+
+:deep(.el-radio-button__original-radio:checked + .el-radio-button__inner) {
+  border-color: #f2b34d;
+  background: linear-gradient(135deg, #ffe8ae, #f2b34d);
+  color: #1d1406;
+  box-shadow: none;
+}
+
+:deep(.el-input-number .el-input__wrapper),
+:deep(.el-input__wrapper) {
+  border-radius: 12px;
+  border: 1px solid rgba(255, 214, 145, 0.16);
+  background: rgba(4, 10, 20, 0.72);
+  box-shadow: none;
+}
+
+:deep(.el-input__inner) {
+  color: #f8efd9;
+}
+
+:deep(.el-link.el-link--primary) {
+  color: #ffe8ae;
+}
+
+:deep(.admin-action-dialog) {
+  border-radius: 18px;
+  border: 1px solid rgba(255, 214, 145, 0.2);
+  background: linear-gradient(145deg, rgba(8, 14, 28, 0.96), rgba(13, 23, 42, 0.94));
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.48), inset 0 1px 0 rgba(255, 232, 174, 0.08);
+}
+
+:deep(.admin-action-dialog .el-dialog__title) {
+  color: #ffe8ae;
+  font-weight: 800;
+}
+
+:deep(.admin-action-dialog .el-dialog__body),
+:deep(.admin-action-dialog .el-dialog__footer),
+:deep(.admin-action-dialog .el-form-item__label) {
+  color: #d8e1ee;
 }
 
 /* ====== 移动端卡片样式 ====== */
@@ -1046,5 +1268,16 @@ watch(
   border-color: rgba(148, 163, 184, 0.18) !important;
   color: #94a3b8 !important;
   font-size: 13px;
+}
+
+@media (max-width: 900px) {
+  .user-list-page {
+    padding: 18px;
+  }
+
+  .card-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 }
 </style>
