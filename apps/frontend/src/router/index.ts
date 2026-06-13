@@ -65,6 +65,7 @@ const router = createRouter({
         },
         {
           path: '/my-task',
+          alias: '/my-tasks',
           name: 'my-task',
           component: () => import('@/views/task/MyTasks.vue'),
         },
