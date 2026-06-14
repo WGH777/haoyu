@@ -1,10 +1,11 @@
-﻿import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 const isProduction = process.env.NODE_ENV === 'production';
 
 const DEV_PASSWORD = 'Haoyu@2026';
+const DEV_INITIAL_AVAILABLE = 1_000_000; // 10,000 煜米，单位：分
 const DEV_USERS = [
   {
     email: 'super@haoyu.com',
@@ -23,6 +24,57 @@ const DEV_USERS = [
     nickname: '浩煜测试',
     role: 'USER',
     bio: '开发环境固定测试用户账号',
+  },
+];
+
+const DEV_TASKS = [
+  {
+    title: '品牌视觉升级与首页改版',
+    description: '为灯火主题品牌站优化首屏视觉、卡片层级与响应式体验，交付设计稿与落地建议。',
+    price: 38000,
+    category: 'SKILL_SERVICE',
+    serviceMode: 'ONLINE',
+    status: 'PENDING',
+  },
+  {
+    title: '智能家居小程序功能梳理',
+    description: '梳理设备控制、场景联动、消息提醒等功能流程，输出原型说明与接口清单。',
+    price: 32000,
+    category: 'REMOTE_ASSISTANCE',
+    serviceMode: 'ONLINE',
+    status: 'PENDING',
+  },
+  {
+    title: '产品宣传短片脚本策划',
+    description: '围绕产品亮点撰写 60 秒宣传片脚本，包含分镜、旁白和拍摄建议。',
+    price: 28000,
+    category: 'SKILL_SERVICE',
+    serviceMode: 'BOTH',
+    status: 'PENDING',
+  },
+  {
+    title: '品牌全案传播方案',
+    description: '从定位、内容主题、渠道节奏到落地物料，提供一套小型品牌传播方案。',
+    price: 45000,
+    category: 'OTHER',
+    serviceMode: 'ONLINE',
+    status: 'ASSIGNED',
+  },
+  {
+    title: '电商详情页文案优化',
+    description: '优化商品卖点表达、模块标题和转化引导，适配主流电商详情页结构。',
+    price: 16000,
+    category: 'SKILL_SERVICE',
+    serviceMode: 'ONLINE',
+    status: 'PENDING',
+  },
+  {
+    title: '社区活动海报与报名页',
+    description: '设计社区线下活动主视觉海报，并整理报名页内容结构和视觉建议。',
+    price: 24000,
+    category: 'COMMUNITY_COLLABORATION',
+    serviceMode: 'BOTH',
+    status: 'SUBMITTED',
   },
 ];
 
@@ -117,6 +169,70 @@ async function ensureDevelopmentUsers() {
   }
 }
 
+async function ensureDevelopmentWalletBaseline() {
+  for (const user of DEV_USERS) {
+    const saved = await prisma.user.findUnique({ where: { email: user.email }, select: { id: true, email: true } });
+    if (!saved) continue;
+
+    await prisma.wallet.upsert({
+      where: { userId_currency: { userId: saved.id, currency: 'CNY' } },
+      update: {
+        ownerType: 'USER',
+        available: DEV_INITIAL_AVAILABLE,
+        frozen: 0,
+      },
+      create: {
+        ownerType: 'USER',
+        userId: saved.id,
+        currency: 'CNY',
+        available: DEV_INITIAL_AVAILABLE,
+        frozen: 0,
+      },
+    });
+    console.log(`Dev wallet baseline ensured: ${saved.email} / available=${DEV_INITIAL_AVAILABLE} / frozen=0`);
+  }
+}
+
+async function ensureDevelopmentTasks() {
+  const publisher = await prisma.user.findUnique({ where: { email: 'test@haoyu.com' }, select: { id: true } });
+  if (!publisher) return;
+
+  for (const item of DEV_TASKS) {
+    const existing = await prisma.task.findFirst({
+      where: { title: item.title, publisherId: publisher.id },
+      select: { id: true },
+    });
+
+    if (existing) {
+      await prisma.task.update({
+        where: { id: existing.id },
+        data: {
+          description: item.description,
+          price: item.price,
+          category: item.category,
+          serviceMode: item.serviceMode,
+          status: item.status,
+        },
+      });
+      console.log(`Dev task updated: #${existing.id} ${item.title}`);
+      continue;
+    }
+
+    const created = await prisma.task.create({
+      data: {
+        title: item.title,
+        description: item.description,
+        price: item.price,
+        category: item.category,
+        serviceMode: item.serviceMode,
+        status: item.status,
+        publisherId: publisher.id,
+      },
+    });
+    console.log(`Dev task created: #${created.id} ${item.title}`);
+  }
+}
+
 async function main() {
   console.log(`Running seed for ${process.env.NODE_ENV || 'development'} environment...`);
 
@@ -129,6 +245,12 @@ async function main() {
   }
 
   await ensureUserWallets();
+
+  if (!isProduction) {
+    await ensureDevelopmentWalletBaseline();
+    await ensureDevelopmentTasks();
+  }
+
   console.log('Seed completed.');
 }
 

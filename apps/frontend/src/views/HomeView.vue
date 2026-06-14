@@ -67,31 +67,6 @@
             </div>
           </div>
         </section>
-
-        <section class="stats-bar" aria-label="平台数据">
-          <div v-for="item in stats" :key="item.label" class="stat-item">
-            <el-icon><component :is="item.icon" /></el-icon>
-            <strong>{{ item.value }}</strong>
-            <span>{{ item.label }}</span>
-          </div>
-        </section>
-
-        <section class="process">
-          <div class="section-title">
-            <span>✦</span>
-            <h2>信任，让协作更简单</h2>
-            <span>✦</span>
-          </div>
-          <p>五步流程，保障每一次合作安心高效</p>
-          <div class="process-line">
-            <article v-for="step in processSteps" :key="step.title" class="process-card">
-              <div class="step-icon"><el-icon><component :is="step.icon" /></el-icon></div>
-              <div class="step-title"><b>{{ step.no }}</b>{{ step.title }}</div>
-              <span>{{ step.desc }}</span>
-            </article>
-          </div>
-        </section>
-
         <section id="task-section" class="tasks-section">
           <div class="tasks-head">
             <div class="tabs">
@@ -251,6 +226,15 @@
     </aside>
     </div>
 
+    <footer class="site-footer" aria-label="站点版权信息">
+      <div class="site-footer__brand">浩煜·万家灯火</div>
+      <div class="site-footer__links">
+        <span>可信协作</span>
+        <span>资金托管</span>
+        <span>过程留痕</span>
+      </div>
+      <p>© 2026 HaoYu. All rights reserved.</p>
+    </footer>
     <nav class="mobile-bottom" aria-label="移动端导航">
       <button :class="{ active: isHome }" @click="router.push('/task')"><el-icon><House /></el-icon><span>首页</span></button>
       <button @click="router.push('/my-orders')"><el-icon><Tickets /></el-icon><span>任务市场</span></button>
@@ -771,6 +755,58 @@ onMounted(() => {
 .pc-home-layout.is-home .desktop-frame {
   max-width: none;
   margin: 0;
+}
+
+.site-footer {
+  position: relative;
+  z-index: 1;
+  max-width: 1420px;
+  margin: 18px auto 0;
+  padding: 20px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  border: 1px solid rgba(255, 214, 145, .14);
+  border-radius: 18px;
+  color: rgba(255, 232, 196, .66);
+  background: linear-gradient(135deg, rgba(5, 10, 20, .72), rgba(10, 18, 32, .54));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05), 0 16px 34px rgba(0, 0, 0, .18);
+}
+
+.site-footer__brand {
+  color: #ffe8ae;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.site-footer__links {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+}
+
+.site-footer__links span {
+  position: relative;
+}
+
+.site-footer__links span + span::before {
+  content: "";
+  position: absolute;
+  left: -7px;
+  top: 50%;
+  width: 3px;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(255, 214, 145, .48);
+  transform: translateY(-50%);
+}
+
+.site-footer p {
+  margin: 0;
+  font-size: 12px;
+  color: rgba(205, 217, 234, .58);
 }
 
 .account-preview {
@@ -1471,13 +1507,16 @@ button {
 }
 
 .filter-btn {
-  margin-left: auto;
   display: inline-flex;
   align-items: center;
   gap: 8px;
 }
 
 
+
+.task-controls :deep(.el-dropdown) {
+  margin-left: auto;
+}
 :global(.haoyu-task-sort-popper.el-popper) {
   border: 1px solid rgba(255, 214, 145, .22) !important;
   border-radius: 14px !important;
@@ -2244,6 +2283,17 @@ button {
     border-radius: 0;
   }
 
+  .site-footer {
+    margin: 16px 14px calc(88px + env(safe-area-inset-bottom));
+    padding: 16px;
+    flex-direction: column;
+    align-items: flex-start;
+    border-radius: 16px;
+  }
+
+  .site-footer__links {
+    flex-wrap: wrap;
+  }
   .top-nav {
     grid-template-columns: 1fr auto;
     padding: 0 22px;
@@ -2375,7 +2425,6 @@ button {
   .filter-btn {
     margin-left: 0;
   }
-
   .task-grid {
     grid-template-columns: 1fr;
     gap: 12px;

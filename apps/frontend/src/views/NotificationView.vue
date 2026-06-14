@@ -20,7 +20,7 @@
         <el-button v-if="notifications.length && unreadCount" type="primary" size="small" round @click="markAll">
           全部已读 ({{ unreadCount }})
         </el-button>
-        <el-button size="small" :type="showAll ? 'default' : 'primary'" round @click="showAll = !showAll">
+        <el-button v-if="notifications.length" size="small" :type="showAll ? 'default' : 'primary'" round @click="showAll = !showAll">
           {{ showAll ? '仅未读' : '全部' }}
         </el-button>
       </div>

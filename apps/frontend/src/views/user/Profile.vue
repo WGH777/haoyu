@@ -266,12 +266,13 @@ const avatarSvg = (bg: string, fg: string) => {
 }
 
 const avatarPresets = [
-  { label: '暖金', value: avatarSvg('#d18a2f', '#fff2d6') },
-  { label: '紫金', value: avatarSvg('#7c65d8', '#fff2d6') },
-  { label: '蓝灰', value: avatarSvg('#1c314f', '#dbeafe') },
-  { label: '青金', value: avatarSvg('#2f8f83', '#fef3c7') },
+  { label: '男生暖金', value: avatarSvg('#d18a2f', '#fff2d6') },
+  { label: '女生暖金', value: avatarSvg('#f0a35e', '#fff7df') },
+  { label: '男生紫金', value: avatarSvg('#6d5bd0', '#fff2d6') },
+  { label: '女生紫金', value: avatarSvg('#9b6ad8', '#fff2d6') },
+  { label: '男生蓝灰', value: avatarSvg('#1c314f', '#dbeafe') },
+  { label: '女生青金', value: avatarSvg('#2f8f83', '#fef3c7') },
 ]
-
 const selectAvatarPreset = (value: string) => {
   profileForm.avatar = value
 }
