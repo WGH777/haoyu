@@ -685,7 +685,7 @@ const fetchUsers = async () => {
   loadingUsers.value = true
   try {
     const res = await getUserList()
-    users.value = res
+    users.value = Array.isArray(res) ? res : ((res as any)?.items || [])
   } catch (error) {
     console.error('获取用户列表失败:', error)
     ElMessage.error('获取用户列表失败')
