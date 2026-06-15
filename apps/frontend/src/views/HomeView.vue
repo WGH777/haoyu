@@ -28,7 +28,7 @@
             <span v-if="unreadCount">{{ unreadCount }}</span>
           </button>
           <template v-if="isLogin && currentUser">
-            <el-avatar :size="30" :src="currentUser.avatar ? getFullUrl(currentUser.avatar) : defaultAvatarSrc">
+            <el-avatar :size="30" :src="userAvatarSrc" @error="handleAvatarError">
               {{ userInitial }}
             </el-avatar>
             <el-dropdown trigger="click" @command="handleCommand">
@@ -144,7 +144,7 @@
 
         <template v-if="isLogin && currentUser">
           <div class="account-hero-card">
-            <el-avatar :size="62" :src="currentUser.avatar ? getFullUrl(currentUser.avatar) : defaultAvatarSrc">
+            <el-avatar :size="62" :src="userAvatarSrc" @error="handleAvatarError">
               {{ userInitial }}
             </el-avatar>
             <div class="account-identity">
@@ -343,6 +343,7 @@ const heroBgSrc = heroBg
 const brandLogoSrc = brandLogo
 const addButtonSrc = addButton
 const defaultAvatarSrc = defaultAvatar
+const avatarLoadFailed = ref(false)
 const walletBalance = ref(0)
 const unreadCount = ref(0)
 const loading = ref(false)
@@ -379,6 +380,12 @@ const demoTasks: Task[] = [
 const isLogin = computed(() => Boolean(localStorage.getItem('token')))
 const isHome = computed(() => route.path === '/' || route.path === '/task')
 const userInitial = computed(() => currentUser.value?.nickname?.[0] || currentUser.value?.email?.[0]?.toUpperCase() || '浩')
+const userAvatarSrc = computed(() => {
+  if (avatarLoadFailed.value) return defaultAvatarSrc
+  const avatar = currentUser.value?.avatar?.trim()
+  if (!avatar || !isUsableAvatarValue(avatar)) return defaultAvatarSrc
+  return getFullUrl(avatar)
+})
 const canSeeUserManage = computed(() => ['ADMIN', 'SUPER_ADMIN'].includes(currentUser.value?.role || ''))
 const accountRoleLabel = computed(() => ({
   SUPER_ADMIN: '超级管理员',
@@ -507,6 +514,7 @@ const fetchProfile = async () => {
   if (!isLogin.value) return
   try {
     const res = await getProfile()
+    avatarLoadFailed.value = false
     currentUser.value = res
     localStorage.setItem('currentUser', JSON.stringify(res))
   } catch {
@@ -686,6 +694,13 @@ const relativeTime = (date?: string) => {
 
 const getFullUrl = (path: string) => {
   return resolveApiAssetUrl(path)
+}
+
+const isUsableAvatarValue = (value: string) =>
+  /^(https?:\/\/|data:image\/|\/?uploads\/|\/?assets\/)/i.test(value)
+
+const handleAvatarError = () => {
+  avatarLoadFailed.value = true
 }
 
 onMounted(() => {
